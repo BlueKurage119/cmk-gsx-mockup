@@ -39,11 +39,15 @@ PORT=18080 npm start
   - **レスポンス**: `H端末（指揮所用）` (Content-Type: `text/html; charset=utf-8`)
 - **M端末（現場用）**: `http://localhost:8080/m`
   - **レスポンス**: `M端末（現場用）` (Content-Type: `text/html; charset=utf-8`)
+- **設備一覧 API**: `http://localhost:8080/api/facilities`
+  - **レスポンス**: 設備5件の JSON 配列 (Content-Type: `application/json; charset=utf-8`)
+  - **状態管理**: 設備状態はサーバープロセスのメモリ上に保持され、サーバー再起動時に初期状態へリセットされます。
 
 ```bash
 curl -i http://localhost:8080/
 curl -i http://localhost:8080/h
 curl -i http://localhost:8080/m
+curl -i http://localhost:8080/api/facilities
 ```
 
 ## テスト手順
@@ -58,7 +62,7 @@ npm test
 
 - `server.js`: Express サーバー本体およびエントリーポイント
 - `test/`: 自動テストコード
-- `src/routes/`: ルーティング実装配置先
-- `src/state/`: 後続 Issue 用状態モデル実装配置先
+- `src/routes/`: ルーティング実装配置先（端末画面、設備 API 等）
+- `src/state/`: 設備状態モデルおよび初期値配置先
 - `public/h/`: H端末静的ファイル配置先
 - `public/m/`: M端末静的ファイル配置先

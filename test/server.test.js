@@ -18,6 +18,14 @@ async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
   };
 }
 
+const EXPECTED_INITIAL_FACILITIES = [
+  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 120, y: 340 },
+  { id: 'higashi3-gate', name: '東3ゲート', type: 'gate', state: 'open', x: 180, y: 340 },
+  { id: 'higashi123-shutter', name: '東123シャッター', type: 'shutter', state: 'open', x: 100, y: 200 },
+  { id: 'higashi456-shutter', name: '東456シャッター', type: 'shutter', state: 'closed', x: 260, y: 200 },
+  { id: 'higashi78-shutter', name: '東78シャッター', type: 'shutter', state: 'open', x: 420, y: 200 },
+];
+
 test('GET / returns 200 and plain text message', async () => {
   const { baseUrl, close } = await listenServer();
   try {
@@ -35,6 +43,30 @@ test('GET /not-found returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/not-found`);
+    assert.equal(res.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/facilities returns 200 and JSON array with all 5 initial facilities', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('content-type'), 'application/json; charset=utf-8');
+    const data = await res.json();
+    assert.ok(Array.isArray(data));
+    assert.deepStrictEqual(data, EXPECTED_INITIAL_FACILITIES);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/not-found returns 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/not-found`);
     assert.equal(res.status, 404);
   } finally {
     await close();
