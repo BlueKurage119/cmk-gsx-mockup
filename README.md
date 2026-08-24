@@ -58,9 +58,17 @@ Node.js 組み込みテストランナーによる自動テストを実行しま
 npm test
 ```
 
+## Cloud Run デプロイ
+
+本リポジトリには Google Cloud Run デプロイ用の `Dockerfile`、`.dockerignore`、`.gcloudignore` が含まれています。
+詳細なデプロイ手順、ローカル検証、および撤去手順については [Google Cloud Run デプロイ手順書](../docs/cloud-run-deployment.md) を参照してください。
+
 ## ディレクトリ構成
 
 - `server.js`: Express サーバー本体およびエントリーポイント
+- `Dockerfile`: Google Cloud Run 用コンテナイメージ定義
+- `.dockerignore`: Docker ビルドコンテキスト除外設定
+- `.gcloudignore`: Cloud Build ソースアップロード除外設定
 - `test/`: 自動テストコード
 - `src/routes/`: ルーティング実装配置先（端末画面、設備 API 等）
 - `src/state/`: 設備状態モデルおよび初期値配置先
