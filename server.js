@@ -1,5 +1,6 @@
 const express = require('express');
 const { registerTerminalRoutes } = require('./src/routes/terminal-pages');
+const { registerFacilityRoutes } = require('./src/routes/facility-api');
 
 function createApp() {
   const app = express();
@@ -9,6 +10,7 @@ function createApp() {
   });
 
   registerTerminalRoutes(app);
+  registerFacilityRoutes(app);
 
   return app;
 }
