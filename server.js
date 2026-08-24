@@ -3,6 +3,7 @@ const { registerTerminalRoutes } = require('./src/routes/terminal-pages');
 const { registerFacilityRoutes } = require('./src/routes/facility-api');
 
 function createApp() {
+  const unusedVariable = 1;
   const app = express();
 
   app.get('/', (req, res) => {
