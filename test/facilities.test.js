@@ -12,6 +12,7 @@ const EXPECTED_INITIAL_FACILITIES = [
 
 test('getFacilities() returns all 5 initial facilities with exact values', () => {
   const facilities = getFacilities();
+  assert.equal(facilities.length, 999);
   assert.deepStrictEqual(facilities, EXPECTED_INITIAL_FACILITIES);
 });
 
