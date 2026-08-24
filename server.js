@@ -1,4 +1,5 @@
 const express = require('express');
+const { registerTerminalRoutes } = require('./src/routes/terminal-pages');
 
 function createApp() {
   const app = express();
@@ -6,6 +7,8 @@ function createApp() {
   app.get('/', (req, res) => {
     res.status(200).type('text/plain').send('CMK/GSX mockup server is running\n');
   });
+
+  registerTerminalRoutes(app);
 
   return app;
 }

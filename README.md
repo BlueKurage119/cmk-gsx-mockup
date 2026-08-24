@@ -33,11 +33,17 @@ PORT=18080 npm start
 
 サーバー起動後、ブラウザまたは curl で以下の URL にアクセスして稼働を確認します。
 
-- **URL**: `http://localhost:8080/`
-- **レスポンス**: `CMK/GSX mockup server is running` (Content-Type: `text/plain; charset=utf-8`)
+- **サーバー稼働確認**: `http://localhost:8080/`
+  - **レスポンス**: `CMK/GSX mockup server is running` (Content-Type: `text/plain; charset=utf-8`)
+- **H端末（指揮所用）**: `http://localhost:8080/h`
+  - **レスポンス**: `H端末（指揮所用）` (Content-Type: `text/html; charset=utf-8`)
+- **M端末（現場用）**: `http://localhost:8080/m`
+  - **レスポンス**: `M端末（現場用）` (Content-Type: `text/html; charset=utf-8`)
 
 ```bash
 curl -i http://localhost:8080/
+curl -i http://localhost:8080/h
+curl -i http://localhost:8080/m
 ```
 
 ## テスト手順
@@ -52,7 +58,7 @@ npm test
 
 - `server.js`: Express サーバー本体およびエントリーポイント
 - `test/`: 自動テストコード
-- `src/routes/`: 後続 Issue 用ルーティング実装配置先
+- `src/routes/`: ルーティング実装配置先
 - `src/state/`: 後続 Issue 用状態モデル実装配置先
-- `public/h/`: 後続 Issue 用 H端末静的ファイル配置先
-- `public/m/`: 後続 Issue 用 M端末静的ファイル配置先
+- `public/h/`: H端末静的ファイル配置先
+- `public/m/`: M端末静的ファイル配置先
