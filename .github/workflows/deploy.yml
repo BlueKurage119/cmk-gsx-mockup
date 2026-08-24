@@ -108,7 +108,7 @@ jobs:
 
           check_endpoint "/h" "text/html" "H端末"
           check_endpoint "/m" "text/html" "M端末"
-          check_endpoint "/api/facilities" "application/json" "F-01"
+          check_endpoint "/api/facilities" "application/json" "higashi2-gate"
 
           FACILITIES_JSON=$(curl --fail --show-error --silent --retry 5 --retry-all-errors "$SERVICE_URL/api/facilities")
           COUNT=$(echo "$FACILITIES_JSON" | grep -o '"id"' | wc -l | tr -d ' ')
