@@ -71,3 +71,67 @@ test('requiring server.js has no side effects and exports functions', () => {
   assert.ok(app);
   assert.equal(typeof app.listen, 'function');
 });
+
+test('GET /h directly returns 200 without redirect and serves H terminal page', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`, { redirect: 'manual' });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('location'), null);
+    assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
+    const text = await res.text();
+    assert.ok(text.includes('H端末（指揮所用）'));
+    assert.ok(!text.includes('M端末（現場用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m directly returns 200 without redirect and serves M terminal page', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`, { redirect: 'manual' });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('location'), null);
+    assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
+    const text = await res.text();
+    assert.ok(text.includes('M端末（現場用）'));
+    assert.ok(!text.includes('H端末（指揮所用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h/index.html and GET /m/index.html serve respective terminal pages via static route', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const resH = await fetch(`${baseUrl}/h/index.html`);
+    assert.equal(resH.status, 200);
+    assert.match(resH.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
+    const textH = await resH.text();
+    assert.ok(textH.includes('H端末（指揮所用）'));
+    assert.ok(!textH.includes('M端末（現場用）'));
+
+    const resM = await fetch(`${baseUrl}/m/index.html`);
+    assert.equal(resM.status, 200);
+    assert.match(resM.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
+    const textM = await resM.text();
+    assert.ok(textM.includes('M端末（現場用）'));
+    assert.ok(!textM.includes('H端末（指揮所用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('static 404: /h/missing.css and /m/missing.css return 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const resH = await fetch(`${baseUrl}/h/missing.css`);
+    assert.equal(resH.status, 404);
+
+    const resM = await fetch(`${baseUrl}/m/missing.css`);
+    assert.equal(resM.status, 404);
+  } finally {
+    await close();
+  }
+});
