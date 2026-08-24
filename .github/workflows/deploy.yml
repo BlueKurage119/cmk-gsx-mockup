@@ -1,0 +1,120 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: cmk-gsx
+  REGION: asia-northeast1
+  SERVICE_NAME: cmk-gsx-mockup
+
+jobs:
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20.19.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --source . \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --allow-unauthenticated \
+            --max-instances 1 \
+            --port 8080 \
+            --quiet
+
+      - name: Post-deploy Smoke Test
+        run: |
+          SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
+          if [ -z "$SERVICE_URL" ]; then
+            echo "Error: SERVICE_URL is empty"
+            exit 1
+          fi
+          echo "Smoke testing service URL: $SERVICE_URL"
+
+          check_endpoint() {
+            local path="$1"
+            local expected_content_type="$2"
+            local expected_keyword="$3"
+
+            echo "Checking endpoint: $SERVICE_URL$path"
+            local response
+            response=$(curl --fail --show-error --silent --retry 5 --retry-all-errors -i "$SERVICE_URL$path")
+
+            echo "$response" | head -n 1 | grep -q "200" || {
+              echo "Error: HTTP status is not 200 for $path"
+              exit 1
+            }
+
+            echo "$response" | grep -i "content-type:" | grep -q "$expected_content_type" || {
+              echo "Error: Content-Type does not match $expected_content_type for $path"
+              exit 1
+            }
+
+            echo "$response" | grep -q "$expected_keyword" || {
+              echo "Error: Expected keyword '$expected_keyword' not found for $path"
+              exit 1
+            }
+          }
+
+          check_endpoint "/h" "text/html" "H端末"
+          check_endpoint "/m" "text/html" "M端末"
+          check_endpoint "/api/facilities" "application/json" "F-01"
+
+          FACILITIES_JSON=$(curl --fail --show-error --silent --retry 5 --retry-all-errors "$SERVICE_URL/api/facilities")
+          COUNT=$(echo "$FACILITIES_JSON" | grep -o '"id"' | wc -l | tr -d ' ')
+          if [ "$COUNT" -ne 5 ]; then
+            echo "Error: Expected 5 facilities, got $COUNT"
+            exit 1
+          fi
+
+          echo "All post-deploy smoke checks passed successfully!"
