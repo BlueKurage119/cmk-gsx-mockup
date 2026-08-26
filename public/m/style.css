@@ -85,6 +85,18 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
+/* 通信エラー表示 */
+#error-container {
+  display: none;
+  padding: 10px 16px;
+  background-color: rgba(234, 67, 53, 0.2);
+  border-bottom: 1px solid var(--danger-red);
+  color: #f28b82;
+  font-size: 12px;
+  text-align: center;
+  z-index: 20;
+}
+
 /* メインコンテンツ・マップ表示領域 */
 .map-wrapper {
   flex: 1;

@@ -391,6 +391,24 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
   }
 });
 
+test('GET /m body includes all 8 hall names, 4 place names, and facility fetch logic', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const body = await res.text();
+    for (const hallName of EXPECTED_HALL_NAMES) {
+      assert.ok(body.includes(hallName), `M terminal should include hall name: ${hallName}`);
+    }
+    for (const placeName of EXPECTED_PLACE_NAMES) {
+      assert.ok(body.includes(placeName), `M terminal should include place name: ${placeName}`);
+    }
+    assert.ok(body.includes('/shared/map-east.svg'), 'M terminal should fetch map SVG');
+    assert.ok(body.includes('/api/facilities'), 'M terminal should fetch facilities API');
+  } finally {
+    await close();
+  }
+});
+
 test('GET /m/style.css returns 200 and valid CSS content', async () => {
   const { baseUrl, close } = await listenServer();
   try {
