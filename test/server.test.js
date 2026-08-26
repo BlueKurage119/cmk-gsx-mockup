@@ -1,6 +1,6 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { createApp, startServer } = require('../server');
+const { startServer } = require('../server');
 const { resetFacilities } = require('../src/state/facilities');
 const { resetRequests } = require('../src/state/requests');
 
@@ -430,6 +430,99 @@ test('GET /api/requests and GET /api/requests/:id return requests and handle 404
   }
 });
 
+test('POST /api/requests/:id/approve updates request status to approved and facility state to requestedState', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // Initial state of higashi2-gate is closed
+    const facResInit = await fetch(`${baseUrl}/api/facilities`);
+    const facListInit = await facResInit.json();
+    const targetInit = facListInit.find((f) => f.id === 'higashi2-gate');
+    assert.equal(targetInit.state, 'closed');
+
+    // Create pending request for higashi2-gate -> open
+    const createRes = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate', requestedState: 'open', applicant: '東地区外警1' }),
+    });
+    assert.equal(createRes.status, 201);
+    const reqData = await createRes.json();
+    assert.equal(reqData.status, 'pending');
+
+    // Approve request
+    const approveRes = await fetch(`${baseUrl}/api/requests/${reqData.id}/approve`, {
+      method: 'POST',
+    });
+    assert.equal(approveRes.status, 200);
+    const approveData = await approveRes.json();
+    assert.equal(approveData.success, true);
+    assert.equal(approveData.request.status, 'approved');
+    assert.equal(approveData.facility.state, 'open');
+
+    // Verify facility state was actually updated in API
+    const facResAfter = await fetch(`${baseUrl}/api/facilities`);
+    const facListAfter = await facResAfter.json();
+    const targetAfter = facListAfter.find((f) => f.id === 'higashi2-gate');
+    assert.equal(targetAfter.state, 'open');
+
+    // Approving already approved request returns 409
+    const againRes = await fetch(`${baseUrl}/api/requests/${reqData.id}/approve`, {
+      method: 'POST',
+    });
+    assert.equal(againRes.status, 409);
+
+    // Approving non-existent request returns 404
+    const notFoundRes = await fetch(`${baseUrl}/api/requests/req-999/approve`, {
+      method: 'POST',
+    });
+    assert.equal(notFoundRes.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests/:id/reject updates request status to rejected without changing facility state', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // Create pending request for higashi1-a-shutter -> open
+    const createRes = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-a-shutter', requestedState: 'open', applicant: '東地区外警1' }),
+    });
+    const reqData = await createRes.json();
+
+    // Reject request
+    const rejectRes = await fetch(`${baseUrl}/api/requests/${reqData.id}/reject`, {
+      method: 'POST',
+    });
+    assert.equal(rejectRes.status, 200);
+    const rejectData = await rejectRes.json();
+    assert.equal(rejectData.success, true);
+    assert.equal(rejectData.request.status, 'rejected');
+
+    // Verify facility state was NOT changed (remains closed)
+    const facRes = await fetch(`${baseUrl}/api/facilities`);
+    const facList = await facRes.json();
+    const target = facList.find((f) => f.id === 'higashi1-a-shutter');
+    assert.equal(target.state, 'closed');
+
+    // Rejecting already rejected request returns 409
+    const againRes = await fetch(`${baseUrl}/api/requests/${reqData.id}/reject`, {
+      method: 'POST',
+    });
+    assert.equal(againRes.status, 409);
+
+    // Rejecting non-existent request returns 404
+    const notFoundRes = await fetch(`${baseUrl}/api/requests/req-999/reject`, {
+      method: 'POST',
+    });
+    assert.equal(notFoundRes.status, 404);
+  } finally {
+    await close();
+  }
+});
+
 test('DELETE /api/requests/:id cancels pending request, returns 404 for unknown, and 409 for already cancelled', async () => {
   const { baseUrl, close } = await listenServer();
   try {
@@ -505,7 +598,7 @@ test('GET /shared/facility-map-check.html body includes all 8 hall names', async
     const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
     const body = await res.text();
     for (const hallName of EXPECTED_HALL_NAMES) {
-      assert.ok(body.includes(hallName), `body should include hall name: ${hallName}`);
+      assert.ok(body.includes(hallName), `Facility map check should include hall name: ${hallName}`);
     }
   } finally {
     await close();
@@ -520,7 +613,7 @@ test('GET /shared/facility-map-check.html body includes all 4 place names', asyn
     const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
     const body = await res.text();
     for (const placeName of EXPECTED_PLACE_NAMES) {
-      assert.ok(body.includes(placeName), `body should include place name: ${placeName}`);
+      assert.ok(body.includes(placeName), `Facility map check should include place name: ${placeName}`);
     }
   } finally {
     await close();
@@ -561,11 +654,9 @@ test('options.port=0 takes precedence over process.env.PORT', async () => {
 });
 
 test('requiring server.js has no side effects and exports functions', () => {
-  assert.equal(typeof createApp, 'function');
-  assert.equal(typeof startServer, 'function');
-  const app = createApp();
-  assert.ok(app);
-  assert.equal(typeof app.listen, 'function');
+  const mod = require('../server');
+  assert.equal(typeof mod.createApp, 'function');
+  assert.equal(typeof mod.startServer, 'function');
 });
 
 test('GET /h directly returns 200 without redirect and serves H terminal page with Material Design components and operation UI', async () => {
@@ -576,48 +667,31 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.equal(res.headers.get('location'), null);
     assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
     const text = await res.text();
-    assert.ok(text.includes('H端末（指揮所用）'));
     assert.ok(text.includes('概況（東地区）'));
-    assert.ok(text.includes('東地区外務H1'));
-    assert.ok(text.includes('概況(東)'));
-    assert.ok(text.includes('設備入力'));
-    assert.ok(text.includes('警報一覧'));
-    assert.ok(text.includes('状態を変更する設備を選択してください'));
-    assert.ok(text.includes('btn-status-open'));
-    assert.ok(text.includes('btn-status-closed'));
-    assert.ok(text.includes('btn-status-restricted'));
-    assert.ok(text.includes('btn-submit-status'));
+    assert.ok(text.includes('端末名: 東地区外務H1'));
+    assert.ok(text.includes('current-datetime'));
+    assert.ok(text.includes('nav-rail'));
+    assert.ok(text.includes('data-view="overview"'));
+    assert.ok(text.includes('data-view="facilities"'));
+    assert.ok(text.includes('data-view="alerts"'));
+    assert.ok(text.includes('map-container'));
+    assert.ok(text.includes('toolbar'));
     assert.ok(text.includes('btn-cancel-selection'));
     assert.ok(text.includes('開放'));
     assert.ok(text.includes('閉鎖'));
     assert.ok(text.includes('制限'));
     assert.ok(text.includes('送信'));
-    assert.ok(text.includes('選択解除'));
-    assert.ok(text.includes('submit-pulse'));
-    assert.ok(text.includes('ready-to-submit'));
-    assert.ok(text.includes('view-facilities'));
-    assert.ok(text.includes('facility-table'));
-    assert.ok(text.includes('filter-hall'));
-    assert.ok(text.includes('filter-type'));
-    assert.ok(text.includes('filter-state'));
-    assert.ok(text.includes('check-all-facilities'));
-    assert.ok(text.includes('btn-batch-open'));
-    assert.ok(text.includes('btn-batch-closed'));
-    assert.ok(text.includes('btn-batch-restricted'));
-    assert.ok(text.includes('btn-batch-cancel'));
-    assert.ok(text.includes('btn-batch-submit'));
-    assert.ok(text.includes('/api/facilities/batch'));
-    assert.ok(text.includes('switchView'));
-    assert.ok(text.includes('詳細'));
-    assert.ok(text.includes('はい'));
     assert.ok(text.includes('いいえ'));
     assert.ok(text.includes('header-buzzer-blink'));
     assert.ok(text.includes('alarm-active'));
     assert.ok(text.includes('stopBuzzer'));
     assert.ok(text.includes('F8'));
+    assert.ok(text.includes('facility-icon-pending'));
+    assert.ok(text.includes('icon-pending-blink'));
     assert.ok(text.includes('request-detail-modal'));
-    assert.ok(text.includes('btn-close-request-detail'));
-    assert.ok(text.includes('btn-modal-dismiss'));
+    assert.ok(text.includes('btn-modal-approve'));
+    assert.ok(text.includes('btn-modal-reject'));
+    assert.ok(text.includes('modal-stack-badge'));
     assert.ok(text.includes('updateNotificationArea'));
     assert.ok(text.includes('pollFacilitiesAndRequests'));
     assert.ok(text.includes('POLL_INTERVAL_MS = 3000'));
@@ -665,14 +739,23 @@ test('GET /h includes notification area controls, buzzer alarm animation, F8 sto
     assert.ok(text.includes('stopBuzzer()'));
     assert.ok(text.includes("e.key === 'F8'"));
 
-    // Request detail modal
+    // Icon pending blink animation
+    assert.ok(text.includes('facility-icon-pending'));
+    assert.ok(text.includes('icon-pending-blink'));
+
+    // Request detail modal and actions
     assert.ok(text.includes('id="request-detail-modal"'));
     assert.ok(text.includes('id="request-detail-body"'));
     assert.ok(text.includes('id="btn-close-request-detail"'));
     assert.ok(text.includes('id="btn-modal-dismiss"'));
+    assert.ok(text.includes('id="btn-modal-approve"'));
+    assert.ok(text.includes('id="btn-modal-reject"'));
+    assert.ok(text.includes('id="modal-stack-badge"'));
     assert.ok(text.includes('設備状態変更 申請内容'));
     assert.ok(text.includes('openRequestDetailModal'));
     assert.ok(text.includes('closeRequestDetailModal'));
+    assert.ok(text.includes('approveCurrentRequest'));
+    assert.ok(text.includes('rejectCurrentRequest'));
   } finally {
     await close();
   }

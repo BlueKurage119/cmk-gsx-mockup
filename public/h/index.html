@@ -711,20 +711,40 @@
       background-color: transparent;
     }
 
-    /* ヘッダー ブザー点滅アニメーション */
+    /* ヘッダー ブザー点滅アニメーション（濃い青 ↔ 白） */
     @keyframes header-buzzer-blink {
       0%, 100% {
-        background-color: #d93025;
-        box-shadow: 0 0 14px rgba(217, 48, 37, 0.85);
+        background-color: #174ea6;
+        color: #ffffff;
       }
       50% {
-        background-color: #f29900;
-        box-shadow: 0 0 6px rgba(242, 153, 0, 0.5);
+        background-color: #ffffff;
+        color: #174ea6;
       }
     }
 
     .app-header.alarm-active {
       animation: header-buzzer-blink 0.8s infinite ease-in-out;
+    }
+
+    .app-header.alarm-active .header-title,
+    .app-header.alarm-active .datetime-display,
+    .app-header.alarm-active .terminal-name {
+      color: inherit;
+    }
+
+    /* 申請中設備アイコン点滅アニメーション（現在色 ↔ 新色） */
+    @keyframes icon-pending-blink {
+      0%, 100% {
+        fill: var(--color-current, #D93025);
+      }
+      50% {
+        fill: var(--color-requested, #34A853);
+      }
+    }
+
+    .facility-icon-pending {
+      animation: icon-pending-blink 1.2s infinite ease-in-out;
     }
 
     /* 変更申請 内容確認モーダル */
@@ -752,7 +772,7 @@
 
     .modal-card {
       width: 90%;
-      max-width: 580px;
+      max-width: 520px;
       max-height: 85vh;
       background-color: var(--surface-dark);
       border: 1px solid var(--border-color);
@@ -795,6 +815,17 @@
       gap: 8px;
     }
 
+    .stack-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background-color: rgba(251, 188, 4, 0.2);
+      color: #fbbc04;
+      border: 1px solid rgba(251, 188, 4, 0.4);
+      font-weight: 500;
+    }
+
     .btn-modal-close {
       background: transparent;
       border: none;
@@ -812,12 +843,12 @@
     }
 
     .modal-body {
-      padding: 16px 20px;
+      padding: 18px 20px;
       overflow-y: auto;
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .modal-footer {
@@ -826,34 +857,24 @@
       border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: flex-end;
+      align-items: center;
       gap: 10px;
       flex-shrink: 0;
     }
 
-    /* 申請詳細カードスタイル */
-    .detail-req-card {
-      background-color: #1e1e1e;
-      border: 1px solid var(--border-color);
-      border-left: 4px solid var(--color-restricted);
-      border-radius: 6px;
-      padding: 14px 16px;
+    /* 申請詳細表示スタイル（カードを廃止しフラットなプロパティリスト形式） */
+    .detail-req-view {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-    }
-
-    .detail-req-card[data-state="open"] {
-      border-left-color: var(--color-open);
-    }
-
-    .detail-req-card[data-state="closed"] {
-      border-left-color: var(--color-closed);
+      gap: 16px;
     }
 
     .detail-req-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .detail-req-title-group {
@@ -863,14 +884,14 @@
     }
 
     .detail-req-name {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 700;
       color: #ffffff;
     }
 
     .detail-req-badge {
       font-size: 11px;
-      padding: 2px 6px;
+      padding: 2px 8px;
       border-radius: 4px;
       background-color: rgba(255, 255, 255, 0.08);
       color: #dadce0;
@@ -879,29 +900,64 @@
     .detail-req-states {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      background-color: rgba(0, 0, 0, 0.25);
-      padding: 8px 12px;
-      border-radius: 4px;
+      gap: 14px;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .detail-req-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
+    .detail-req-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      row-gap: 10px;
+      column-gap: 12px;
+      font-size: 13px;
+      align-items: start;
+    }
+
+    .detail-req-label {
       color: var(--text-muted);
+      font-weight: 500;
+      padding-top: 2px;
+    }
+
+    .detail-req-val {
+      color: var(--text-primary);
     }
 
     .detail-req-note {
-      font-size: 12px;
+      font-size: 13px;
       color: #dadce0;
       background-color: rgba(255, 255, 255, 0.04);
-      border-left: 2px solid #8ab4f8;
-      padding: 6px 10px;
+      border-left: 3px solid #8ab4f8;
+      padding: 8px 12px;
       border-radius: 0 4px 4px 0;
       word-break: break-all;
+    }
+
+    .btn-approve {
+      background-color: #1a73e8;
+      color: #ffffff;
+      border: 1px solid transparent;
+      font-weight: 600;
+    }
+
+    .btn-approve:hover:not(:disabled) {
+      background-color: #1557b0;
+    }
+
+    .btn-reject {
+      background-color: transparent;
+      color: #f28b82;
+      border: 1px solid #d93025;
+      font-weight: 600;
+    }
+
+    .btn-reject:hover:not(:disabled) {
+      background-color: rgba(217, 48, 37, 0.15);
+      color: #f6aea9;
     }
   </style>
 </head>
@@ -1077,13 +1133,16 @@
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
           </svg>
           <span>設備状態変更 申請内容</span>
+          <span class="stack-badge" id="modal-stack-badge" style="display: none;">承認待ち: 1件</span>
         </div>
         <button type="button" class="btn-modal-close" id="btn-close-request-detail" aria-label="閉じる">✕</button>
       </header>
       <div class="modal-body" id="request-detail-body">
-        <!-- 動的描画 -->
+        <!-- 動的描画（先頭1件） -->
       </div>
       <footer class="modal-footer">
+        <button type="button" class="btn btn-reject" id="btn-modal-reject">差戻</button>
+        <button type="button" class="btn btn-approve" id="btn-modal-approve">承認</button>
         <button type="button" class="btn btn-outlined" id="btn-modal-dismiss">閉じる</button>
       </footer>
     </div>
@@ -1187,10 +1246,65 @@
     let isBuzzerActive = false;
     const buzzerAcknowledgedReqIds = new Set();
     const POLL_INTERVAL_MS = 3000;
+    let isProcessingRequest = false;
 
-    // ブザー点滅停止（F8キー押下または詳細/はい/いいえボタン押下）
+    // Web Audio API による電子ビープ音合成
+    let audioCtx = null;
+    let buzzerIntervalId = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 880, durationMs = 100) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + durationMs / 1000);
+      } catch (_) {
+        // Autoplay policy 等でブロックされた場合は無視
+      }
+    }
+
+    function startBuzzerSound() {
+      if (buzzerIntervalId) return;
+      playBeep(880, 90);
+      setTimeout(() => playBeep(880, 90), 140);
+      buzzerIntervalId = setInterval(() => {
+        playBeep(880, 90);
+        setTimeout(() => playBeep(880, 90), 140);
+      }, 1500);
+    }
+
+    function stopBuzzerSound() {
+      if (buzzerIntervalId) {
+        clearInterval(buzzerIntervalId);
+        buzzerIntervalId = null;
+      }
+    }
+
+    // ブザー点滅・消音停止（F8キー押下または詳細/はい/いいえ/承認/差戻ボタン押下）
     function stopBuzzer() {
       isBuzzerActive = false;
+      stopBuzzerSound();
       pendingRequests.forEach((req) => buzzerAcknowledgedReqIds.add(req.id));
       const header = document.querySelector('.app-header');
       if (header) header.classList.remove('alarm-active');
@@ -1268,7 +1382,7 @@
       currentView = viewName;
 
       // Navigation Rail アイテムの active 切り替え
-      document.querySelectorAll('.nav-rail-item').forEach(item => {
+      document.querySelectorAll('.nav-rail-item').forEach((item) => {
         if (item.dataset.view === viewName) {
           item.classList.add('active');
           item.setAttribute('aria-current', 'page');
@@ -1291,7 +1405,7 @@
       }
 
       // ビューパネル切り替え
-      document.querySelectorAll('.view-panel').forEach(panel => {
+      document.querySelectorAll('.view-panel').forEach((panel) => {
         panel.classList.remove('active');
       });
 
@@ -1328,7 +1442,7 @@
       }
     }
 
-    // 未承認申請に応じた通知領域の更新
+    // 未承認申請に応じた通知領域の更新（スタック先頭1件＋残り件数表示）
     function updateNotificationArea() {
       const hasPending = pendingRequests.length > 0;
       const btnDetail = document.getElementById('btn-detail');
@@ -1342,7 +1456,7 @@
         if (pendingRequests.length === 1) {
           msg = `設備状態変更: ${escapeHtml(firstReq.facilityName)}（${escapeHtml(reqStateLabel)}） 承認しますか？`;
         } else {
-          msg = `設備状態変更: ${escapeHtml(firstReq.facilityName)}（${escapeHtml(reqStateLabel)}） ほか${pendingRequests.length - 1}件 承認しますか？`;
+          msg = `設備状態変更: ${escapeHtml(firstReq.facilityName)}（${escapeHtml(reqStateLabel)}） 承認しますか？（承認待ち: ${pendingRequests.length}件）`;
         }
         setNotification(msg, 'warning');
 
@@ -1357,7 +1471,7 @@
       }
     }
 
-    // 変更申請 内容確認モーダル制御
+    // 変更申請 内容確認モーダル制御（スタック先頭1件表示）
     function openRequestDetailModal() {
       stopBuzzer();
       renderRequestDetailModal();
@@ -1372,58 +1486,131 @@
 
     function renderRequestDetailModal() {
       const body = document.getElementById('request-detail-body');
+      const badge = document.getElementById('modal-stack-badge');
+      const btnApprove = document.getElementById('btn-modal-approve');
+      const btnReject = document.getElementById('btn-modal-reject');
       if (!body) return;
 
       if (pendingRequests.length === 0) {
+        if (badge) badge.style.display = 'none';
+        if (btnApprove) btnApprove.disabled = true;
+        if (btnReject) btnReject.disabled = true;
         body.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted);">現在、未承認の申請はありません</div>';
         return;
       }
 
-      body.innerHTML = pendingRequests.map((req) => {
-        const area = req.facilityType === 'gate' || req.facilityType === 'checkpoint' ? '外周・共用部' : (
-          req.facilityId.startsWith('higashi1-') ? '東1H' :
-          req.facilityId.startsWith('higashi2-') ? '東2H' :
-          req.facilityId.startsWith('higashi3-') ? '東3H' :
-          req.facilityId.startsWith('higashi4-') ? '東4H' :
-          req.facilityId.startsWith('higashi5-') ? '東5H' :
-          req.facilityId.startsWith('higashi6-') ? '東6H' :
-          req.facilityId.startsWith('higashi7-') ? '東7H' :
-          req.facilityId.startsWith('higashi8-') ? '東8H' : '外周・共用部'
-        );
-        const typeName = getFacilityTypeName(req.facilityType);
-        const prevStateLabel = STATE_LABELS[req.previousState] || req.previousState;
-        const reqStateLabel = STATE_LABELS[req.requestedState] || req.requestedState;
-        const timeStr = req.createdAt ? new Date(req.createdAt).toLocaleTimeString('ja-JP', { hour12: false }) : '-';
+      if (badge) {
+        badge.style.display = 'inline-block';
+        badge.textContent = `承認待ち: ${pendingRequests.length}件`;
+      }
+      if (btnApprove) btnApprove.disabled = false;
+      if (btnReject) btnReject.disabled = false;
 
-        return `
-          <div class="detail-req-card" data-state="${escapeHtml(req.requestedState)}">
-            <div class="detail-req-header">
-              <div class="detail-req-title-group">
-                <span class="detail-req-name">${escapeHtml(req.facilityName)}</span>
-                <span class="detail-req-badge">${escapeHtml(typeName)}</span>
-                <span class="detail-req-badge">${escapeHtml(area)}</span>
-              </div>
-              <span style="font-family: monospace; font-size: 11px; color: var(--text-muted);">${escapeHtml(req.id)}</span>
+      const req = pendingRequests[0];
+      const area = getFacilityArea({ id: req.facilityId, type: req.facilityType });
+      const typeName = getFacilityTypeName(req.facilityType);
+      const prevStateLabel = STATE_LABELS[req.previousState] || req.previousState;
+      const reqStateLabel = STATE_LABELS[req.requestedState] || req.requestedState;
+      const timeStr = req.createdAt ? new Date(req.createdAt).toLocaleTimeString('ja-JP', { hour12: false }) : '-';
+
+      body.innerHTML = `
+        <div class="detail-req-view">
+          <div class="detail-req-header">
+            <div class="detail-req-title-group">
+              <span class="detail-req-name">${escapeHtml(req.facilityName)}</span>
+              <span class="detail-req-badge">${escapeHtml(typeName)}</span>
+              <span class="detail-req-badge">${escapeHtml(area)}</span>
             </div>
-            <div class="detail-req-states">
-              <span style="color: var(--text-muted);">現在:</span>
-              <span class="status-badge ${escapeHtml(req.previousState)}">
-                <span class="status-badge-dot"></span>${escapeHtml(prevStateLabel)}
-              </span>
-              <span style="color: #8ab4f8; font-weight: bold;">➔</span>
-              <span style="color: var(--text-muted);">希望:</span>
-              <span class="status-badge ${escapeHtml(req.requestedState)}">
-                <span class="status-badge-dot"></span>${escapeHtml(reqStateLabel)}
-              </span>
-            </div>
-            <div class="detail-req-meta">
-              <span>申請端末: <strong style="color: var(--text-secondary);">${escapeHtml(req.applicant || '現場端末')}</strong></span>
-              <span>申請時刻: ${escapeHtml(timeStr)}</span>
-            </div>
-            ${req.note ? `<div class="detail-req-note">備考: ${escapeHtml(req.note)}</div>` : ''}
+            <span style="font-family: monospace; font-size: 12px; color: var(--text-muted);">${escapeHtml(req.id)}</span>
           </div>
-        `;
-      }).join('');
+          <div class="detail-req-states">
+            <span style="color: var(--text-muted);">現在状態:</span>
+            <span class="status-badge ${escapeHtml(req.previousState)}">
+              <span class="status-badge-dot"></span>${escapeHtml(prevStateLabel)}
+            </span>
+            <span style="color: #8ab4f8; font-weight: bold; font-size: 16px;">➔</span>
+            <span style="color: var(--text-muted);">申請希望:</span>
+            <span class="status-badge ${escapeHtml(req.requestedState)}">
+              <span class="status-badge-dot"></span>${escapeHtml(reqStateLabel)}
+            </span>
+          </div>
+          <div class="detail-req-grid">
+            <span class="detail-req-label">申請端末:</span>
+            <span class="detail-req-val"><strong>${escapeHtml(req.applicant || '現場端末')}</strong></span>
+            <span class="detail-req-label">申請時刻:</span>
+            <span class="detail-req-val">${escapeHtml(timeStr)}</span>
+            <span class="detail-req-label">備考:</span>
+            <span class="detail-req-val">${req.note ? `<div class="detail-req-note">${escapeHtml(req.note)}</div>` : '<span style="color: var(--text-muted);">なし</span>'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 1件承認処理
+    async function approveCurrentRequest() {
+      if (isProcessingRequest || pendingRequests.length === 0) return;
+      const targetReq = pendingRequests[0];
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(targetReq.id)}/approve`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.facility) {
+          const cached = facilitiesMap.get(data.facility.id);
+          if (cached) cached.state = data.facility.state;
+        }
+        await pollFacilitiesAndRequests();
+        setNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 状態変更（${escapeHtml(STATE_LABELS[targetReq.requestedState] || targetReq.requestedState)}）を承認しました`,
+          'success',
+          2500
+        );
+      } catch (err) {
+        showError(`承認処理に失敗しました: ${err.message}`);
+      } finally {
+        isProcessingRequest = false;
+        if (pendingRequests.length === 0) {
+          closeRequestDetailModal();
+        }
+      }
+    }
+
+    // 1件差戻処理
+    async function rejectCurrentRequest() {
+      if (isProcessingRequest || pendingRequests.length === 0) return;
+      const targetReq = pendingRequests[0];
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(targetReq.id)}/reject`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        await pollFacilitiesAndRequests();
+        setNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 申請を差戻しました`,
+          'default',
+          2500
+        );
+      } catch (err) {
+        showError(`差戻処理に失敗しました: ${err.message}`);
+      } finally {
+        isProcessingRequest = false;
+        if (pendingRequests.length === 0) {
+          closeRequestDetailModal();
+        }
+      }
     }
 
     // 通知領域の一元制御関数（設備入力用）
@@ -1872,18 +2059,39 @@
       }
     }
 
-    // 設備アイコン色の差分更新（SVG全体再描画を回避）
+    // 設備アイコン色の差分更新 & 申請中設備の現在色↔新色点滅更新
     function updateFacilityColors(facilities) {
       const mapContainer = document.getElementById('map-container');
       if (!mapContainer) return;
+
+      const pendingMap = new Map();
+      pendingRequests.forEach((req) => {
+        if (req.status === 'pending') {
+          pendingMap.set(req.facilityId, req.requestedState);
+        }
+      });
+
       facilities.forEach((facility) => {
         const group = mapContainer.querySelector(`g[data-facility-id="${facility.id}"]`);
         if (group) {
           const shape = group.querySelector('circle, rect');
           if (shape) {
-            const newColor = STATE_COLORS[facility.state] || '#34A853';
-            if (shape.getAttribute('fill') !== newColor) {
-              shape.setAttribute('fill', newColor);
+            const currentColor = STATE_COLORS[facility.state] || '#34A853';
+            const pendingReqState = pendingMap.get(facility.id);
+
+            if (pendingReqState) {
+              const requestedColor = STATE_COLORS[pendingReqState] || '#34A853';
+              shape.style.setProperty('--color-current', currentColor);
+              shape.style.setProperty('--color-requested', requestedColor);
+              shape.classList.add('facility-icon-pending');
+              shape.removeAttribute('fill');
+            } else {
+              shape.classList.remove('facility-icon-pending');
+              shape.style.removeProperty('--color-current');
+              shape.style.removeProperty('--color-requested');
+              if (shape.getAttribute('fill') !== currentColor) {
+                shape.setAttribute('fill', currentColor);
+              }
             }
           }
         }
@@ -1898,13 +2106,10 @@
           fetch('/api/requests?status=pending'),
         ]);
 
+        let facilitiesData = null;
         if (facRes.ok) {
-          const facilities = await facRes.json();
-          facilities.forEach((f) => facilitiesMap.set(f.id, f));
-          updateFacilityColors(facilities);
-          if (currentView === 'facilities') {
-            renderFacilityTable();
-          }
+          facilitiesData = await facRes.json();
+          facilitiesData.forEach((f) => facilitiesMap.set(f.id, f));
         }
 
         if (reqRes.ok) {
@@ -1915,8 +2120,10 @@
           const hasNewUnack = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
           if (newPending.length > 0 && hasNewUnack) {
             isBuzzerActive = true;
+            startBuzzerSound();
           } else if (newPending.length === 0) {
             isBuzzerActive = false;
+            stopBuzzerSound();
             buzzerAcknowledgedReqIds.clear();
           }
 
@@ -1935,6 +2142,13 @@
           const modal = document.getElementById('request-detail-modal');
           if (modal && modal.classList.contains('active')) {
             renderRequestDetailModal();
+          }
+        }
+
+        if (facilitiesData) {
+          updateFacilityColors(facilitiesData);
+          if (currentView === 'facilities') {
+            renderFacilityTable();
           }
         }
       } catch (err) {
@@ -1973,6 +2187,7 @@
           pendingRequests = await reqRes.json();
           if (pendingRequests.length > 0) {
             isBuzzerActive = true;
+            startBuzzerSound();
             const header = document.querySelector('.app-header');
             if (header) header.classList.add('alarm-active');
           }
@@ -2098,7 +2313,8 @@
         selectionLayer.setAttribute('id', 'selection-layer');
         svgElement.appendChild(selectionLayer);
 
-        // 通知領域の初期更新
+        // アイコン点滅状態と通知領域の初期更新
+        updateFacilityColors(facilities);
         updateNotificationArea();
 
         // 台帳テーブルの初期描画
@@ -2120,6 +2336,15 @@
       updateDateTime();
       setInterval(updateDateTime, 1000);
       loadMapAndFacilities();
+
+      // 初回インタラクションで AudioContext を起動
+      const unlockAudio = () => {
+        getAudioContext();
+        window.removeEventListener('pointerdown', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      };
+      window.addEventListener('pointerdown', unlockAudio, { once: true });
+      window.addEventListener('keydown', unlockAudio, { once: true });
 
       // キーボードイベント（F8キーでブザー停止）
       window.addEventListener('keydown', (e) => {
@@ -2154,20 +2379,28 @@
         submitStatusChange();
       });
 
-      // 通知領域アクションボタンイベント（詳細・はい・いいえ）
+      // 通知領域アクションボタンイベント（詳細・はい（承認）・いいえ（差戻））
       document.getElementById('btn-detail')?.addEventListener('click', () => {
         openRequestDetailModal();
       });
 
       document.getElementById('btn-yes')?.addEventListener('click', () => {
-        stopBuzzer();
+        approveCurrentRequest();
       });
 
       document.getElementById('btn-no')?.addEventListener('click', () => {
-        stopBuzzer();
+        rejectCurrentRequest();
       });
 
-      // モーダル閉じるイベント
+      // モーダル内ボタンイベント（承認・差戻・閉じる）
+      document.getElementById('btn-modal-approve')?.addEventListener('click', () => {
+        approveCurrentRequest();
+      });
+
+      document.getElementById('btn-modal-reject')?.addEventListener('click', () => {
+        rejectCurrentRequest();
+      });
+
       document.getElementById('btn-close-request-detail')?.addEventListener('click', closeRequestDetailModal);
       document.getElementById('btn-modal-dismiss')?.addEventListener('click', closeRequestDetailModal);
       document.getElementById('request-detail-modal')?.addEventListener('click', (e) => {

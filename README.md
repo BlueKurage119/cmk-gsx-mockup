@@ -39,9 +39,10 @@ PORT=18080 npm start
   - **レスポンス**: HTMLページ (Content-Type: `text/html; charset=utf-8`)
   - **ブラウザー確認**: Google Cloud Console 調（マテリアルデザイン）のダッシュボード画面です。青ヘッダー（タイトル「概況（東地区）」/「設備入力（東地区）」、リアルタイム時計、端末名）、左側 Navigation Rail（「概況(東)」「設備入力」「警報一覧」）による画面切り替えに対応しています。3秒ごとの自動ポーリングにより、設備状態の変更および現場M端末からの状態変更申請がリアルタイムに自動反映されます。
     - **概況(東)画面**: 中央マップ表示領域（東展示棟マップ、ホール名・地名・設備ラベル30件、状態色: 開=緑 / 閉=赤 / 制限=オレンジ）、下部操作ツールバー（色枠線付き「開放」「閉鎖」「制限」ボタン、右端「選択解除」「送信（ブリンク発光）」ボタン）、下部通知領域が表示され、マップクリックによる直感的な単体操作が可能です。
-      - **現場申請着信通知**: 現場M端末から状態変更申請（`status: "pending"`）が送信されると、ヘッダー背景色がアラート点滅（ブザー警報表示）し、下部通知領域に「`設備状態変更: 東2-入口1・2（開放） 承認しますか？`」メッセージと「詳細」「はい」「いいえ」ボタンが表示されます。
-      - **ブザー停止操作**: 通知領域の「詳細」「はい」「いいえ」のいずれかをクリックするか、キーボードの `F8` キーを押すことでヘッダーの点滅（ブザー）が停止します。
-      - **申請内容詳細確認**: 「詳細」ボタンを押すと「設備状態変更 申請内容」モーダルがポップアップ表示され、設備名・エリア・種別・現在状態 ➔ 希望状態・申請端末・申請時刻・備考が確認できます。
+      - **現場申請着信通知・ブザー**: 現場M端末から状態変更申請（`status: "pending"`）が着信すると、ヘッダー背景が濃い青（`#174ea6`）↔白（`#ffffff`）で点滅（視覚警報）し、Web Audio APIによる電子ビープ音（880Hz 短ピッチ断続音）が鳴動します。通知領域には「`設備状態変更: 東2-入口1・2（開放） 承認しますか？`」（複数件ある場合は「`（承認待ち: N件）`」と残り件数をスタック表示）と「詳細」「はい（承認）」「いいえ（差戻）」ボタンが表示されます。
+      - **ブザー停止操作**: キーボードの `F8` キーを押すか、通知領域・モーダル内の各種ボタン（詳細・はい・いいえ・承認・差戻）を押すことでヘッダー点滅およびブザー音が消音・停止します。
+      - **マップ上アイコンの現在色↔新色点滅**: H端末では、未承認申請がある設備アイコン（丸・四角）が「現在の状態色」と「申請の希望状態色」の間で1.2秒周期で交互に点滅し続けます。ブザー停止後も申請が確定・取り下げされるまで点滅が維持されるため、現場申請の失念を防止します。
+      - **申請内容詳細確認・承認・差戻**: 「詳細」ボタンを押すと「設備状態変更 申請内容」モーダルが表示されます。複数申請がある場合も先頭1件がフラットなプロパティリスト形式ですっきりと表示され、ヘッダー部に「承認待ち: N件」スタックバッジ、フッターに「差戻」「承認」ボタンが備わっています。「承認」または「差戻」を押すと即座に処理され、スタックされた次の申請へ自動的に切り替わります。
     - **設備入力画面**: 全30件の設備台帳テーブル、ホール別・種別・状態別の絞り込みフィルターバー、複数選択チェックボックス（全選択対応）、一括操作ツールバー（「一括開放」「一括閉鎖」「一括制限」「一括送信」）を備え、指揮所からの効率的な一括点検・一括操作が可能です。現場からの未承認申請がある設備には「変更予定」列に「`申請: 〇〇`」バッジ（破線枠・黄色）が自動表示されます。
 - **M端末（現場用）**: `http://localhost:8080/m`
   - **レスポンス**: HTMLページ (Content-Type: `text/html; charset=utf-8`)
@@ -63,6 +64,10 @@ PORT=18080 npm start
 - **設備変更申請一覧取得 API**: `GET http://localhost:8080/api/requests`
   - **クエリ**: `?status=pending` (任意)
   - **レスポンス**: `200 OK`、申請オブジェクトの JSON 配列
+- **設備変更申請承認 API**: `POST http://localhost:8080/api/requests/:id/approve`
+  - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "approved", ...}, "facility": {...}}`（対象設備の運用状態も希望状態へ即時更新）
+- **設備変更申請差戻 API**: `POST http://localhost:8080/api/requests/:id/reject`
+  - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "rejected", ...}}`（設備状態は更新されず現状維持）
 - **設備変更申請取り下げ API**: `DELETE http://localhost:8080/api/requests/:id`
   - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "cancelled", ...}}`
 - **東展示棟マップ SVG**: `http://localhost:8080/shared/map-east.svg`
@@ -80,6 +85,8 @@ curl -i -X PUT http://localhost:8080/api/facilities/higashi2-gate -H "Content-Ty
 curl -i -X PUT http://localhost:8080/api/facilities/batch -H "Content-Type: application/json" -d '{"ids":["higashi1-a-shutter","higashi1-b-shutter"],"state":"open"}'
 curl -i -X POST http://localhost:8080/api/requests -H "Content-Type: application/json" -d '{"facilityId":"higashi2-gate","requestedState":"open","note":"開門確認","applicant":"東地区外警1"}'
 curl -i http://localhost:8080/api/requests?status=pending
+curl -i -X POST http://localhost:8080/api/requests/req-1/approve
+curl -i -X POST http://localhost:8080/api/requests/req-1/reject
 curl -i -X DELETE http://localhost:8080/api/requests/req-1
 curl -i http://localhost:8080/shared/map-east.svg
 curl -i http://localhost:8080/shared/facility-map-check.html
