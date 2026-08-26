@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   getFacilities,
   updateFacilityState,
+  updateFacilitiesBatch,
   resetFacilities,
 } = require('../src/state/facilities');
 
@@ -19,18 +20,18 @@ const EXPECTED_INITIAL_FACILITIES = [
   { id: 'higashi1-b-shutter', name: '東1-B', type: 'shutter', state: 'closed', x: 1917, y: 178 },
   { id: 'higashi1-c-shutter', name: '東1-C', type: 'shutter', state: 'closed', x: 2158, y: 314 },
   { id: 'higashi1-d-shutter', name: '東1-D', type: 'shutter', state: 'closed', x: 2158, y: 510 },
-  { id: 'higashi1-12-shutter', name: '東1-1・2', type: 'shutter', state: 'closed', x: 1904, y: 628 },
-  { id: 'higashi1-34-shutter', name: '東1-3・4', type: 'shutter', state: 'closed', x: 2002, y: 628 },
+  { id: 'higashi1-12-shutter', name: '東1-入口1・2', type: 'shutter', state: 'closed', x: 1904, y: 628 },
+  { id: 'higashi1-34-shutter', name: '東1-入口3・4', type: 'shutter', state: 'closed', x: 2002, y: 628 },
   { id: 'higashi2-a-shutter', name: '東2-A', type: 'shutter', state: 'closed', x: 1587, y: 178 },
   { id: 'higashi2-b-shutter', name: '東2-B', type: 'shutter', state: 'closed', x: 1515, y: 178 },
-  { id: 'higashi2-12-shutter', name: '東2-1・2', type: 'shutter', state: 'closed', x: 1502, y: 628 },
-  { id: 'higashi2-34-shutter', name: '東2-3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
+  { id: 'higashi2-12-shutter', name: '東2-入口1・2', type: 'shutter', state: 'closed', x: 1502, y: 628 },
+  { id: 'higashi2-34-shutter', name: '東2-入口3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
   { id: 'higashi3-a-shutter', name: '東3-A', type: 'shutter', state: 'closed', x: 1185, y: 178 },
   { id: 'higashi3-b-shutter', name: '東3-B', type: 'shutter', state: 'closed', x: 1113, y: 178 },
   { id: 'higashi3-c-shutter', name: '東3-C', type: 'shutter', state: 'closed', x: 944, y: 314 },
   { id: 'higashi3-d-shutter', name: '東3-D', type: 'shutter', state: 'closed', x: 944, y: 510 },
-  { id: 'higashi3-12-shutter', name: '東3-1・2', type: 'shutter', state: 'closed', x: 1100, y: 628 },
-  { id: 'higashi3-34-shutter', name: '東3-3・4', type: 'shutter', state: 'closed', x: 1198, y: 628 },
+  { id: 'higashi3-12-shutter', name: '東3-入口1・2', type: 'shutter', state: 'closed', x: 1100, y: 628 },
+  { id: 'higashi3-34-shutter', name: '東3-入口3・4', type: 'shutter', state: 'closed', x: 1198, y: 628 },
   { id: 'higashi7-a-shutter', name: '東7-A', type: 'shutter', state: 'closed', x: 315, y: 1280 },
   { id: 'higashi7-b-shutter', name: '東7-B', type: 'shutter', state: 'closed', x: 446, y: 1280 },
   { id: 'higashi7-c-shutter', name: '東7-C', type: 'shutter', state: 'closed', x: 645, y: 1007 },
@@ -132,6 +133,45 @@ test('updateFacilityState() returns NOT_FOUND for unknown facility ID', () => {
   const res = updateFacilityState('non-existent-facility', 'open');
   assert.equal(res.success, false);
   assert.equal(res.reason, 'NOT_FOUND');
+});
+
+test('updateFacilitiesBatch() successfully updates multiple facilities in batch', () => {
+  const targetIds = ['higashi1-a-shutter', 'higashi1-b-shutter', 'higashi2-gate'];
+  const res = updateFacilitiesBatch(targetIds, 'open');
+  assert.equal(res.success, true);
+  assert.equal(res.updatedCount, 3);
+  assert.equal(res.facilities.length, 3);
+  for (const f of res.facilities) {
+    assert.equal(f.state, 'open');
+  }
+
+  const all = getFacilities();
+  assert.equal(all.find((f) => f.id === 'higashi1-a-shutter').state, 'open');
+  assert.equal(all.find((f) => f.id === 'higashi1-b-shutter').state, 'open');
+  assert.equal(all.find((f) => f.id === 'higashi2-gate').state, 'open');
+});
+
+test('updateFacilitiesBatch() returns INVALID_STATE for unsupported state', () => {
+  const res = updateFacilitiesBatch(['higashi1-a-shutter'], 'invalid_state');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'INVALID_STATE');
+});
+
+test('updateFacilitiesBatch() returns INVALID_IDS for empty or non-array ids', () => {
+  const resEmpty = updateFacilitiesBatch([], 'open');
+  assert.equal(resEmpty.success, false);
+  assert.equal(resEmpty.reason, 'INVALID_IDS');
+
+  const resNull = updateFacilitiesBatch(null, 'open');
+  assert.equal(resNull.success, false);
+  assert.equal(resNull.reason, 'INVALID_IDS');
+});
+
+test('updateFacilitiesBatch() returns NOT_FOUND if any facility id does not exist', () => {
+  const res = updateFacilitiesBatch(['higashi1-a-shutter', 'non-existent-id'], 'restricted');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'NOT_FOUND');
+  assert.equal(res.notFoundId, 'non-existent-id');
 });
 
 test('resetFacilities() restores all facilities back to initial state', () => {

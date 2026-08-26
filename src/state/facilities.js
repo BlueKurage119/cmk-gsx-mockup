@@ -11,18 +11,18 @@ const INITIAL_FACILITIES = [
   { id: 'higashi1-b-shutter', name: '東1-B', type: 'shutter', state: 'closed', x: 1917, y: 178 },
   { id: 'higashi1-c-shutter', name: '東1-C', type: 'shutter', state: 'closed', x: 2158, y: 314 },
   { id: 'higashi1-d-shutter', name: '東1-D', type: 'shutter', state: 'closed', x: 2158, y: 510 },
-  { id: 'higashi1-12-shutter', name: '東1-1・2', type: 'shutter', state: 'closed', x: 1904, y: 628 },
-  { id: 'higashi1-34-shutter', name: '東1-3・4', type: 'shutter', state: 'closed', x: 2002, y: 628 },
+  { id: 'higashi1-12-shutter', name: '東1-入口1・2', type: 'shutter', state: 'closed', x: 1904, y: 628 },
+  { id: 'higashi1-34-shutter', name: '東1-入口3・4', type: 'shutter', state: 'closed', x: 2002, y: 628 },
   { id: 'higashi2-a-shutter', name: '東2-A', type: 'shutter', state: 'closed', x: 1587, y: 178 },
   { id: 'higashi2-b-shutter', name: '東2-B', type: 'shutter', state: 'closed', x: 1515, y: 178 },
-  { id: 'higashi2-12-shutter', name: '東2-1・2', type: 'shutter', state: 'closed', x: 1502, y: 628 },
-  { id: 'higashi2-34-shutter', name: '東2-3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
+  { id: 'higashi2-12-shutter', name: '東2-入口1・2', type: 'shutter', state: 'closed', x: 1502, y: 628 },
+  { id: 'higashi2-34-shutter', name: '東2-入口3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
   { id: 'higashi3-a-shutter', name: '東3-A', type: 'shutter', state: 'closed', x: 1185, y: 178 },
   { id: 'higashi3-b-shutter', name: '東3-B', type: 'shutter', state: 'closed', x: 1113, y: 178 },
   { id: 'higashi3-c-shutter', name: '東3-C', type: 'shutter', state: 'closed', x: 944, y: 314 },
   { id: 'higashi3-d-shutter', name: '東3-D', type: 'shutter', state: 'closed', x: 944, y: 510 },
-  { id: 'higashi3-12-shutter', name: '東3-1・2', type: 'shutter', state: 'closed', x: 1100, y: 628 },
-  { id: 'higashi3-34-shutter', name: '東3-3・4', type: 'shutter', state: 'closed', x: 1198, y: 628 },
+  { id: 'higashi3-12-shutter', name: '東3-入口1・2', type: 'shutter', state: 'closed', x: 1100, y: 628 },
+  { id: 'higashi3-34-shutter', name: '東3-入口3・4', type: 'shutter', state: 'closed', x: 1198, y: 628 },
   { id: 'higashi7-a-shutter', name: '東7-A', type: 'shutter', state: 'closed', x: 315, y: 1280 },
   { id: 'higashi7-b-shutter', name: '東7-B', type: 'shutter', state: 'closed', x: 446, y: 1280 },
   { id: 'higashi7-c-shutter', name: '東7-C', type: 'shutter', state: 'closed', x: 645, y: 1007 },
@@ -51,6 +51,31 @@ function updateFacilityState(id, state) {
   return { success: true, facility: { ...facility } };
 }
 
+function updateFacilitiesBatch(ids, state) {
+  if (!VALID_STATES.has(state)) {
+    return { success: false, reason: 'INVALID_STATE' };
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { success: false, reason: 'INVALID_IDS' };
+  }
+  // 全IDの存在チェック
+  const notFoundId = ids.find(id => !facilities.some(f => f.id === id));
+  if (notFoundId) {
+    return { success: false, reason: 'NOT_FOUND', notFoundId };
+  }
+
+  const updated = [];
+  ids.forEach(id => {
+    const facility = facilities.find(f => f.id === id);
+    if (facility) {
+      facility.state = state;
+      updated.push({ ...facility });
+    }
+  });
+
+  return { success: true, updatedCount: updated.length, facilities: updated };
+}
+
 function resetFacilities() {
   facilities.length = 0;
   INITIAL_FACILITIES.forEach((facility) => {
@@ -61,6 +86,7 @@ function resetFacilities() {
 module.exports = {
   getFacilities,
   updateFacilityState,
+  updateFacilitiesBatch,
   resetFacilities,
   VALID_STATES,
 };
