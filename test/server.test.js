@@ -222,7 +222,7 @@ test('requiring server.js has no side effects and exports functions', () => {
   assert.equal(typeof app.listen, 'function');
 });
 
-test('GET /h directly returns 200 without redirect and serves H terminal page with Material Design components', async () => {
+test('GET /h directly returns 200 without redirect and serves H terminal page with Material Design components and operation UI', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`, { redirect: 'manual' });
@@ -236,7 +236,17 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.ok(text.includes('概況(東)'));
     assert.ok(text.includes('設備入力'));
     assert.ok(text.includes('警報一覧'));
-    assert.ok(text.includes('業務を選択してください'));
+    assert.ok(text.includes('状態を変更する設備を選択してください'));
+    assert.ok(text.includes('btn-status-open'));
+    assert.ok(text.includes('btn-status-closed'));
+    assert.ok(text.includes('btn-status-restricted'));
+    assert.ok(text.includes('btn-submit-status'));
+    assert.ok(text.includes('btn-cancel-selection'));
+    assert.ok(text.includes('開放'));
+    assert.ok(text.includes('閉鎖'));
+    assert.ok(text.includes('制限'));
+    assert.ok(text.includes('送信'));
+    assert.ok(text.includes('取消'));
     assert.ok(text.includes('詳細'));
     assert.ok(text.includes('はい'));
     assert.ok(text.includes('いいえ'));

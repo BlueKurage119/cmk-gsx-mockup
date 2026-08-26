@@ -24,6 +24,9 @@
       --rail-active-text: #8ab4f8;
       --btn-outlined-border: #5f6368;
       --btn-outlined-text: #8ab4f8;
+      --color-open: #2ECC71;
+      --color-closed: #E85C4A;
+      --color-restricted: #F39C12;
       --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
@@ -167,15 +170,105 @@
       position: relative;
     }
 
-    /* 上部ツールバー（空） */
+    /* 上部ツールバー */
     .toolbar {
-      height: 36px;
+      height: 44px;
       background-color: var(--surface-dark);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       padding: 0 16px;
+      gap: 12px;
       flex-shrink: 0;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background-color: var(--border-color);
+      margin: 0 4px;
+    }
+
+    .toolbar-btn {
+      min-width: 68px;
+      height: 28px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--btn-outlined-border);
+      background-color: transparent;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toolbar-btn:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: #8ab4f8;
+      color: #ffffff;
+    }
+
+    .toolbar-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: #484b50;
+      color: #80868b;
+      background-color: transparent;
+    }
+
+    /* 状態ボタンの選択中スタイル */
+    .status-btn.selected[data-state="open"] {
+      background-color: rgba(46, 204, 113, 0.2);
+      border-color: var(--color-open);
+      color: var(--color-open);
+      font-weight: 700;
+      box-shadow: 0 0 6px rgba(46, 204, 113, 0.35);
+    }
+
+    .status-btn.selected[data-state="closed"] {
+      background-color: rgba(232, 92, 74, 0.2);
+      border-color: var(--color-closed);
+      color: var(--color-closed);
+      font-weight: 700;
+      box-shadow: 0 0 6px rgba(232, 92, 74, 0.35);
+    }
+
+    .status-btn.selected[data-state="restricted"] {
+      background-color: rgba(243, 156, 18, 0.2);
+      border-color: var(--color-restricted);
+      color: var(--color-restricted);
+      font-weight: 700;
+      box-shadow: 0 0 6px rgba(243, 156, 18, 0.35);
+    }
+
+    /* アクションボタン（送信・取消） */
+    .action-btn-submit:not(:disabled) {
+      background-color: var(--gcp-blue);
+      border-color: var(--gcp-blue);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-btn-submit:hover:not(:disabled) {
+      background-color: #1b66ca;
+      border-color: #1b66ca;
+    }
+
+    .action-btn-cancel:not(:disabled) {
+      border-color: var(--btn-outlined-border);
+      color: #dadce0;
     }
 
     /* エラーバナー */
@@ -201,6 +294,7 @@
       overflow: hidden;
       position: relative;
       background-color: var(--map-bg);
+      cursor: default;
     }
 
     #map-container {
@@ -218,6 +312,33 @@
       height: auto;
       object-fit: contain;
       filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+    }
+
+    /* 設備アイコンのカーソルとホバー */
+    .facility-clickable {
+      cursor: pointer;
+    }
+
+    .facility-clickable:hover circle,
+    .facility-clickable:hover rect {
+      filter: brightness(1.2);
+    }
+
+    /* 選択ハイライトリングのアニメーション */
+    .selection-ring {
+      pointer-events: none;
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-ring {
+      0%, 100% {
+        opacity: 0.9;
+        stroke-width: 6px;
+      }
+      50% {
+        opacity: 0.5;
+        stroke-width: 4px;
+      }
     }
 
     /* 下部通知領域 */
@@ -317,20 +438,31 @@
 
       <!-- メインコンテンツ -->
       <main class="main-content">
-        <!-- 上部ツールバー（現フェーズは空領域） -->
-        <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー"></div>
+        <!-- 上部ツールバー -->
+        <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー">
+          <div class="toolbar-group status-buttons">
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-open" data-state="open" disabled>開放</button>
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-closed" data-state="closed" disabled>閉鎖</button>
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-restricted" data-state="restricted" disabled>制限</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group action-buttons">
+            <button type="button" class="toolbar-btn action-btn-submit" id="btn-submit-status" disabled>送信</button>
+            <button type="button" class="toolbar-btn action-btn-cancel" id="btn-cancel-selection" disabled>取消</button>
+          </div>
+        </div>
 
         <!-- 通信エラー表示 -->
         <div id="error-container"></div>
 
         <!-- マップ表示領域 -->
-        <div class="map-wrapper">
+        <div class="map-wrapper" id="map-wrapper">
           <div id="map-container"></div>
         </div>
 
         <!-- 下部通知領域 -->
         <section class="notification-area" aria-label="通知領域">
-          <div class="notification-message">業務を選択してください</div>
+          <div class="notification-message" id="notification-message">状態を変更する設備を選択してください</div>
           <div class="notification-actions">
             <button type="button" class="btn btn-outlined" id="btn-detail" disabled>詳細</button>
             <button type="button" class="btn btn-filled" id="btn-yes" disabled>はい</button>
@@ -410,6 +542,18 @@
       'higashi3-34-shutter',
     ]);
 
+    const STATE_LABELS = {
+      open: '開放',
+      closed: '閉鎖',
+      restricted: '制限',
+    };
+
+    // 操作UIの状態管理オブジェクト
+    const currentSelection = {
+      facility: null,     // 選択中設備オブジェクト
+      targetState: null,  // 選択された変更後状態 ('open' | 'closed' | 'restricted' | null)
+    };
+
     // リアルタイム時計更新
     function updateDateTime() {
       const now = new Date();
@@ -433,6 +577,107 @@
         errorContainer.textContent = message;
         errorContainer.style.display = 'block';
       }
+    }
+
+    // ハイライトリングの描画・更新
+    function renderSelectionRing(facility) {
+      const selectionLayer = document.getElementById('selection-layer');
+      if (!selectionLayer) return;
+
+      selectionLayer.innerHTML = '';
+      if (!facility || facility.type === 'checkpoint') return;
+
+      if (facility.type === 'gate') {
+        const ring = document.createElementNS(SVG_NS, 'circle');
+        ring.setAttribute('cx', String(facility.x));
+        ring.setAttribute('cy', String(facility.y));
+        ring.setAttribute('r', '40');
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', '#8AB4F8');
+        ring.setAttribute('stroke-width', '6');
+        ring.setAttribute('stroke-dasharray', '8,5');
+        ring.setAttribute('class', 'selection-ring');
+        selectionLayer.appendChild(ring);
+      } else if (facility.type === 'shutter') {
+        const ring = document.createElementNS(SVG_NS, 'rect');
+        ring.setAttribute('x', String(facility.x - 36));
+        ring.setAttribute('y', String(facility.y - 36));
+        ring.setAttribute('width', '72');
+        ring.setAttribute('height', '72');
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', '#8AB4F8');
+        ring.setAttribute('stroke-width', '6');
+        ring.setAttribute('stroke-dasharray', '8,5');
+        ring.setAttribute('class', 'selection-ring');
+        selectionLayer.appendChild(ring);
+      }
+    }
+
+    // UI状態（ツールバーボタン、下部メッセージ）の更新
+    function updateUIState() {
+      const statusBtns = document.querySelectorAll('.status-btn');
+      const submitBtn = document.getElementById('btn-submit-status');
+      const cancelBtn = document.getElementById('btn-cancel-selection');
+      const messageElem = document.getElementById('notification-message');
+
+      if (!currentSelection.facility) {
+        // Step 0: 未選択
+        statusBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.classList.remove('selected');
+        });
+        submitBtn.disabled = true;
+        cancelBtn.disabled = true;
+        messageElem.textContent = '状態を変更する設備を選択してください';
+        renderSelectionRing(null);
+        return;
+      }
+
+      // Step 1 または Step 2: 設備選択済み
+      statusBtns.forEach(btn => {
+        btn.disabled = false;
+        if (btn.dataset.state === currentSelection.targetState) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      });
+      cancelBtn.disabled = false;
+
+      if (!currentSelection.targetState) {
+        // Step 1: 状態未選択
+        submitBtn.disabled = true;
+        messageElem.textContent = `${currentSelection.facility.name}: 状態を選択してください`;
+      } else {
+        // Step 2: 状態選択済み
+        submitBtn.disabled = false;
+        const stateText = STATE_LABELS[currentSelection.targetState] || currentSelection.targetState;
+        messageElem.textContent = `${currentSelection.facility.name}／${stateText}: 送信をクリックして変更を反映させてください`;
+      }
+
+      renderSelectionRing(currentSelection.facility);
+    }
+
+    // 設備選択処理
+    function selectFacility(facility) {
+      if (!facility || facility.type === 'checkpoint') return;
+      currentSelection.facility = facility;
+      currentSelection.targetState = null;
+      updateUIState();
+    }
+
+    // 状態選択処理
+    function selectState(state) {
+      if (!currentSelection.facility) return;
+      currentSelection.targetState = state;
+      updateUIState();
+    }
+
+    // 選択解除処理
+    function clearSelection() {
+      currentSelection.facility = null;
+      currentSelection.targetState = null;
+      updateUIState();
     }
 
     // マップおよび設備データの読み込みと描画
@@ -464,6 +709,13 @@
           showError('Invalid SVG: svg root element not found');
           return;
         }
+
+        // マップ背景クリックで選択解除
+        svgElement.addEventListener('click', (e) => {
+          if (e.target === svgElement || e.target.tagName === 'polygon' || e.target.tagName === 'path') {
+            clearSelection();
+          }
+        });
 
         // ホール名・地名レイヤー（hall-label-layer）
         const hallLabelLayer = document.createElementNS(SVG_NS, 'g');
@@ -507,7 +759,20 @@
           const group = document.createElementNS(SVG_NS, 'g');
           group.setAttribute('data-facility-id', facility.id);
 
-          const color = facility.state === 'open' ? '#2ECC71' : '#E85C4A';
+          if (facility.type !== 'checkpoint') {
+            group.setAttribute('class', 'facility-clickable');
+            group.addEventListener('click', (e) => {
+              e.stopPropagation();
+              selectFacility(facility);
+            });
+          }
+
+          let color = '#2ECC71';
+          if (facility.state === 'closed') {
+            color = '#E85C4A';
+          } else if (facility.state === 'restricted') {
+            color = '#F39C12';
+          }
 
           // アイコン描画
           if (facility.type === 'gate') {
@@ -550,16 +815,47 @@
         });
 
         svgElement.appendChild(facilityLayer);
+
+        // 選択ハイライトレイヤー（selection-layer: facility-layer の上）
+        const selectionLayer = document.createElementNS(SVG_NS, 'g');
+        selectionLayer.setAttribute('id', 'selection-layer');
+        svgElement.appendChild(selectionLayer);
+
       } catch (err) {
         showError(`Unexpected error: ${err.message}`);
       }
     }
 
-    // 初期化
+    // 初期化とイベントバインド
     window.addEventListener('DOMContentLoaded', () => {
       updateDateTime();
       setInterval(updateDateTime, 1000);
       loadMapAndFacilities();
+
+      // ツールバーボタンイベント
+      document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectState(btn.dataset.state);
+        });
+      });
+
+      document.getElementById('btn-cancel-selection').addEventListener('click', () => {
+        clearSelection();
+      });
+
+      document.getElementById('btn-submit-status').addEventListener('click', () => {
+        // Issue 27 で送信ロジックを実装
+      });
+
+      // マップ領域の余白クリックで選択解除
+      const mapWrapper = document.getElementById('map-wrapper');
+      if (mapWrapper) {
+        mapWrapper.addEventListener('click', (e) => {
+          if (e.target === mapWrapper || e.target.id === 'map-container') {
+            clearSelection();
+          }
+        });
+      }
     });
   </script>
 </body>
