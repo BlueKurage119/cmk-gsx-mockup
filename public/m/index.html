@@ -25,8 +25,8 @@
       <!-- 上段: 地図ペイン（ミニマッププレビュー / タップで拡大） -->
       <section class="map-pane-card" id="map-pane-card" aria-label="東地区マップ（タップで拡大表示）">
         <div class="map-expand-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <svg viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7h-1v2H7v1h2v2h1v-2h2V9h-2V7z"/>
           </svg>
           タップで拡大
         </div>
@@ -42,17 +42,20 @@
 
       <!-- 下段: 要約ペイン（運用サマリー） -->
       <section class="summary-pane-card" id="summary-pane-card" aria-label="現場運用サマリー">
-        <!-- ゲートセクション -->
+        <!-- ゲートセクション（閉所定: 開放・制限のみ列挙） -->
         <div class="summary-group">
           <div class="summary-section-header">
             <div class="summary-section-title">
-              <span>🚪 ゲート運用状況</span>
+              <svg class="section-icon" viewBox="0 0 24 24">
+                <path d="M19 19V5c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v14H3v2h18v-2h-2zm-8-6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
+              </svg>
+              <span>ゲート運用状況（閉所定）</span>
             </div>
           </div>
 
           <div class="summary-row">
             <div class="summary-label">
-              <span style="color: var(--color-open);">●</span> 開放中:
+              <span class="status-dot dot-open"></span> 開放中:
             </div>
             <div class="badge-container" id="open-gates-container">
               <span class="badge-empty">読込中...</span>
@@ -61,34 +64,43 @@
 
           <div class="summary-row">
             <div class="summary-label">
-              <span style="color: var(--color-restricted);">●</span> 制限中:
+              <span class="status-dot dot-restricted"></span> 制限中:
             </div>
             <div class="badge-container" id="restricted-gates-container">
               <span class="badge-empty">読込中...</span>
-            </div>
-          </div>
-
-          <div class="summary-row">
-            <div class="summary-label">
-              <span style="color: var(--color-closed);">●</span> 閉鎖中:
-            </div>
-            <div class="summary-closed-text" id="closed-gates-container">
-              読込中...
             </div>
           </div>
         </div>
 
         <div class="summary-divider"></div>
 
-        <!-- シャッターセクション -->
+        <!-- シャッターセクション（開所定: 閉鎖・制限のみ列挙） -->
         <div class="summary-group">
           <div class="summary-section-header">
             <div class="summary-section-title">
-              <span>🪟 シャッター運用状況</span>
+              <svg class="section-icon" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 2v7H4V4h7zm0 16H4v-7h7v7zm9 0h-7v-7h7v7zm0-9h-7V4h7v7z"/>
+              </svg>
+              <span>シャッター運用状況（開所定）</span>
             </div>
           </div>
-          <div class="summary-closed-text" id="shutter-summary-container">
-            読込中...
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-closed"></span> 閉鎖中:
+            </div>
+            <div class="badge-container" id="closed-shutters-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-restricted"></span> 制限中:
+            </div>
+            <div class="badge-container" id="restricted-shutters-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
           </div>
         </div>
       </section>
@@ -140,12 +152,24 @@
         <div id="modal-zoom-container"></div>
       </div>
 
-      <!-- ズームツールバー -->
+      <!-- ズームツールバー（フラット・Material Iconsのみ） -->
       <div class="zoom-toolbar" role="toolbar" aria-label="ズーム操作">
-        <button type="button" class="zoom-btn" id="btn-zoom-out" aria-label="縮小">－</button>
+        <button type="button" class="zoom-btn" id="btn-zoom-out" aria-label="縮小">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 13H5v-2h14v2z"/>
+          </svg>
+        </button>
         <span class="zoom-level-text" id="zoom-level-text">100%</span>
-        <button type="button" class="zoom-btn" id="btn-zoom-in" aria-label="拡大">＋</button>
-        <button type="button" class="zoom-btn zoom-btn-reset" id="btn-zoom-reset" aria-label="リセット">↺ リセット</button>
+        <button type="button" class="zoom-btn" id="btn-zoom-in" aria-label="拡大">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+        <button type="button" class="zoom-btn" id="btn-zoom-reset" aria-label="リセット (Reset Focus)">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm-7 7H3v4c0 1.1.9 2 2 2h4v-2H5v-4zM5 5h4V3H5c-1.1 0-2 .9-2 2v4h2V5zm14-2h-4v2h4v4h2V5c0-1.1-.9-2-2-2zm0 16h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4z"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -329,16 +353,15 @@
       return svgElement;
     }
 
-    // 要約ペインの集計・バッジ描画
+    // 要約ペインの集計・バッジ描画（閉所定・開所定の例外のみ列挙）
     function updateSummaryPane(facilities) {
       const gates = facilities.filter((f) => f.type === 'gate');
       const shutters = facilities.filter((f) => f.type === 'shutter');
 
+      // ゲート（閉所定）: 開放中・制限中のみ列挙（閉鎖は不要）
       const openGates = gates.filter((g) => g.state === 'open');
       const restrictedGates = gates.filter((g) => g.state === 'restricted');
-      const closedGates = gates.filter((g) => g.state === 'closed');
 
-      // 1. 開放中ゲート
       const openContainer = document.getElementById('open-gates-container');
       if (openContainer) {
         if (openGates.length === 0) {
@@ -346,48 +369,52 @@
         } else {
           openContainer.innerHTML = openGates.map((g) => `
             <span class="badge-open">
-              <span>●</span> ${g.name}
+              <span class="status-dot dot-open"></span> ${g.name}
             </span>
           `).join('');
         }
       }
 
-      // 2. 制限中ゲート
-      const restrictedContainer = document.getElementById('restricted-gates-container');
-      if (restrictedContainer) {
+      const restrictedGatesContainer = document.getElementById('restricted-gates-container');
+      if (restrictedGatesContainer) {
         if (restrictedGates.length === 0) {
-          restrictedContainer.innerHTML = '<span class="badge-empty">なし</span>';
+          restrictedGatesContainer.innerHTML = '<span class="badge-empty">なし</span>';
         } else {
-          restrictedContainer.innerHTML = restrictedGates.map((g) => `
+          restrictedGatesContainer.innerHTML = restrictedGates.map((g) => `
             <span class="badge-restricted">
-              <span>●</span> ${g.name}
+              <span class="status-dot dot-restricted"></span> ${g.name}
             </span>
           `).join('');
         }
       }
 
-      // 3. 閉鎖中ゲート
-      const closedContainer = document.getElementById('closed-gates-container');
-      if (closedContainer) {
-        const closedNames = closedGates.map((g) => g.name).join('、');
-        closedContainer.textContent = `${closedGates.length}件 （${closedNames || 'なし'}）`;
+      // シャッター（開所定）: 閉鎖中・制限中のみ列挙（開放は不要）
+      const closedShutters = shutters.filter((s) => s.state === 'closed');
+      const restrictedShutters = shutters.filter((s) => s.state === 'restricted');
+
+      const closedShuttersContainer = document.getElementById('closed-shutters-container');
+      if (closedShuttersContainer) {
+        if (closedShutters.length === 0) {
+          closedShuttersContainer.innerHTML = '<span class="badge-empty">なし</span>';
+        } else {
+          closedShuttersContainer.innerHTML = closedShutters.map((s) => `
+            <span class="badge-closed">
+              <span class="status-dot dot-closed"></span> ${s.name}
+            </span>
+          `).join('');
+        }
       }
 
-      // 4. シャッターサマリー
-      const shutterContainer = document.getElementById('shutter-summary-container');
-      if (shutterContainer) {
-        const openShutters = shutters.filter((s) => s.state === 'open');
-        const restrictedShutters = shutters.filter((s) => s.state === 'restricted');
-        const closedShutters = shutters.filter((s) => s.state === 'closed');
-
-        if (openShutters.length === 0 && restrictedShutters.length === 0) {
-          shutterContainer.textContent = `全${shutters.length}件 閉鎖中 （開放: 0、制限: 0）`;
+      const restrictedShuttersContainer = document.getElementById('restricted-shutters-container');
+      if (restrictedShuttersContainer) {
+        if (restrictedShutters.length === 0) {
+          restrictedShuttersContainer.innerHTML = '<span class="badge-empty">なし</span>';
         } else {
-          const parts = [];
-          if (openShutters.length > 0) parts.push(`開放: ${openShutters.map((s) => s.name).join(', ')}`);
-          if (restrictedShutters.length > 0) parts.push(`制限: ${restrictedShutters.map((s) => s.name).join(', ')}`);
-          parts.push(`閉鎖: ${closedShutters.length}件`);
-          shutterContainer.textContent = parts.join(' / ');
+          restrictedShuttersContainer.innerHTML = restrictedShutters.map((s) => `
+            <span class="badge-restricted">
+              <span class="status-dot dot-restricted"></span> ${s.name}
+            </span>
+          `).join('');
         }
       }
     }

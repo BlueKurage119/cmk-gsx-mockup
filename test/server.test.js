@@ -382,8 +382,12 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
     assert.ok(text.includes('概況表示'));
     assert.ok(text.includes('東地区外警1'));
     assert.ok(text.includes('タップで拡大'));
-    assert.ok(text.includes('ゲート運用状況'));
+    assert.ok(text.includes('ゲート運用状況（閉所定）'));
+    assert.ok(text.includes('シャッター運用状況（開所定）'));
+    assert.ok(text.includes('open-gates-container'));
+    assert.ok(text.includes('closed-shutters-container'));
     assert.ok(text.includes('map-zoom-modal'));
+    assert.ok(text.includes('btn-zoom-reset'));
     assert.ok(text.includes('設備入力'));
     assert.ok(text.includes('非常通報'));
     assert.ok(text.includes('故障申告'));
