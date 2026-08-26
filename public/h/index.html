@@ -360,6 +360,12 @@
       letter-spacing: 0.2px;
     }
 
+    .msg-highlight {
+      color: #8ab4f8;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
     .notification-actions {
       display: flex;
       align-items: center;
@@ -613,6 +619,14 @@
       }
     }
 
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
     // UI状態（ツールバーボタン、下部メッセージ）の更新
     function updateUIState() {
       const statusBtns = document.querySelectorAll('.status-btn');
@@ -647,12 +661,12 @@
       if (!currentSelection.targetState) {
         // Step 1: 状態未選択
         submitBtn.disabled = true;
-        messageElem.textContent = `${currentSelection.facility.name}: 状態を選択してください`;
+        messageElem.innerHTML = `<span class="msg-highlight">${escapeHtml(currentSelection.facility.name)}:</span> 状態を選択してください`;
       } else {
         // Step 2: 状態選択済み
         submitBtn.disabled = false;
         const stateText = STATE_LABELS[currentSelection.targetState] || currentSelection.targetState;
-        messageElem.textContent = `${currentSelection.facility.name}／${stateText}: 送信をクリックして変更を反映させてください`;
+        messageElem.innerHTML = `<span class="msg-highlight">${escapeHtml(currentSelection.facility.name)}／${escapeHtml(stateText)}:</span> 送信をクリックして変更を反映させてください`;
       }
 
       renderSelectionRing(currentSelection.facility);
