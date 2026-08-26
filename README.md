@@ -43,6 +43,9 @@ PORT=18080 npm start
 - **設備一覧 API**: `http://localhost:8080/api/facilities`
   - **レスポンス**: 設備30件（ゲート7・シャッター22・定点1）の JSON 配列 (Content-Type: `application/json; charset=utf-8`)
   - **状態管理**: 設備状態はサーバープロセスのメモリ上に保持され、サーバー再起動時に初期状態へリセットされます。
+- **設備状態更新 API**: `PUT http://localhost:8080/api/facilities/:id`
+  - **リクエスト**: `{"state": "open" | "closed" | "restricted"}` (Content-Type: `application/json`)
+  - **レスポンス**: 更新後の設備オブジェクト (Content-Type: `application/json; charset=utf-8`)
 - **東展示棟マップ SVG**: `http://localhost:8080/shared/map-east.svg`
   - **レスポンス**: SVG画像ファイル (Content-Type: `image/svg+xml`)
 - **設備座標確認マップ**: `http://localhost:8080/shared/facility-map-check.html`
@@ -54,6 +57,7 @@ curl -i http://localhost:8080/
 curl -i http://localhost:8080/h
 curl -i http://localhost:8080/m
 curl -i http://localhost:8080/api/facilities
+curl -i -X PUT http://localhost:8080/api/facilities/higashi2-gate -H "Content-Type: application/json" -d '{"state":"closed"}'
 curl -i http://localhost:8080/shared/map-east.svg
 curl -i http://localhost:8080/shared/facility-map-check.html
 ```

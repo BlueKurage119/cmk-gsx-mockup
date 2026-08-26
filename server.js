@@ -6,6 +6,8 @@ const { registerSharedRoutes } = require('./src/routes/shared-assets');
 function createApp() {
   const app = express();
 
+  app.use(express.json());
+
   app.get('/', (req, res) => {
     res.status(200).type('text/plain').send('CMK/GSX mockup server is running\n');
   });

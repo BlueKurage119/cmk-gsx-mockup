@@ -352,6 +352,33 @@
       padding: 0 20px;
       flex-shrink: 0;
       z-index: 5;
+      transition: background-color 0.25s ease, border-top-color 0.25s ease;
+    }
+
+    /* 通知領域のステータス別スタイル */
+    .notification-area.status-default {
+      background-color: var(--surface-dark);
+      border-top-color: var(--border-color);
+    }
+
+    .notification-area.status-active {
+      background-color: rgba(26, 115, 232, 0.12);
+      border-top-color: var(--gcp-blue);
+    }
+
+    .notification-area.status-success {
+      background-color: rgba(46, 204, 113, 0.16);
+      border-top-color: var(--color-open);
+    }
+
+    .notification-area.status-warning {
+      background-color: rgba(243, 156, 18, 0.18);
+      border-top-color: var(--color-restricted);
+    }
+
+    .notification-area.status-error {
+      background-color: rgba(232, 92, 74, 0.22);
+      border-top-color: var(--color-closed);
     }
 
     .notification-message {
@@ -360,8 +387,8 @@
       letter-spacing: 0.2px;
     }
 
-    .msg-highlight {
-      color: #8ab4f8;
+    .notification-highlight {
+      color: var(--rail-active-text);
       font-weight: 600;
       margin-right: 4px;
     }
@@ -467,7 +494,7 @@
         </div>
 
         <!-- 下部通知領域 -->
-        <section class="notification-area" aria-label="通知領域">
+        <section class="notification-area status-default" id="notification-area" aria-label="通知領域">
           <div class="notification-message" id="notification-message">状態を変更する設備を選択してください</div>
           <div class="notification-actions">
             <button type="button" class="btn btn-outlined" id="btn-detail" disabled>詳細</button>
@@ -554,11 +581,31 @@
       restricted: '制限',
     };
 
+    const STATE_COLORS = {
+      open: '#2ECC71',
+      closed: '#E85C4A',
+      restricted: '#F39C12',
+    };
+
+    // 設備データキャッシュ（ID -> 設備オブジェクト）
+    const facilitiesMap = new Map();
+
     // 操作UIの状態管理オブジェクト
     const currentSelection = {
       facility: null,     // 選択中設備オブジェクト
       targetState: null,  // 選択された変更後状態 ('open' | 'closed' | 'restricted' | null)
     };
+
+    let isSubmitting = false;
+    let notificationTimer = null;
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
     // リアルタイム時計更新
     function updateDateTime() {
@@ -582,6 +629,27 @@
       if (errorContainer) {
         errorContainer.textContent = message;
         errorContainer.style.display = 'block';
+      }
+    }
+
+    // 通知領域の一元制御関数
+    function setNotification(html, type = 'default', duration = 0) {
+      const area = document.getElementById('notification-area');
+      const messageElem = document.getElementById('notification-message');
+      if (!area || !messageElem) return;
+
+      if (notificationTimer) {
+        clearTimeout(notificationTimer);
+        notificationTimer = null;
+      }
+
+      area.className = `notification-area status-${type}`;
+      messageElem.innerHTML = html;
+
+      if (duration > 0) {
+        notificationTimer = setTimeout(() => {
+          updateUIState();
+        }, duration);
       }
     }
 
@@ -619,20 +687,11 @@
       }
     }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
     // UI状態（ツールバーボタン、下部メッセージ）の更新
     function updateUIState() {
       const statusBtns = document.querySelectorAll('.status-btn');
       const submitBtn = document.getElementById('btn-submit-status');
       const cancelBtn = document.getElementById('btn-cancel-selection');
-      const messageElem = document.getElementById('notification-message');
 
       if (!currentSelection.facility) {
         // Step 0: 未選択
@@ -642,31 +701,31 @@
         });
         submitBtn.disabled = true;
         cancelBtn.disabled = true;
-        messageElem.textContent = '状態を変更する設備を選択してください';
+        setNotification('状態を変更する設備を選択してください', 'default');
         renderSelectionRing(null);
         return;
       }
 
       // Step 1 または Step 2: 設備選択済み
       statusBtns.forEach(btn => {
-        btn.disabled = false;
+        btn.disabled = isSubmitting;
         if (btn.dataset.state === currentSelection.targetState) {
           btn.classList.add('selected');
         } else {
           btn.classList.remove('selected');
         }
       });
-      cancelBtn.disabled = false;
+      cancelBtn.disabled = isSubmitting;
 
       if (!currentSelection.targetState) {
         // Step 1: 状態未選択
         submitBtn.disabled = true;
-        messageElem.innerHTML = `<span class="msg-highlight">${escapeHtml(currentSelection.facility.name)}:</span> 状態を選択してください`;
+        setNotification(`<span class="notification-highlight">${escapeHtml(currentSelection.facility.name)}:</span> 状態を選択してください`, 'active');
       } else {
         // Step 2: 状態選択済み
-        submitBtn.disabled = false;
+        submitBtn.disabled = isSubmitting;
         const stateText = STATE_LABELS[currentSelection.targetState] || currentSelection.targetState;
-        messageElem.innerHTML = `<span class="msg-highlight">${escapeHtml(currentSelection.facility.name)}／${escapeHtml(stateText)}:</span> 送信をクリックして変更を反映させてください`;
+        setNotification(`<span class="notification-highlight">${escapeHtml(currentSelection.facility.name)}／${escapeHtml(stateText)}:</span> 送信をクリックして変更を反映させてください`, 'active');
       }
 
       renderSelectionRing(currentSelection.facility);
@@ -674,7 +733,7 @@
 
     // 設備選択処理
     function selectFacility(facility) {
-      if (!facility || facility.type === 'checkpoint') return;
+      if (isSubmitting || !facility || facility.type === 'checkpoint') return;
       currentSelection.facility = facility;
       currentSelection.targetState = null;
       updateUIState();
@@ -682,16 +741,77 @@
 
     // 状態選択処理
     function selectState(state) {
-      if (!currentSelection.facility) return;
+      if (isSubmitting || !currentSelection.facility) return;
       currentSelection.targetState = state;
       updateUIState();
     }
 
     // 選択解除処理
     function clearSelection() {
+      if (isSubmitting) return;
       currentSelection.facility = null;
       currentSelection.targetState = null;
       updateUIState();
+    }
+
+    // 状態変更の送信処理（Issue 27）
+    async function submitStatusChange() {
+      if (isSubmitting || !currentSelection.facility || !currentSelection.targetState) return;
+
+      const targetFacility = currentSelection.facility;
+      const targetState = currentSelection.targetState;
+
+      isSubmitting = true;
+      updateUIState();
+
+      try {
+        const res = await fetch(`/api/facilities/${encodeURIComponent(targetFacility.id)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ state: targetState }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const updated = await res.json();
+
+        // キャッシュ更新
+        const cached = facilitiesMap.get(updated.id);
+        if (cached) {
+          cached.state = updated.state;
+        }
+
+        // SVG アイコンの fill を即時更新
+        const group = document.querySelector(`[data-facility-id="${updated.id}"]`);
+        if (group) {
+          const icon = group.querySelector('circle, rect');
+          if (icon) {
+            const newColor = STATE_COLORS[updated.state] || '#2ECC71';
+            icon.setAttribute('fill', newColor);
+          }
+        }
+
+        // 選択解除
+        isSubmitting = false;
+        clearSelection();
+
+        // 完了通知を3秒間表示（緑調背景）
+        const stateLabel = STATE_LABELS[updated.state] || updated.state;
+        setNotification(
+          `<span class="notification-highlight">${escapeHtml(updated.name)}:</span> 状態を「${escapeHtml(stateLabel)}」に変更しました`,
+          'success',
+          3000
+        );
+      } catch (err) {
+        isSubmitting = false;
+        updateUIState();
+        setNotification(`状態変更の送信に失敗しました: ${escapeHtml(err.message)}`, 'error');
+      }
     }
 
     // マップおよび設備データの読み込みと描画
@@ -713,6 +833,10 @@
           return;
         }
         const facilities = await facilitiesRes.json();
+
+        // キャッシュ初期化
+        facilitiesMap.clear();
+        facilities.forEach(f => facilitiesMap.set(f.id, f));
 
         // SVGのインライン展開
         const mapContainer = document.getElementById('map-container');
@@ -781,12 +905,7 @@
             });
           }
 
-          let color = '#2ECC71';
-          if (facility.state === 'closed') {
-            color = '#E85C4A';
-          } else if (facility.state === 'restricted') {
-            color = '#F39C12';
-          }
+          let color = STATE_COLORS[facility.state] || '#2ECC71';
 
           // アイコン描画
           if (facility.type === 'gate') {
@@ -858,7 +977,7 @@
       });
 
       document.getElementById('btn-submit-status').addEventListener('click', () => {
-        // Issue 27 で送信ロジックを実装
+        submitStatusChange();
       });
 
       // マップ領域の余白クリックで選択解除
