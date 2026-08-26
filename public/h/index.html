@@ -554,6 +554,7 @@
     .target-badge.open { background: rgba(52, 168, 83, 0.2); color: #81c995; }
     .target-badge.closed { background: rgba(234, 67, 53, 0.2); color: #f28b82; }
     .target-badge.restricted { background: rgba(251, 188, 4, 0.2); color: #fdd663; }
+    .target-badge.pending { background: rgba(251, 188, 4, 0.25); color: #fdd663; border: 1px dashed #fbbc04; }
 
     .toolbar-selection-info {
       font-size: 13px;
@@ -982,8 +983,11 @@
         .replace(/"/g, '&quot;');
     }
 
-    // エリア・ホール判定
+    // エリア・ホール判定（ゲート・定点はすべて外周・共用部）
     function getFacilityArea(facility) {
+      if (facility.type === 'gate' || facility.type === 'checkpoint') {
+        return '外周・共用部';
+      }
       const id = facility.id;
       if (id.startsWith('higashi1-')) return '東1H';
       if (id.startsWith('higashi2-')) return '東2H';
@@ -1332,6 +1336,9 @@
         if (isChecked && batchTargetState) {
           const targetLabel = STATE_LABELS[batchTargetState] || batchTargetState;
           targetBadgeHtml = `<span class="target-badge ${batchTargetState}">➔ ${escapeHtml(targetLabel)}</span>`;
+        } else if (facility.pendingState) {
+          const pendingLabel = STATE_LABELS[facility.pendingState] || facility.pendingState;
+          targetBadgeHtml = `<span class="target-badge pending" title="現場からの変更申請中">申請: ${escapeHtml(pendingLabel)}</span>`;
         }
 
         tr.innerHTML = `

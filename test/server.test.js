@@ -60,7 +60,7 @@ const REPRESENTATIVE_FACILITIES = [
   { id: 'higashi1-gate', name: '東1ゲート', type: 'gate', state: 'open', x: 2355, y: 531 },
   { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'closed', x: 2388, y: 184 },
   { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'closed', x: 20, y: 1300 },
-  { id: 'higashi2-34-shutter', name: '東2-3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
+  { id: 'higashi2-34-shutter', name: '東2-入口3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
 ];
 
 test('GET / returns 200 and plain text message', async () => {
