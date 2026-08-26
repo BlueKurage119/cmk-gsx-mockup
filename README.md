@@ -36,7 +36,8 @@ PORT=18080 npm start
 - **サーバー稼働確認**: `http://localhost:8080/`
   - **レスポンス**: `CMK/GSX mockup server is running` (Content-Type: `text/plain; charset=utf-8`)
 - **H端末（指揮所用）**: `http://localhost:8080/h`
-  - **レスポンス**: `H端末（指揮所用）` (Content-Type: `text/html; charset=utf-8`)
+  - **レスポンス**: HTMLページ (Content-Type: `text/html; charset=utf-8`)
+  - **ブラウザー確認**: Google Cloud Console 調（マテリアルデザイン）のダッシュボード画面です。青ヘッダー（タイトル「概況（東地区）」、リアルタイム時計、端末名）、左側 Navigation Rail（「概況(東)」「設備入力」「警報一覧」）、ダークテーマのマップ表示領域（東展示棟マップ、ホール名8件、地名4件、設備アイコン・ラベル30件、状態色: 開=緑 / 閉=赤）、下部通知領域（「業務を選択してください」と応答ボタン）が表示されます。
 - **M端末（現場用）**: `http://localhost:8080/m`
   - **レスポンス**: `M端末（現場用）` (Content-Type: `text/html; charset=utf-8`)
 - **設備一覧 API**: `http://localhost:8080/api/facilities`

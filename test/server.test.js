@@ -222,7 +222,7 @@ test('requiring server.js has no side effects and exports functions', () => {
   assert.equal(typeof app.listen, 'function');
 });
 
-test('GET /h directly returns 200 without redirect and serves H terminal page', async () => {
+test('GET /h directly returns 200 without redirect and serves H terminal page with Material Design components', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`, { redirect: 'manual' });
@@ -231,7 +231,34 @@ test('GET /h directly returns 200 without redirect and serves H terminal page', 
     assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
     const text = await res.text();
     assert.ok(text.includes('H端末（指揮所用）'));
+    assert.ok(text.includes('概況（東地区）'));
+    assert.ok(text.includes('東地区外務H1'));
+    assert.ok(text.includes('概況(東)'));
+    assert.ok(text.includes('設備入力'));
+    assert.ok(text.includes('警報一覧'));
+    assert.ok(text.includes('業務を選択してください'));
+    assert.ok(text.includes('詳細'));
+    assert.ok(text.includes('はい'));
+    assert.ok(text.includes('いいえ'));
+    assert.ok(text.includes('/shared/map-east.svg'));
+    assert.ok(text.includes('/api/facilities'));
     assert.ok(!text.includes('M端末（現場用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h body includes all 8 hall names and 4 place names', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const body = await res.text();
+    for (const hallName of EXPECTED_HALL_NAMES) {
+      assert.ok(body.includes(hallName), `H terminal should include hall name: ${hallName}`);
+    }
+    for (const placeName of EXPECTED_PLACE_NAMES) {
+      assert.ok(body.includes(placeName), `H terminal should include place name: ${placeName}`);
+    }
   } finally {
     await close();
   }
