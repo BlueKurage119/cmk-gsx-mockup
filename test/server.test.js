@@ -166,6 +166,21 @@ test('GET /shared/facility-map-check.html body includes all 8 hall names', async
   }
 });
 
+const EXPECTED_PLACE_NAMES = ['ガレリア', 'リンクスペース', '東ターミナル', '東棟屋外駐車場'];
+
+test('GET /shared/facility-map-check.html body includes all 4 place names', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
+    const body = await res.text();
+    for (const placeName of EXPECTED_PLACE_NAMES) {
+      assert.ok(body.includes(placeName), `body should include place name: ${placeName}`);
+    }
+  } finally {
+    await close();
+  }
+});
+
 test('GET /shared/missing.svg returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
