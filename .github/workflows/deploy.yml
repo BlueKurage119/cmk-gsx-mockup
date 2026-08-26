@@ -112,8 +112,8 @@ jobs:
 
           FACILITIES_JSON=$(curl --fail --show-error --silent --retry 5 --retry-all-errors "$SERVICE_URL/api/facilities")
           COUNT=$(echo "$FACILITIES_JSON" | grep -o '"id"' | wc -l | tr -d ' ')
-          if [ "$COUNT" -ne 5 ]; then
-            echo "Error: Expected 5 facilities, got $COUNT"
+          if [ "$COUNT" -ne 30 ]; then
+            echo "Error: Expected 30 facilities, got $COUNT"
             exit 1
           fi
 
