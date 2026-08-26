@@ -368,7 +368,7 @@ test('GET /h body includes all 8 hall names and 4 place names', async () => {
   }
 });
 
-test('GET /m directly returns 200 without redirect and serves M terminal page', async () => {
+test('GET /m directly returns 200 without redirect and serves M terminal page with mobile layout, simplified header, and 4-item bottom navigation', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`, { redirect: 'manual' });
@@ -377,7 +377,30 @@ test('GET /m directly returns 200 without redirect and serves M terminal page', 
     assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
     const text = await res.text();
     assert.ok(text.includes('M端末（現場用）'));
+    assert.ok(text.includes('<meta name="viewport"'));
+    assert.ok(text.includes('href="/m/style.css"'));
+    assert.ok(text.includes('図面表示'));
+    assert.ok(text.includes('東地区外警1'));
+    assert.ok(text.includes('設備入力'));
+    assert.ok(text.includes('非常通報'));
+    assert.ok(text.includes('故障申告'));
+    assert.ok(!text.includes('current-datetime'));
     assert.ok(!text.includes('H端末（指揮所用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css returns 200 and valid CSS content', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /^text\/css/i);
+    const css = await res.text();
+    assert.ok(css.includes('--gcp-blue'));
+    assert.ok(css.includes('.bottom-nav'));
+    assert.ok(css.includes('.nav-item'));
   } finally {
     await close();
   }

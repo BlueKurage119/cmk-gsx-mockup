@@ -2,12 +2,67 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>M端末（現場用）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>M端末（現場用） - 図面表示</title>
+  <link rel="stylesheet" href="/m/style.css">
 </head>
 <body>
-  <main>
-    <h1>M端末（現場用）</h1>
-  </main>
+  <div id="app">
+    <!-- ヘッダー（画面名称と端末名のみ） -->
+    <header class="app-header">
+      <div class="header-title-group">
+        <span class="header-title">図面表示</span>
+        <span class="header-subtitle">東地区</span>
+      </div>
+      <div class="device-badge">東地区外警1</div>
+    </header>
+
+    <!-- メインコンテンツ・マップ表示領域 -->
+    <main class="map-wrapper" id="map-wrapper">
+      <div id="map-container">
+        <div class="map-placeholder" id="map-placeholder">
+          <svg viewBox="0 0 24 24">
+            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+          </svg>
+          <span>東地区マップ読込中...</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- ボトムナビゲーションバー（4項目） -->
+    <nav class="bottom-nav" aria-label="メインナビゲーション">
+      <!-- 1. 図面表示 -->
+      <button class="nav-item active" id="nav-map" type="button" aria-label="図面表示">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+        </svg>
+        <span class="nav-label">図面表示</span>
+      </button>
+
+      <!-- 2. 設備入力 -->
+      <button class="nav-item" id="nav-facility" type="button" aria-label="設備入力">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+        </svg>
+        <span class="nav-label">設備入力</span>
+      </button>
+
+      <!-- 3. 非常通報 -->
+      <button class="nav-item nav-emergency" id="nav-emergency" type="button" aria-label="非常通報">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+        </svg>
+        <span class="nav-label">非常通報</span>
+      </button>
+
+      <!-- 4. 故障申告 -->
+      <button class="nav-item" id="nav-trouble" type="button" aria-label="故障申告">
+        <svg class="nav-icon" viewBox="0 0 24 24">
+          <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+        </svg>
+        <span class="nav-label">故障申告</span>
+      </button>
+    </nav>
+  </div>
 </body>
 </html>
