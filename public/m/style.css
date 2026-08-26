@@ -1,0 +1,206 @@
+:root {
+  --gcp-blue: #1a73e8;
+  --bg-dark: #121212;
+  --surface-dark: #202124;
+  --surface-card: #282a2d;
+  --map-bg: #1e1e1e;
+  --border-color: #3c4043;
+  --text-primary: #ffffff;
+  --text-secondary: #e8eaed;
+  --text-muted: #9aa0a6;
+  --active-blue: #8ab4f8;
+  --active-bg: rgba(138, 180, 248, 0.12);
+  --danger-red: #ea4335;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-family);
+  background-color: var(--bg-dark);
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ヘッダー */
+.app-header {
+  height: 48px;
+  min-height: 48px;
+  background-color: var(--gcp-blue);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.device-badge {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.4px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* メインコンテンツ・マップ表示領域 */
+.map-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--map-bg);
+  position: relative;
+  overflow: hidden;
+  padding: 12px;
+}
+
+#map-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#map-container svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  overflow: visible;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
+.map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.map-placeholder svg {
+  width: 48px;
+  height: 48px;
+  fill: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* ボトムナビゲーションバー（4項目） */
+.bottom-nav {
+  height: 56px;
+  min-height: 56px;
+  background-color: var(--surface-dark);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  padding: 4px 0;
+  font-family: inherit;
+}
+
+.nav-item:active {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 2px;
+  fill: currentColor;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+/* アクティブタブ（図面表示） */
+.nav-item.active {
+  color: var(--active-blue);
+}
+
+.nav-item.active .nav-icon {
+  fill: var(--active-blue);
+}
+
+.nav-item.active .nav-label {
+  font-weight: 700;
+}
+
+/* 非常通報タブ */
+.nav-item.nav-emergency:hover,
+.nav-item.nav-emergency:active {
+  color: var(--danger-red);
+}
+
+.nav-item.nav-emergency:hover .nav-icon,
+.nav-item.nav-emergency:active .nav-icon {
+  fill: var(--danger-red);
+}
