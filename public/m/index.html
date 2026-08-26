@@ -437,6 +437,49 @@
       }
     }
 
+    // 設備アイコン色の差分更新（SVG再描画を回避してチラつきやズーム位置破棄を防止）
+    function updateFacilityColors(container, facilities) {
+      if (!container) return;
+      facilities.forEach((facility) => {
+        const group = container.querySelector(`g[data-facility-id="${facility.id}"]`);
+        if (group) {
+          const shape = group.querySelector('circle, rect');
+          if (shape) {
+            const newColor = STATE_COLORS[facility.state] || '#34A853';
+            if (shape.getAttribute('fill') !== newColor) {
+              shape.setAttribute('fill', newColor);
+            }
+          }
+        }
+      });
+    }
+
+    const POLL_INTERVAL_MS = 3000;
+
+    // サーバー状態の定期ポーリング
+    async function pollFacilities() {
+      try {
+        const res = await fetch('/api/facilities');
+        if (!res.ok) throw new Error(`設備データの同期に失敗しました (${res.status})`);
+        const facilities = await res.json();
+
+        const mapContainer = document.getElementById('map-container');
+        const modalContainer = document.getElementById('modal-zoom-container');
+
+        updateFacilityColors(mapContainer, facilities);
+        updateFacilityColors(modalContainer, facilities);
+        updateSummaryPane(facilities);
+
+        // 成功時はエラー表示をクリア
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer && errorContainer.style.display === 'block') {
+          errorContainer.style.display = 'none';
+        }
+      } catch (err) {
+        showError(err.message || '通信エラー: 設備情報の更新に失敗しました');
+      }
+    }
+
     function zoomIn() {
       if (currentZoom < 4.0) {
         currentZoom = Math.min(4.0, Math.round((currentZoom + 0.3) * 10) / 10);
@@ -550,6 +593,9 @@
             }
           }, { passive: false });
         }
+
+        // 5. 定期ポーリング開始（3秒ごと）
+        setInterval(pollFacilities, POLL_INTERVAL_MS);
       } catch (err) {
         showError(err.message || '読み込み中にエラーが発生しました');
       }

@@ -400,7 +400,7 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
   }
 });
 
-test('GET /m body includes all 8 hall names, 4 place names, and facility fetch logic', async () => {
+test('GET /m body includes all 8 hall names, 4 place names, facility fetch logic, and 3s polling sync', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`);
@@ -413,6 +413,9 @@ test('GET /m body includes all 8 hall names, 4 place names, and facility fetch l
     }
     assert.ok(body.includes('/shared/map-east.svg'), 'M terminal should fetch map SVG');
     assert.ok(body.includes('/api/facilities'), 'M terminal should fetch facilities API');
+    assert.ok(body.includes('POLL_INTERVAL_MS = 3000'), 'M terminal should define 3s polling interval');
+    assert.ok(body.includes('updateFacilityColors'), 'M terminal should have diff color updater');
+    assert.ok(body.includes('pollFacilities'), 'M terminal should have periodic polling function');
   } finally {
     await close();
   }
