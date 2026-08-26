@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>M端末（現場用） - 図面表示</title>
+  <title>M端末（現場用） - 概況表示</title>
   <link rel="stylesheet" href="/m/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <!-- ヘッダー（画面名称と端末名のみ） -->
     <header class="app-header">
       <div class="header-title-group">
-        <span class="header-title">図面表示</span>
+        <span class="header-title">概況表示</span>
         <span class="header-subtitle">東地区</span>
       </div>
       <div class="device-badge">東地区外警1</div>
@@ -20,26 +20,99 @@
     <!-- 通信エラー表示 -->
     <div id="error-container"></div>
 
-    <!-- メインコンテンツ・マップ表示領域 -->
-    <main class="map-wrapper" id="map-wrapper">
-      <div id="map-container">
-        <div class="map-placeholder" id="map-placeholder">
+    <!-- メインダッシュボード（2段ペイン構成） -->
+    <main class="main-dashboard" id="main-dashboard">
+      <!-- 上段: 地図ペイン（ミニマッププレビュー / タップで拡大） -->
+      <section class="map-pane-card" id="map-pane-card" aria-label="東地区マップ（タップで拡大表示）">
+        <div class="map-expand-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
-            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7h-1v2H7v1h2v2h1v-2h2V9h-2V7z"/>
           </svg>
-          <span>東地区マップ読込中...</span>
         </div>
-      </div>
+        <div id="map-container">
+          <div class="map-placeholder" id="map-placeholder">
+            <svg viewBox="0 0 24 24">
+              <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+            </svg>
+            <span>東地区マップ読込中...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 下段: 要約ペイン（運用サマリー） -->
+      <section class="summary-pane-card" id="summary-pane-card" aria-label="現場運用サマリー">
+        <!-- ゲートセクション（開放・制限のみ列挙） -->
+        <div class="summary-group">
+          <div class="summary-section-header">
+            <div class="summary-section-title">
+              <svg class="section-icon" viewBox="0 0 24 24">
+                <path d="M19 4h-2V3c0-.55-.45-1-1-1s-1 .45-1 1v1H9V3c0-.55-.45-1-1-1s-1 .45-1 1v1H5c-1.1 0-2 .9-2 2v14c0 .55.45 1 1 1s1-.45 1-1V6h2v12H5v2h14v-2h-2V6h2v12c0 .55.45 1 1 1s1-.45 1-1V6c0-1.1-.9-2-2-2zM9 6h2v5H9V6zm0 7h2v5H9v-5zm4-7h2v5h-2V6zm0 7h2v5h-2v-5z"/>
+              </svg>
+              <span>ゲート運用状況</span>
+            </div>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-open"></span> 開放中:
+            </div>
+            <div class="badge-container" id="open-gates-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-restricted"></span> 制限中:
+            </div>
+            <div class="badge-container" id="restricted-gates-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-divider"></div>
+
+        <!-- シャッターセクション（閉鎖・制限のみ列挙） -->
+        <div class="summary-group">
+          <div class="summary-section-header">
+            <div class="summary-section-title">
+              <svg class="section-icon" viewBox="0 0 24 24">
+                <path d="M20 19V3H4v16H2v2h20v-2h-2zM18 5v2h-5V5h5zm-7 0v2H6V5h5zm-5 4h5v2H6V9zm7 0h5v2h-5V9zm5 4v2h-5v-2h5zm-7 0v2H6v-2h5zm-5 4h5v2H6v-2zm7 0h5v2h-5v-2z"/>
+              </svg>
+              <span>シャッター運用状況</span>
+            </div>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-closed"></span> 閉鎖中:
+            </div>
+            <div class="badge-container" id="closed-shutters-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-label">
+              <span class="status-dot dot-restricted"></span> 制限中:
+            </div>
+            <div class="badge-container" id="restricted-shutters-container">
+              <span class="badge-empty">読込中...</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- ボトムナビゲーションバー（4項目） -->
     <nav class="bottom-nav" aria-label="メインナビゲーション">
-      <!-- 1. 図面表示 -->
-      <button class="nav-item active" id="nav-map" type="button" aria-label="図面表示">
+      <!-- 1. 概況表示 -->
+      <button class="nav-item active" id="nav-map" type="button" aria-label="概況表示">
         <svg class="nav-icon" viewBox="0 0 24 24">
           <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
         </svg>
-        <span class="nav-label">図面表示</span>
+        <span class="nav-label">概況表示</span>
       </button>
 
       <!-- 2. 設備入力 -->
@@ -66,6 +139,38 @@
         <span class="nav-label">故障申告</span>
       </button>
     </nav>
+
+    <!-- 全画面マップ拡大モーダル -->
+    <div class="map-zoom-modal" id="map-zoom-modal" role="dialog" aria-modal="true" aria-label="東地区全体図（拡大表示）">
+      <header class="modal-header">
+        <div class="modal-title">東地区全体図（拡大表示）</div>
+        <button type="button" class="btn-close-modal" id="btn-close-modal" aria-label="閉じる">✕ 閉じる</button>
+      </header>
+
+      <div class="modal-map-viewport" id="modal-map-viewport">
+        <div id="modal-zoom-container"></div>
+      </div>
+
+      <!-- ズームツールバー（フラット・Material Iconsのみ） -->
+      <div class="zoom-toolbar" role="toolbar" aria-label="ズーム操作">
+        <button type="button" class="zoom-btn" id="btn-zoom-out" aria-label="縮小">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 13H5v-2h14v2z"/>
+          </svg>
+        </button>
+        <span class="zoom-level-text" id="zoom-level-text">100%</span>
+        <button type="button" class="zoom-btn" id="btn-zoom-in" aria-label="拡大">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+        <button type="button" class="zoom-btn" id="btn-zoom-reset" aria-label="リセット (Reset Focus)">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm-7 7H3v4c0 1.1.9 2 2 2h4v-2H5v-4zM5 5h4V3H5c-1.1 0-2 .9-2 2v4h2V5zm14-2h-4v2h4v4h2V5c0-1.1-.9-2-2-2zm0 16h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -151,7 +256,225 @@
       }
     }
 
-    async function loadMapAndFacilities() {
+    // SVGマップDOM生成ヘルパー
+    function createMapSvgElement(svgText, facilities) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svgElement = doc.querySelector('svg');
+      if (!svgElement) {
+        throw new Error('マップSVGの形式が不正です');
+      }
+
+      // ホール名・地名レイヤー (hall-label-layer)
+      const hallLabelLayer = document.createElementNS(SVG_NS, 'g');
+      hallLabelLayer.setAttribute('id', 'hall-label-layer');
+
+      HALL_LABELS.forEach((hall) => {
+        const text = document.createElementNS(SVG_NS, 'text');
+        text.setAttribute('x', String(hall.x));
+        text.setAttribute('y', String(hall.y));
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('font-size', '56');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-family', 'sans-serif');
+        text.setAttribute('fill', '#E8EAED');
+        text.textContent = hall.name;
+        hallLabelLayer.appendChild(text);
+      });
+
+      PLACE_LABELS.forEach((place) => {
+        const text = document.createElementNS(SVG_NS, 'text');
+        text.setAttribute('x', String(place.x));
+        text.setAttribute('y', String(place.y));
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('font-size', '32');
+        text.setAttribute('font-style', 'italic');
+        text.setAttribute('font-family', 'sans-serif');
+        text.setAttribute('fill', '#8AB4F8');
+        text.textContent = place.name;
+        hallLabelLayer.appendChild(text);
+      });
+
+      svgElement.appendChild(hallLabelLayer);
+
+      // 設備レイヤー (facility-layer)
+      const facilityLayer = document.createElementNS(SVG_NS, 'g');
+      facilityLayer.setAttribute('id', 'facility-layer');
+
+      facilities.forEach((facility) => {
+        const group = document.createElementNS(SVG_NS, 'g');
+        group.setAttribute('data-facility-id', facility.id);
+
+        let color = STATE_COLORS[facility.state] || '#34A853';
+
+        // アイコン描画
+        if (facility.type === 'gate') {
+          const circle = document.createElementNS(SVG_NS, 'circle');
+          circle.setAttribute('cx', String(facility.x));
+          circle.setAttribute('cy', String(facility.y));
+          circle.setAttribute('r', '30');
+          circle.setAttribute('fill', color);
+          circle.setAttribute('stroke', '#1B1B1B');
+          circle.setAttribute('stroke-width', '4');
+          group.appendChild(circle);
+        } else if (facility.type === 'shutter') {
+          const rect = document.createElementNS(SVG_NS, 'rect');
+          rect.setAttribute('x', String(facility.x - 28));
+          rect.setAttribute('y', String(facility.y - 28));
+          rect.setAttribute('width', '56');
+          rect.setAttribute('height', '56');
+          rect.setAttribute('fill', color);
+          rect.setAttribute('stroke', '#1B1B1B');
+          rect.setAttribute('stroke-width', '4');
+          group.appendChild(rect);
+        }
+
+        // ラベル描画
+        if (!HIDDEN_LABEL_IDS.has(facility.id)) {
+          const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', String(facility.x + config.dx));
+          text.setAttribute('y', String(facility.y + config.dy));
+          text.setAttribute('text-anchor', config.textAnchor);
+          text.setAttribute('font-size', '36');
+          text.setAttribute('fill', '#FFFFFF');
+          text.setAttribute('font-family', 'sans-serif');
+          text.textContent = facility.name;
+          group.appendChild(text);
+        }
+
+        facilityLayer.appendChild(group);
+      });
+
+      svgElement.appendChild(facilityLayer);
+      return svgElement;
+    }
+
+    // 要約ペインの集計・バッジ描画
+    function updateSummaryPane(facilities) {
+      const gates = facilities.filter((f) => f.type === 'gate');
+      const shutters = facilities.filter((f) => f.type === 'shutter');
+
+      // ゲート: 開放中・制限中のみ列挙（閉鎖は不要）
+      const openGates = gates.filter((g) => g.state === 'open');
+      const restrictedGates = gates.filter((g) => g.state === 'restricted');
+
+      const openContainer = document.getElementById('open-gates-container');
+      if (openContainer) {
+        if (openGates.length === 0) {
+          openContainer.innerHTML = '<span class="badge-empty">なし</span>';
+        } else {
+          openContainer.innerHTML = openGates.map((g) => `
+            <span class="badge-open">
+              <span class="status-dot dot-open"></span> ${g.name}
+            </span>
+          `).join('');
+        }
+      }
+
+      const restrictedGatesContainer = document.getElementById('restricted-gates-container');
+      if (restrictedGatesContainer) {
+        if (restrictedGates.length === 0) {
+          restrictedGatesContainer.innerHTML = '<span class="badge-empty">なし</span>';
+        } else {
+          restrictedGatesContainer.innerHTML = restrictedGates.map((g) => `
+            <span class="badge-restricted">
+              <span class="status-dot dot-restricted"></span> ${g.name}
+            </span>
+          `).join('');
+        }
+      }
+
+      // シャッター: 閉鎖中・制限中のみ列挙（開放は不要）
+      const closedShutters = shutters.filter((s) => s.state === 'closed');
+      const restrictedShutters = shutters.filter((s) => s.state === 'restricted');
+
+      const closedShuttersContainer = document.getElementById('closed-shutters-container');
+      if (closedShuttersContainer) {
+        if (closedShutters.length === 0) {
+          closedShuttersContainer.innerHTML = '<span class="badge-empty">なし</span>';
+        } else {
+          closedShuttersContainer.innerHTML = closedShutters.map((s) => `
+            <span class="badge-closed">
+              <span class="status-dot dot-closed"></span> ${s.name}
+            </span>
+          `).join('');
+        }
+      }
+
+      const restrictedShuttersContainer = document.getElementById('restricted-shutters-container');
+      if (restrictedShuttersContainer) {
+        if (restrictedShutters.length === 0) {
+          restrictedShuttersContainer.innerHTML = '<span class="badge-empty">なし</span>';
+        } else {
+          restrictedShuttersContainer.innerHTML = restrictedShutters.map((s) => `
+            <span class="badge-restricted">
+              <span class="status-dot dot-restricted"></span> ${s.name}
+            </span>
+          `).join('');
+        }
+      }
+    }
+
+    // ズーム・パン管理
+    let currentZoom = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+
+    function applyTransform() {
+      const container = document.getElementById('modal-zoom-container');
+      const text = document.getElementById('zoom-level-text');
+      if (container) {
+        container.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+      }
+      if (text) {
+        text.textContent = `${Math.round(currentZoom * 100)}%`;
+      }
+    }
+
+    function zoomIn() {
+      if (currentZoom < 4.0) {
+        currentZoom = Math.min(4.0, Math.round((currentZoom + 0.3) * 10) / 10);
+        applyTransform();
+      }
+    }
+
+    function zoomOut() {
+      if (currentZoom > 0.7) {
+        currentZoom = Math.max(0.7, Math.round((currentZoom - 0.3) * 10) / 10);
+        applyTransform();
+      }
+    }
+
+    function resetZoom() {
+      currentZoom = 1.0;
+      panX = 0;
+      panY = 0;
+      applyTransform();
+    }
+
+    function openModal() {
+      const modal = document.getElementById('map-zoom-modal');
+      if (modal) {
+        modal.classList.add('open');
+        resetZoom();
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('map-zoom-modal');
+      if (modal) {
+        modal.classList.remove('open');
+      }
+    }
+
+    // 初期化
+    async function init() {
       try {
         const svgUrl = '/shared/map-east.svg';
         const facilitiesUrl = '/api/facilities';
@@ -161,115 +484,79 @@
           fetch(facilitiesUrl),
         ]);
 
-        if (!svgRes.ok) {
-          throw new Error(`マップの取得に失敗しました: ${svgUrl} (${svgRes.status})`);
-        }
-        if (!facilitiesRes.ok) {
-          throw new Error(`設備データの取得に失敗しました: ${facilitiesUrl} (${facilitiesRes.status})`);
-        }
+        if (!svgRes.ok) throw new Error(`マップの取得に失敗しました: ${svgUrl} (${svgRes.status})`);
+        if (!facilitiesRes.ok) throw new Error(`設備データの取得に失敗しました: ${facilitiesUrl} (${facilitiesRes.status})`);
 
         const svgText = await svgRes.text();
         const facilities = await facilitiesRes.json();
 
+        // 1. ミニマップに描画
         const mapContainer = document.getElementById('map-container');
-        mapContainer.innerHTML = svgText;
+        mapContainer.innerHTML = '';
+        const miniSvg = createMapSvgElement(svgText, facilities);
+        mapContainer.appendChild(miniSvg);
 
-        const svgElement = mapContainer.querySelector('svg');
-        if (!svgElement) {
-          throw new Error('マップSVGの形式が不正です');
+        // 2. モーダルに描画
+        const modalContainer = document.getElementById('modal-zoom-container');
+        modalContainer.innerHTML = '';
+        const modalSvg = createMapSvgElement(svgText, facilities);
+        modalContainer.appendChild(modalSvg);
+
+        // 3. 要約ペインの更新
+        updateSummaryPane(facilities);
+
+        // 4. イベント登録
+        document.getElementById('map-pane-card').addEventListener('click', openModal);
+        document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+        document.getElementById('btn-zoom-in').addEventListener('click', zoomIn);
+        document.getElementById('btn-zoom-out').addEventListener('click', zoomOut);
+        document.getElementById('btn-zoom-reset').addEventListener('click', resetZoom);
+
+        // ドラッグ/パン操作
+        const viewport = document.getElementById('modal-map-viewport');
+        if (viewport) {
+          viewport.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.zoom-toolbar') || e.target.closest('.btn-close-modal')) return;
+            isPanning = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+            viewport.setPointerCapture(e.pointerId);
+          });
+
+          viewport.addEventListener('pointermove', (e) => {
+            if (!isPanning) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            applyTransform();
+          });
+
+          const endPan = (e) => {
+            if (isPanning) {
+              isPanning = false;
+              try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
+            }
+          };
+
+          viewport.addEventListener('pointerup', endPan);
+          viewport.addEventListener('pointercancel', endPan);
+
+          // マウスホイールでのズーム
+          viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+              zoomIn();
+            } else {
+              zoomOut();
+            }
+          }, { passive: false });
         }
-
-        // ホール名・地名レイヤー (hall-label-layer)
-        const hallLabelLayer = document.createElementNS(SVG_NS, 'g');
-        hallLabelLayer.setAttribute('id', 'hall-label-layer');
-
-        HALL_LABELS.forEach((hall) => {
-          const text = document.createElementNS(SVG_NS, 'text');
-          text.setAttribute('x', String(hall.x));
-          text.setAttribute('y', String(hall.y));
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('dominant-baseline', 'middle');
-          text.setAttribute('font-size', '56');
-          text.setAttribute('font-weight', 'bold');
-          text.setAttribute('font-family', 'sans-serif');
-          text.setAttribute('fill', '#E8EAED');
-          text.textContent = hall.name;
-          hallLabelLayer.appendChild(text);
-        });
-
-        PLACE_LABELS.forEach((place) => {
-          const text = document.createElementNS(SVG_NS, 'text');
-          text.setAttribute('x', String(place.x));
-          text.setAttribute('y', String(place.y));
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('dominant-baseline', 'middle');
-          text.setAttribute('font-size', '32');
-          text.setAttribute('font-style', 'italic');
-          text.setAttribute('font-family', 'sans-serif');
-          text.setAttribute('fill', '#8AB4F8');
-          text.textContent = place.name;
-          hallLabelLayer.appendChild(text);
-        });
-
-        svgElement.appendChild(hallLabelLayer);
-
-        // 設備レイヤー (facility-layer)
-        const facilityLayer = document.createElementNS(SVG_NS, 'g');
-        facilityLayer.setAttribute('id', 'facility-layer');
-
-        facilities.forEach((facility) => {
-          const group = document.createElementNS(SVG_NS, 'g');
-          group.setAttribute('data-facility-id', facility.id);
-
-          let color = STATE_COLORS[facility.state] || '#34A853';
-
-          // アイコン描画（閲覧専用）
-          if (facility.type === 'gate') {
-            const circle = document.createElementNS(SVG_NS, 'circle');
-            circle.setAttribute('cx', String(facility.x));
-            circle.setAttribute('cy', String(facility.y));
-            circle.setAttribute('r', '30');
-            circle.setAttribute('fill', color);
-            circle.setAttribute('stroke', '#1B1B1B');
-            circle.setAttribute('stroke-width', '4');
-            group.appendChild(circle);
-          } else if (facility.type === 'shutter') {
-            const rect = document.createElementNS(SVG_NS, 'rect');
-            rect.setAttribute('x', String(facility.x - 28));
-            rect.setAttribute('y', String(facility.y - 28));
-            rect.setAttribute('width', '56');
-            rect.setAttribute('height', '56');
-            rect.setAttribute('fill', color);
-            rect.setAttribute('stroke', '#1B1B1B');
-            rect.setAttribute('stroke-width', '4');
-            group.appendChild(rect);
-          }
-
-          // ラベル描画（ガレリア側シャッターを除く）
-          if (!HIDDEN_LABEL_IDS.has(facility.id)) {
-            const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
-            const text = document.createElementNS(SVG_NS, 'text');
-            text.setAttribute('x', String(facility.x + config.dx));
-            text.setAttribute('y', String(facility.y + config.dy));
-            text.setAttribute('text-anchor', config.textAnchor);
-            text.setAttribute('font-size', '36');
-            text.setAttribute('fill', '#FFFFFF');
-            text.setAttribute('font-family', 'sans-serif');
-            text.textContent = facility.name;
-            group.appendChild(text);
-          }
-
-          facilityLayer.appendChild(group);
-        });
-
-        svgElement.appendChild(facilityLayer);
       } catch (err) {
-        showError(err.message || 'マップの読み込み中にエラーが発生しました');
+        showError(err.message || '読み込み中にエラーが発生しました');
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      loadMapAndFacilities();
+      init();
     });
   </script>
 </body>

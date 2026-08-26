@@ -368,7 +368,7 @@ test('GET /h body includes all 8 hall names and 4 place names', async () => {
   }
 });
 
-test('GET /m directly returns 200 without redirect and serves M terminal page with mobile layout, simplified header, and 4-item bottom navigation', async () => {
+test('GET /m directly returns 200 without redirect and serves M terminal page with 2-pane layout, simplified header, summary section, and zoom modal', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`, { redirect: 'manual' });
@@ -376,11 +376,20 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
     assert.equal(res.headers.get('location'), null);
     assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
     const text = await res.text();
-    assert.ok(text.includes('M端末（現場用）'));
+    assert.ok(text.includes('M端末（現場用） - 概況表示'));
     assert.ok(text.includes('<meta name="viewport"'));
     assert.ok(text.includes('href="/m/style.css"'));
-    assert.ok(text.includes('図面表示'));
+    assert.ok(text.includes('概況表示'));
     assert.ok(text.includes('東地区外警1'));
+    assert.ok(text.includes('map-expand-icon'));
+    assert.ok(text.includes('ゲート運用状況'));
+    assert.ok(text.includes('シャッター運用状況'));
+    assert.ok(!text.includes('閉所定'));
+    assert.ok(!text.includes('開所定'));
+    assert.ok(text.includes('open-gates-container'));
+    assert.ok(text.includes('closed-shutters-container'));
+    assert.ok(text.includes('map-zoom-modal'));
+    assert.ok(text.includes('btn-zoom-reset'));
     assert.ok(text.includes('設備入力'));
     assert.ok(text.includes('非常通報'));
     assert.ok(text.includes('故障申告'));

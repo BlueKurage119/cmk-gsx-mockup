@@ -10,6 +10,9 @@
   --text-muted: #9aa0a6;
   --active-blue: #8ab4f8;
   --active-bg: rgba(138, 180, 248, 0.12);
+  --color-open: #34a853;
+  --color-closed: #ea4335;
+  --color-restricted: #fbbc04;
   --danger-red: #ea4335;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
@@ -97,17 +100,66 @@ html, body {
   z-index: 20;
 }
 
-/* メインコンテンツ・マップ表示領域 */
-.map-wrapper {
+/* メインダッシュボード（2段ペイン構成） */
+.main-dashboard {
   flex: 1;
   width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  gap: 12px;
+  background-color: var(--bg-dark);
+}
+
+/* 上段: 地図ペインカード */
+.map-pane-card {
+  width: 100%;
+  height: 190px;
+  min-height: 190px;
   background-color: var(--map-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   position: relative;
   overflow: hidden;
-  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.map-pane-card:hover,
+.map-pane-card:active {
+  border-color: var(--active-blue);
+  box-shadow: 0 0 10px rgba(138, 180, 248, 0.25);
+}
+
+.map-expand-icon {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  background: rgba(32, 33, 36, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--active-blue);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.map-expand-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
 #map-container {
@@ -116,6 +168,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 8px;
 }
 
 #map-container svg {
@@ -125,7 +178,7 @@ html, body {
   height: auto;
   object-fit: contain;
   overflow: visible;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .map-placeholder {
@@ -133,17 +186,162 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   color: var(--text-muted);
-  font-size: 14px;
-  text-align: center;
+  font-size: 13px;
 }
 
 .map-placeholder svg {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   fill: var(--text-muted);
   opacity: 0.6;
+}
+
+/* 下段: 要約ペインカード */
+.summary-pane-card {
+  width: 100%;
+  background-color: var(--surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.summary-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+
+.section-icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--active-blue);
+  flex-shrink: 0;
+}
+
+.summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.dot-open {
+  background-color: var(--color-open);
+  box-shadow: 0 0 4px rgba(52, 168, 83, 0.5);
+}
+
+.status-dot.dot-restricted {
+  background-color: var(--color-restricted);
+  box-shadow: 0 0 4px rgba(251, 188, 4, 0.5);
+}
+
+.status-dot.dot-closed {
+  background-color: var(--color-closed);
+  box-shadow: 0 0 4px rgba(234, 67, 53, 0.5);
+}
+
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* バッジデザイン */
+.badge-open {
+  background: rgba(52, 168, 83, 0.18);
+  border: 1px solid var(--color-open);
+  color: #81c995;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-restricted {
+  background: rgba(251, 188, 4, 0.18);
+  border: 1px solid var(--color-restricted);
+  color: #fdd663;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-closed {
+  background: rgba(234, 67, 53, 0.18);
+  border: 1px solid var(--color-closed);
+  color: #f28b82;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-left: 2px;
+}
+
+.summary-normal-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.summary-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 2px 0;
 }
 
 /* ボトムナビゲーションバー（4項目） */
@@ -193,7 +391,7 @@ html, body {
   letter-spacing: 0.2px;
 }
 
-/* アクティブタブ（図面表示） */
+/* アクティブタブ（概況表示） */
 .nav-item.active {
   color: var(--active-blue);
 }
@@ -215,4 +413,147 @@ html, body {
 .nav-item.nav-emergency:hover .nav-icon,
 .nav-item.nav-emergency:active .nav-icon {
   fill: var(--danger-red);
+}
+
+/* マップ拡大モーダル */
+.map-zoom-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(18, 18, 18, 0.98);
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-zoom-modal.open {
+  display: flex;
+}
+
+.modal-header {
+  height: 48px;
+  min-height: 48px;
+  background-color: var(--surface-dark);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 110;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s;
+}
+
+.btn-close-modal:hover,
+.btn-close-modal:active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.modal-map-viewport {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+  background-color: var(--map-bg);
+}
+
+.modal-map-viewport:active {
+  cursor: grabbing;
+}
+
+#modal-zoom-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 0.05s ease-out;
+}
+
+#modal-zoom-container svg {
+  width: 90%;
+  height: auto;
+  max-height: 90%;
+  object-fit: contain;
+  overflow: visible;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* ズームツールバー（フラット・アイコンのみ） */
+.zoom-toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(32, 33, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 105;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.zoom-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.zoom-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.zoom-btn:hover,
+.zoom-btn:active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--active-blue);
+}
+
+.zoom-level-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 44px;
+  text-align: center;
 }
