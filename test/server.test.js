@@ -57,9 +57,10 @@ const EXPECTED_FACILITY_IDS = [
 ];
 
 const REPRESENTATIVE_FACILITIES = [
-  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 2388, y: 184 },
-  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'open', x: 20, y: 1300 },
-  { id: 'higashi2-34-shutter', name: '東2-3/4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
+  { id: 'higashi1-gate', name: '東1ゲート', type: 'gate', state: 'open', x: 2355, y: 531 },
+  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'closed', x: 2388, y: 184 },
+  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'closed', x: 20, y: 1300 },
+  { id: 'higashi2-34-shutter', name: '東2-3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
 ];
 
 test('GET / returns 200 and plain text message', async () => {
@@ -128,20 +129,20 @@ test('PUT /api/facilities/:id updates state and returns updated facility', async
     const res = await fetch(`${baseUrl}/api/facilities/higashi2-gate`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: 'closed' }),
+      body: JSON.stringify({ state: 'open' }),
     });
     assert.equal(res.status, 200);
     assert.match(res.headers.get('content-type'), /^application\/json/i);
     const data = await res.json();
     assert.equal(data.id, 'higashi2-gate');
-    assert.equal(data.state, 'closed');
+    assert.equal(data.state, 'open');
     assert.equal(data.name, '東2ゲート');
 
     // Verify GET /api/facilities reflects update
     const getRes = await fetch(`${baseUrl}/api/facilities`);
     const all = await getRes.json();
     const updated = all.find((f) => f.id === 'higashi2-gate');
-    assert.equal(updated.state, 'closed');
+    assert.equal(updated.state, 'open');
   } finally {
     await close();
   }
