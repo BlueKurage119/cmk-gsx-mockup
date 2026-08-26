@@ -276,7 +276,12 @@
           const group = document.createElementNS(SVG_NS, 'g');
           group.setAttribute('data-facility-id', facility.id);
 
-          const color = facility.state === 'open' ? '#2ECC71' : '#E85C4A';
+          let color = '#34A853';
+          if (facility.state === 'closed') {
+            color = '#EA4335';
+          } else if (facility.state === 'restricted') {
+            color = '#FBBC04';
+          }
 
           // アイコン描画 (type で分岐)
           if (facility.type === 'gate') {
