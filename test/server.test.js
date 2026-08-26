@@ -211,6 +211,102 @@ test('PUT /api/facilities/:id for non-existent facility returns 404', async () =
   }
 });
 
+test('PUT /api/facilities/batch updates multiple facilities and returns success', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: ['higashi1-a-shutter', 'higashi1-b-shutter', 'higashi2-gate'],
+        state: 'open',
+      }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.updatedCount, 3);
+    assert.equal(data.facilities.length, 3);
+    for (const f of data.facilities) {
+      assert.equal(f.state, 'open');
+    }
+
+    // Verify GET /api/facilities reflects batch update
+    const getRes = await fetch(`${baseUrl}/api/facilities`);
+    const all = await getRes.json();
+    assert.equal(all.find((f) => f.id === 'higashi1-a-shutter').state, 'open');
+    assert.equal(all.find((f) => f.id === 'higashi1-b-shutter').state, 'open');
+    assert.equal(all.find((f) => f.id === 'higashi2-gate').state, 'open');
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/batch with invalid state returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: ['higashi1-a-shutter'],
+        state: 'invalid_state',
+      }),
+    });
+    assert.equal(res.status, 400);
+    const data = await res.json();
+    assert.ok(data.error);
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/batch with empty or non-array ids returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const resEmpty = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: [],
+        state: 'open',
+      }),
+    });
+    assert.equal(resEmpty.status, 400);
+
+    const resNonArray = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: 'not-an-array',
+        state: 'open',
+      }),
+    });
+    assert.equal(resNonArray.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/batch with non-existent id returns 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: ['higashi1-a-shutter', 'non-existent-id'],
+        state: 'open',
+      }),
+    });
+    assert.equal(res.status, 404);
+    const data = await res.json();
+    assert.ok(data.error);
+  } finally {
+    await close();
+  }
+});
+
 test('GET /api/not-found returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
@@ -343,6 +439,19 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.ok(text.includes('選択解除'));
     assert.ok(text.includes('submit-pulse'));
     assert.ok(text.includes('ready-to-submit'));
+    assert.ok(text.includes('view-facilities'));
+    assert.ok(text.includes('facility-table'));
+    assert.ok(text.includes('filter-hall'));
+    assert.ok(text.includes('filter-type'));
+    assert.ok(text.includes('filter-state'));
+    assert.ok(text.includes('check-all-facilities'));
+    assert.ok(text.includes('btn-batch-open'));
+    assert.ok(text.includes('btn-batch-closed'));
+    assert.ok(text.includes('btn-batch-restricted'));
+    assert.ok(text.includes('btn-batch-cancel'));
+    assert.ok(text.includes('btn-batch-submit'));
+    assert.ok(text.includes('/api/facilities/batch'));
+    assert.ok(text.includes('switchView'));
     assert.ok(text.includes('詳細'));
     assert.ok(text.includes('はい'));
     assert.ok(text.includes('いいえ'));

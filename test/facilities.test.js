@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   getFacilities,
   updateFacilityState,
+  updateFacilitiesBatch,
   resetFacilities,
 } = require('../src/state/facilities');
 
@@ -132,6 +133,45 @@ test('updateFacilityState() returns NOT_FOUND for unknown facility ID', () => {
   const res = updateFacilityState('non-existent-facility', 'open');
   assert.equal(res.success, false);
   assert.equal(res.reason, 'NOT_FOUND');
+});
+
+test('updateFacilitiesBatch() successfully updates multiple facilities in batch', () => {
+  const targetIds = ['higashi1-a-shutter', 'higashi1-b-shutter', 'higashi2-gate'];
+  const res = updateFacilitiesBatch(targetIds, 'open');
+  assert.equal(res.success, true);
+  assert.equal(res.updatedCount, 3);
+  assert.equal(res.facilities.length, 3);
+  for (const f of res.facilities) {
+    assert.equal(f.state, 'open');
+  }
+
+  const all = getFacilities();
+  assert.equal(all.find((f) => f.id === 'higashi1-a-shutter').state, 'open');
+  assert.equal(all.find((f) => f.id === 'higashi1-b-shutter').state, 'open');
+  assert.equal(all.find((f) => f.id === 'higashi2-gate').state, 'open');
+});
+
+test('updateFacilitiesBatch() returns INVALID_STATE for unsupported state', () => {
+  const res = updateFacilitiesBatch(['higashi1-a-shutter'], 'invalid_state');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'INVALID_STATE');
+});
+
+test('updateFacilitiesBatch() returns INVALID_IDS for empty or non-array ids', () => {
+  const resEmpty = updateFacilitiesBatch([], 'open');
+  assert.equal(resEmpty.success, false);
+  assert.equal(resEmpty.reason, 'INVALID_IDS');
+
+  const resNull = updateFacilitiesBatch(null, 'open');
+  assert.equal(resNull.success, false);
+  assert.equal(resNull.reason, 'INVALID_IDS');
+});
+
+test('updateFacilitiesBatch() returns NOT_FOUND if any facility id does not exist', () => {
+  const res = updateFacilitiesBatch(['higashi1-a-shutter', 'non-existent-id'], 'restricted');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'NOT_FOUND');
+  assert.equal(res.notFoundId, 'non-existent-id');
 });
 
 test('resetFacilities() restores all facilities back to initial state', () => {

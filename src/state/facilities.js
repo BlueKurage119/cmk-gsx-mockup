@@ -51,6 +51,31 @@ function updateFacilityState(id, state) {
   return { success: true, facility: { ...facility } };
 }
 
+function updateFacilitiesBatch(ids, state) {
+  if (!VALID_STATES.has(state)) {
+    return { success: false, reason: 'INVALID_STATE' };
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { success: false, reason: 'INVALID_IDS' };
+  }
+  // 全IDの存在チェック
+  const notFoundId = ids.find(id => !facilities.some(f => f.id === id));
+  if (notFoundId) {
+    return { success: false, reason: 'NOT_FOUND', notFoundId };
+  }
+
+  const updated = [];
+  ids.forEach(id => {
+    const facility = facilities.find(f => f.id === id);
+    if (facility) {
+      facility.state = state;
+      updated.push({ ...facility });
+    }
+  });
+
+  return { success: true, updatedCount: updated.length, facilities: updated };
+}
+
 function resetFacilities() {
   facilities.length = 0;
   INITIAL_FACILITIES.forEach((facility) => {
@@ -61,6 +86,7 @@ function resetFacilities() {
 module.exports = {
   getFacilities,
   updateFacilityState,
+  updateFacilitiesBatch,
   resetFacilities,
   VALID_STATES,
 };
