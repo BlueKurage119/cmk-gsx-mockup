@@ -52,7 +52,7 @@ const EXPECTED_FACILITY_IDS = [
 ];
 
 const REPRESENTATIVE_FACILITIES = [
-  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 2380, y: 184 },
+  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 2388, y: 184 },
   { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'open', x: 20, y: 1300 },
   { id: 'higashi2-34-shutter', name: '東2-3/4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
 ];

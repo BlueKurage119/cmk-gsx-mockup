@@ -160,6 +160,17 @@
 
     const DEFAULT_LABEL_CONFIG = { dx: 0, dy: -46, textAnchor: 'middle' };
 
+    // ガレリア（中央通路）側シャッターの id/name は内部管理名称であり、地図上には表示しない。
+    // PoC第2弾で階段・エスカレーター等が増えた際にラベルが密集するのを避けるため。
+    const HIDDEN_LABEL_IDS = new Set([
+      'higashi1-12-shutter',
+      'higashi1-34-shutter',
+      'higashi2-12-shutter',
+      'higashi2-34-shutter',
+      'higashi3-12-shutter',
+      'higashi3-34-shutter',
+    ]);
+
     function showError(message) {
       const errorContainer = document.getElementById('error-container');
       errorContainer.textContent = message;
@@ -228,20 +239,22 @@
           }
           // checkpoint はアイコンを描画しない
 
-          // ラベル描画
-          const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
-          const text = document.createElementNS(SVG_NS, 'text');
-          text.setAttribute('x', String(facility.x + config.dx));
-          text.setAttribute('y', String(facility.y + config.dy));
-          text.setAttribute('text-anchor', config.textAnchor);
-          text.setAttribute('font-size', '36');
-          text.setAttribute('fill', '#1B1B1B');
-          text.setAttribute('font-family', 'sans-serif');
-          text.setAttribute('stroke', '#FFFFFF');
-          text.setAttribute('stroke-width', '6');
-          text.setAttribute('paint-order', 'stroke');
-          text.textContent = facility.name;
-          group.appendChild(text);
+          // ラベル描画（ガレリア側シャッターは内部管理名称のため非表示）
+          if (!HIDDEN_LABEL_IDS.has(facility.id)) {
+            const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
+            const text = document.createElementNS(SVG_NS, 'text');
+            text.setAttribute('x', String(facility.x + config.dx));
+            text.setAttribute('y', String(facility.y + config.dy));
+            text.setAttribute('text-anchor', config.textAnchor);
+            text.setAttribute('font-size', '36');
+            text.setAttribute('fill', '#1B1B1B');
+            text.setAttribute('font-family', 'sans-serif');
+            text.setAttribute('stroke', '#FFFFFF');
+            text.setAttribute('stroke-width', '6');
+            text.setAttribute('paint-order', 'stroke');
+            text.textContent = facility.name;
+            group.appendChild(text);
+          }
 
           facilityLayer.appendChild(group);
         });
