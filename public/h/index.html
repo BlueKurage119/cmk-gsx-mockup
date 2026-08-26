@@ -710,6 +710,255 @@
       color: #80868b;
       background-color: transparent;
     }
+
+    /* ヘッダー ブザー点滅アニメーション（濃い青 ↔ 白） */
+    @keyframes header-buzzer-blink {
+      0%, 100% {
+        background-color: #174ea6;
+        color: #ffffff;
+      }
+      50% {
+        background-color: #ffffff;
+        color: #174ea6;
+      }
+    }
+
+    .app-header.alarm-active {
+      animation: header-buzzer-blink 0.8s infinite ease-in-out;
+    }
+
+    .app-header.alarm-active .header-title,
+    .app-header.alarm-active .datetime-display,
+    .app-header.alarm-active .terminal-name {
+      color: inherit;
+    }
+
+    /* 申請中設備アイコン点滅アニメーション（現在色 ↔ 新色: 1秒ごと切替） */
+    @keyframes icon-pending-blink {
+      0%, 49.9% {
+        fill: var(--color-current, #D93025);
+      }
+      50%, 100% {
+        fill: var(--color-requested, #34A853);
+      }
+    }
+
+    .facility-icon-pending {
+      animation: icon-pending-blink 2s infinite step-end;
+    }
+
+    /* 変更申請 内容確認モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 90%;
+      max-width: 520px;
+      max-height: 85vh;
+      background-color: var(--surface-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modal-pop {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      height: 48px;
+      padding: 0 20px;
+      background-color: #292a2d;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stack-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background-color: rgba(251, 188, 4, 0.2);
+      color: #fbbc04;
+      border: 1px solid rgba(251, 188, 4, 0.4);
+      font-weight: 500;
+    }
+
+    .btn-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .btn-modal-close:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      background-color: #292a2d;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* 申請詳細表示スタイル（カードを廃止しフラットなプロパティリスト形式） */
+    .detail-req-view {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .detail-req-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .detail-req-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-req-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .detail-req-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #dadce0;
+    }
+
+    .detail-req-states {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .detail-req-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      row-gap: 10px;
+      column-gap: 12px;
+      font-size: 13px;
+      align-items: start;
+    }
+
+    .detail-req-label {
+      color: var(--text-muted);
+      font-weight: 500;
+      padding-top: 2px;
+    }
+
+    .detail-req-val {
+      color: var(--text-primary);
+    }
+
+    .detail-req-note {
+      font-size: 13px;
+      color: #dadce0;
+      background-color: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid #8ab4f8;
+      padding: 8px 12px;
+      border-radius: 0 4px 4px 0;
+      word-break: break-all;
+    }
+
+    .btn-approve {
+      background-color: #1a73e8;
+      color: #ffffff;
+      border: 1px solid transparent;
+      font-weight: 600;
+    }
+
+    .btn-approve:hover:not(:disabled) {
+      background-color: #1557b0;
+    }
+
+    .btn-reject {
+      background-color: transparent;
+      color: #f28b82;
+      border: 1px solid #d93025;
+      font-weight: 600;
+    }
+
+    .btn-reject:hover:not(:disabled) {
+      background-color: rgba(217, 48, 37, 0.15);
+      color: #f6aea9;
+    }
   </style>
 </head>
 <body>
@@ -875,6 +1124,30 @@
     </div>
   </div>
 
+  <!-- 変更申請 内容確認モーダル -->
+  <div class="modal-overlay" id="request-detail-modal" role="dialog" aria-modal="true" aria-label="設備状態変更 申請内容">
+    <div class="modal-card">
+      <header class="modal-header">
+        <div class="modal-title">
+          <svg style="width: 18px; height: 18px; fill: #8ab4f8;" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <span>設備状態変更 申請内容</span>
+          <span class="stack-badge" id="modal-stack-badge" style="display: none;">承認待ち: 1件</span>
+        </div>
+        <button type="button" class="btn-modal-close" id="btn-close-request-detail" aria-label="閉じる">✕</button>
+      </header>
+      <div class="modal-body" id="request-detail-body">
+        <!-- 動的描画（先頭1件） -->
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-reject" id="btn-modal-reject">差戻</button>
+        <button type="button" class="btn btn-approve" id="btn-modal-approve">承認</button>
+        <button type="button" class="btn btn-outlined" id="btn-modal-dismiss">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
     const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -968,6 +1241,74 @@
     let isSubmitting = false;
     let notificationTimer = null;
 
+    // 申請管理・ブザー状態
+    let pendingRequests = [];
+    let isBuzzerActive = false;
+    const buzzerAcknowledgedReqIds = new Set();
+    const POLL_INTERVAL_MS = 3000;
+    let isProcessingRequest = false;
+
+    // Web Audio API による電子ビープ音合成
+    let audioCtx = null;
+    let buzzerIntervalId = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 750, durationMs = 400) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime + (durationMs - 40) / 1000);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + durationMs / 1000);
+      } catch (_) {
+        // Autoplay policy 等でブロックされた場合は無視
+      }
+    }
+
+    function startBuzzerSound() {
+      if (buzzerIntervalId) return;
+      playBeep(750, 400);
+      buzzerIntervalId = setInterval(() => {
+        playBeep(750, 400);
+      }, 900);
+    }
+
+    function stopBuzzerSound() {
+      if (buzzerIntervalId) {
+        clearInterval(buzzerIntervalId);
+        buzzerIntervalId = null;
+      }
+    }
+
+    // ブザー点滅・消音停止（F8キー押下または詳細/はい/いいえ/承認/差戻ボタン押下）
+    function stopBuzzer() {
+      isBuzzerActive = false;
+      stopBuzzerSound();
+      pendingRequests.forEach((req) => buzzerAcknowledgedReqIds.add(req.id));
+      const header = document.querySelector('.app-header');
+      if (header) header.classList.remove('alarm-active');
+    }
+
     // 画面・設備入力（一括操作）の状態管理
     let currentView = 'overview';
     const selectedFacilityIds = new Set();
@@ -1040,7 +1381,7 @@
       currentView = viewName;
 
       // Navigation Rail アイテムの active 切り替え
-      document.querySelectorAll('.nav-rail-item').forEach(item => {
+      document.querySelectorAll('.nav-rail-item').forEach((item) => {
         if (item.dataset.view === viewName) {
           item.classList.add('active');
           item.setAttribute('aria-current', 'page');
@@ -1063,7 +1404,7 @@
       }
 
       // ビューパネル切り替え
-      document.querySelectorAll('.view-panel').forEach(panel => {
+      document.querySelectorAll('.view-panel').forEach((panel) => {
         panel.classList.remove('active');
       });
 
@@ -1097,6 +1438,177 @@
         notificationTimer = setTimeout(() => {
           updateUIState();
         }, duration);
+      }
+    }
+
+    // 未承認申請に応じた通知領域の更新（スタック先頭1件＋残り件数表示）
+    function updateNotificationArea() {
+      const hasPending = pendingRequests.length > 0;
+      const btnDetail = document.getElementById('btn-detail');
+      const btnYes = document.getElementById('btn-yes');
+      const btnNo = document.getElementById('btn-no');
+
+      if (hasPending && !currentSelection.facility) {
+        const firstReq = pendingRequests[0];
+        const reqStateLabel = STATE_LABELS[firstReq.requestedState] || firstReq.requestedState;
+        let msg = '';
+        if (pendingRequests.length === 1) {
+          msg = `設備状態変更: ${escapeHtml(firstReq.facilityName)}（${escapeHtml(reqStateLabel)}） 承認しますか？`;
+        } else {
+          msg = `設備状態変更: ${escapeHtml(firstReq.facilityName)}（${escapeHtml(reqStateLabel)}） 承認しますか？（承認待ち: ${pendingRequests.length}件）`;
+        }
+        setNotification(msg, 'warning');
+
+        if (btnDetail) btnDetail.disabled = false;
+        if (btnYes) btnYes.disabled = false;
+        if (btnNo) btnNo.disabled = false;
+      } else if (!currentSelection.facility) {
+        if (btnDetail) btnDetail.disabled = true;
+        if (btnYes) btnYes.disabled = true;
+        if (btnNo) btnNo.disabled = true;
+        setNotification('状態を変更する設備を選択してください', 'default');
+      }
+    }
+
+    // 変更申請 内容確認モーダル制御（スタック先頭1件表示）
+    function openRequestDetailModal() {
+      stopBuzzer();
+      renderRequestDetailModal();
+      const modal = document.getElementById('request-detail-modal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeRequestDetailModal() {
+      const modal = document.getElementById('request-detail-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function renderRequestDetailModal() {
+      const body = document.getElementById('request-detail-body');
+      const badge = document.getElementById('modal-stack-badge');
+      const btnApprove = document.getElementById('btn-modal-approve');
+      const btnReject = document.getElementById('btn-modal-reject');
+      if (!body) return;
+
+      if (pendingRequests.length === 0) {
+        if (badge) badge.style.display = 'none';
+        if (btnApprove) btnApprove.disabled = true;
+        if (btnReject) btnReject.disabled = true;
+        body.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted);">現在、未承認の申請はありません</div>';
+        return;
+      }
+
+      if (badge) {
+        badge.style.display = 'inline-block';
+        badge.textContent = `承認待ち: ${pendingRequests.length}件`;
+      }
+      if (btnApprove) btnApprove.disabled = false;
+      if (btnReject) btnReject.disabled = false;
+
+      const req = pendingRequests[0];
+      const area = getFacilityArea({ id: req.facilityId, type: req.facilityType });
+      const typeName = getFacilityTypeName(req.facilityType);
+      const prevStateLabel = STATE_LABELS[req.previousState] || req.previousState;
+      const reqStateLabel = STATE_LABELS[req.requestedState] || req.requestedState;
+      const timeStr = req.createdAt ? new Date(req.createdAt).toLocaleTimeString('ja-JP', { hour12: false }) : '-';
+
+      body.innerHTML = `
+        <div class="detail-req-view">
+          <div class="detail-req-header">
+            <div class="detail-req-title-group">
+              <span class="detail-req-name">${escapeHtml(req.facilityName)}</span>
+              <span class="detail-req-badge">${escapeHtml(typeName)}</span>
+              <span class="detail-req-badge">${escapeHtml(area)}</span>
+            </div>
+            <span style="font-family: monospace; font-size: 12px; color: var(--text-muted);">${escapeHtml(req.id)}</span>
+          </div>
+          <div class="detail-req-states">
+            <span style="color: var(--text-muted);">現在状態:</span>
+            <span class="status-badge ${escapeHtml(req.previousState)}">
+              <span class="status-badge-dot"></span>${escapeHtml(prevStateLabel)}
+            </span>
+            <span style="color: #8ab4f8; font-weight: bold; font-size: 16px;">➔</span>
+            <span style="color: var(--text-muted);">申請希望:</span>
+            <span class="status-badge ${escapeHtml(req.requestedState)}">
+              <span class="status-badge-dot"></span>${escapeHtml(reqStateLabel)}
+            </span>
+          </div>
+          <div class="detail-req-grid">
+            <span class="detail-req-label">申請端末:</span>
+            <span class="detail-req-val"><strong>${escapeHtml(req.applicant || '現場端末')}</strong></span>
+            <span class="detail-req-label">申請時刻:</span>
+            <span class="detail-req-val">${escapeHtml(timeStr)}</span>
+            <span class="detail-req-label">備考:</span>
+            <span class="detail-req-val">${req.note ? `<div class="detail-req-note">${escapeHtml(req.note)}</div>` : '<span style="color: var(--text-muted);">なし</span>'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 1件承認処理
+    async function approveCurrentRequest() {
+      if (isProcessingRequest || pendingRequests.length === 0) return;
+      const targetReq = pendingRequests[0];
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(targetReq.id)}/approve`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.facility) {
+          const cached = facilitiesMap.get(data.facility.id);
+          if (cached) cached.state = data.facility.state;
+        }
+        await pollFacilitiesAndRequests();
+        setNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 状態変更（${escapeHtml(STATE_LABELS[targetReq.requestedState] || targetReq.requestedState)}）を承認しました`,
+          'success',
+          2500
+        );
+      } catch (err) {
+        showError(`承認処理に失敗しました: ${err.message}`);
+      } finally {
+        isProcessingRequest = false;
+        if (pendingRequests.length === 0) {
+          closeRequestDetailModal();
+        }
+      }
+    }
+
+    // 1件差戻処理
+    async function rejectCurrentRequest() {
+      if (isProcessingRequest || pendingRequests.length === 0) return;
+      const targetReq = pendingRequests[0];
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(targetReq.id)}/reject`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        await pollFacilitiesAndRequests();
+        setNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 申請を差戻しました`,
+          'default',
+          2500
+        );
+      } catch (err) {
+        showError(`差戻処理に失敗しました: ${err.message}`);
+      } finally {
+        isProcessingRequest = false;
+        if (pendingRequests.length === 0) {
+          closeRequestDetailModal();
+        }
       }
     }
 
@@ -1167,15 +1679,15 @@
 
       if (!currentSelection.facility) {
         // Step 0: 未選択
-        statusBtns.forEach(btn => {
+        statusBtns.forEach((btn) => {
           btn.disabled = true;
           btn.classList.remove('selected');
         });
         submitBtn.disabled = true;
         submitBtn.classList.remove('ready-to-submit');
         cancelBtn.disabled = true;
-        setNotification('状態を変更する設備を選択してください', 'default');
         renderSelectionRing(null);
+        updateNotificationArea();
         return;
       }
 
@@ -1332,10 +1844,14 @@
           tr.classList.add('selected-row');
         }
 
+        const pendingReq = pendingRequests.find((r) => r.facilityId === facility.id && r.status === 'pending');
         let targetBadgeHtml = '<span style="color: var(--text-muted);">-</span>';
         if (isChecked && batchTargetState) {
           const targetLabel = STATE_LABELS[batchTargetState] || batchTargetState;
           targetBadgeHtml = `<span class="target-badge ${batchTargetState}">➔ ${escapeHtml(targetLabel)}</span>`;
+        } else if (pendingReq) {
+          const pendingLabel = STATE_LABELS[pendingReq.requestedState] || pendingReq.requestedState;
+          targetBadgeHtml = `<span class="target-badge pending" title="申請端末: ${escapeHtml(pendingReq.applicant || '')} / 備考: ${escapeHtml(pendingReq.note || 'なし')}">申請: ${escapeHtml(pendingLabel)}</span>`;
         } else if (facility.pendingState) {
           const pendingLabel = STATE_LABELS[facility.pendingState] || facility.pendingState;
           targetBadgeHtml = `<span class="target-badge pending" title="現場からの変更申請中">申請: ${escapeHtml(pendingLabel)}</span>`;
@@ -1542,6 +2058,103 @@
       }
     }
 
+    // 設備アイコン色の差分更新 & 申請中設備の現在色↔新色点滅更新
+    function updateFacilityColors(facilities) {
+      const mapContainer = document.getElementById('map-container');
+      if (!mapContainer) return;
+
+      const pendingMap = new Map();
+      pendingRequests.forEach((req) => {
+        if (req.status === 'pending') {
+          pendingMap.set(req.facilityId, req.requestedState);
+        }
+      });
+
+      facilities.forEach((facility) => {
+        const group = mapContainer.querySelector(`g[data-facility-id="${facility.id}"]`);
+        if (group) {
+          const shape = group.querySelector('circle, rect');
+          if (shape) {
+            const currentColor = STATE_COLORS[facility.state] || '#34A853';
+            const pendingReqState = pendingMap.get(facility.id);
+
+            if (pendingReqState) {
+              const requestedColor = STATE_COLORS[pendingReqState] || '#34A853';
+              shape.style.setProperty('--color-current', currentColor);
+              shape.style.setProperty('--color-requested', requestedColor);
+              shape.classList.add('facility-icon-pending');
+              shape.removeAttribute('fill');
+            } else {
+              shape.classList.remove('facility-icon-pending');
+              shape.style.removeProperty('--color-current');
+              shape.style.removeProperty('--color-requested');
+              if (shape.getAttribute('fill') !== currentColor) {
+                shape.setAttribute('fill', currentColor);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 定期ポーリング処理（設備データ＋未承認申請データ）
+    async function pollFacilitiesAndRequests() {
+      try {
+        const [facRes, reqRes] = await Promise.all([
+          fetch('/api/facilities'),
+          fetch('/api/requests?status=pending'),
+        ]);
+
+        let facilitiesData = null;
+        if (facRes.ok) {
+          facilitiesData = await facRes.json();
+          facilitiesData.forEach((f) => facilitiesMap.set(f.id, f));
+        }
+
+        if (reqRes.ok) {
+          const newPending = await reqRes.json();
+          pendingRequests = newPending;
+
+          // 新しい未確認申請があるかチェック
+          const hasNewUnack = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
+          if (newPending.length > 0 && hasNewUnack) {
+            isBuzzerActive = true;
+            startBuzzerSound();
+          } else if (newPending.length === 0) {
+            isBuzzerActive = false;
+            stopBuzzerSound();
+            buzzerAcknowledgedReqIds.clear();
+          }
+
+          const header = document.querySelector('.app-header');
+          if (header) {
+            if (isBuzzerActive) {
+              header.classList.add('alarm-active');
+            } else {
+              header.classList.remove('alarm-active');
+            }
+          }
+
+          updateNotificationArea();
+
+          // モーダル表示中の場合は内容をリアルタイム更新
+          const modal = document.getElementById('request-detail-modal');
+          if (modal && modal.classList.contains('active')) {
+            renderRequestDetailModal();
+          }
+        }
+
+        if (facilitiesData) {
+          updateFacilityColors(facilitiesData);
+          if (currentView === 'facilities') {
+            renderFacilityTable();
+          }
+        }
+      } catch (err) {
+        console.warn('Polling sync error:', err);
+      }
+    }
+
     // ----------------------------------------------------
     // マップおよび設備データの読み込みと描画
     // ----------------------------------------------------
@@ -1549,24 +2162,39 @@
       try {
         const svgUrl = '/shared/map-east.svg';
         const facilitiesUrl = '/api/facilities';
+        const requestsUrl = '/api/requests?status=pending';
 
-        const svgRes = await fetch(svgUrl);
+        const [svgRes, facilitiesRes, reqRes] = await Promise.all([
+          fetch(svgUrl),
+          fetch(facilitiesUrl),
+          fetch(requestsUrl),
+        ]);
+
         if (!svgRes.ok) {
           showError(`Failed to fetch SVG: ${svgUrl} (status: ${svgRes.status})`);
           return;
         }
         const svgText = await svgRes.text();
 
-        const facilitiesRes = await fetch(facilitiesUrl);
         if (!facilitiesRes.ok) {
           showError(`Failed to fetch facilities: ${facilitiesUrl} (status: ${facilitiesRes.status})`);
           return;
         }
         const facilities = await facilitiesRes.json();
 
+        if (reqRes.ok) {
+          pendingRequests = await reqRes.json();
+          if (pendingRequests.length > 0) {
+            isBuzzerActive = true;
+            startBuzzerSound();
+            const header = document.querySelector('.app-header');
+            if (header) header.classList.add('alarm-active');
+          }
+        }
+
         // キャッシュ初期化
         facilitiesMap.clear();
-        facilities.forEach(f => facilitiesMap.set(f.id, f));
+        facilities.forEach((f) => facilitiesMap.set(f.id, f));
 
         // SVGのインライン展開
         const mapContainer = document.getElementById('map-container');
@@ -1635,7 +2263,7 @@
             });
           }
 
-          let color = STATE_COLORS[facility.state] || '#34A853';
+          const color = STATE_COLORS[facility.state] || '#34A853';
 
           // アイコン描画
           if (facility.type === 'gate') {
@@ -1684,11 +2312,18 @@
         selectionLayer.setAttribute('id', 'selection-layer');
         svgElement.appendChild(selectionLayer);
 
+        // アイコン点滅状態と通知領域の初期更新
+        updateFacilityColors(facilities);
+        updateNotificationArea();
+
         // 台帳テーブルの初期描画
         if (currentView === 'facilities') {
           renderFacilityTable();
           updateBatchUIState();
         }
+
+        // 定期ポーリング開始（3秒間隔）
+        setInterval(pollFacilitiesAndRequests, POLL_INTERVAL_MS);
 
       } catch (err) {
         showError(`Unexpected error: ${err.message}`);
@@ -1701,8 +2336,25 @@
       setInterval(updateDateTime, 1000);
       loadMapAndFacilities();
 
+      // 初回インタラクションで AudioContext を起動
+      const unlockAudio = () => {
+        getAudioContext();
+        window.removeEventListener('pointerdown', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      };
+      window.addEventListener('pointerdown', unlockAudio, { once: true });
+      window.addEventListener('keydown', unlockAudio, { once: true });
+
+      // キーボードイベント（F8キーでブザー停止）
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'F8') {
+          e.preventDefault();
+          stopBuzzer();
+        }
+      });
+
       // Navigation Rail ビュー切り替えイベント
-      document.querySelectorAll('.nav-rail-item').forEach(item => {
+      document.querySelectorAll('.nav-rail-item').forEach((item) => {
         item.addEventListener('click', () => {
           const view = item.dataset.view;
           if (view) {
@@ -1712,7 +2364,7 @@
       });
 
       // マップ用ツールバーボタンイベント
-      document.querySelectorAll('#toolbar .status-btn').forEach(btn => {
+      document.querySelectorAll('#toolbar .status-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           selectState(btn.dataset.state);
         });
@@ -1726,6 +2378,36 @@
         submitStatusChange();
       });
 
+      // 通知領域アクションボタンイベント（詳細・はい（承認）・いいえ（差戻））
+      document.getElementById('btn-detail')?.addEventListener('click', () => {
+        openRequestDetailModal();
+      });
+
+      document.getElementById('btn-yes')?.addEventListener('click', () => {
+        approveCurrentRequest();
+      });
+
+      document.getElementById('btn-no')?.addEventListener('click', () => {
+        rejectCurrentRequest();
+      });
+
+      // モーダル内ボタンイベント（承認・差戻・閉じる）
+      document.getElementById('btn-modal-approve')?.addEventListener('click', () => {
+        approveCurrentRequest();
+      });
+
+      document.getElementById('btn-modal-reject')?.addEventListener('click', () => {
+        rejectCurrentRequest();
+      });
+
+      document.getElementById('btn-close-request-detail')?.addEventListener('click', closeRequestDetailModal);
+      document.getElementById('btn-modal-dismiss')?.addEventListener('click', closeRequestDetailModal);
+      document.getElementById('request-detail-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'request-detail-modal') {
+          closeRequestDetailModal();
+        }
+      });
+
       // マップ領域の余白クリックで選択解除
       const mapWrapper = document.getElementById('map-wrapper');
       if (mapWrapper) {
@@ -1737,7 +2419,7 @@
       }
 
       // 設備入力（台帳）フィルター変更イベント
-      ['filter-hall', 'filter-type', 'filter-state'].forEach(id => {
+      ['filter-hall', 'filter-type', 'filter-state'].forEach((id) => {
         const elem = document.getElementById(id);
         if (elem) {
           elem.addEventListener('change', () => {
@@ -1755,7 +2437,7 @@
       }
 
       // 設備入力 一括操作ツールバーイベント
-      document.querySelectorAll('#facility-toolbar .status-btn').forEach(btn => {
+      document.querySelectorAll('#facility-toolbar .status-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           selectBatchState(btn.dataset.state);
         });

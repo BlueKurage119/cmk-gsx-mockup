@@ -3,7 +3,9 @@ const {
   getRequestById,
   createRequest,
   cancelRequest,
+  updateRequestStatus,
 } = require('../state/requests');
+const { updateFacilityState } = require('../state/facilities');
 
 function registerRequestRoutes(app) {
   // GET /api/requests: 申請一覧取得
@@ -56,6 +58,56 @@ function registerRequestRoutes(app) {
     }
 
     return res.status(201).json(result.request);
+  });
+
+  // POST /api/requests/:id/approve: 申請承認（設備状態を更新）
+  app.post('/api/requests/:id/approve', (req, res) => {
+    const { id } = req.params;
+    const item = getRequestById(id);
+    if (!item) {
+      return res.status(404).json({ error: `Request ${id} not found` });
+    }
+    if (item.status !== 'pending') {
+      return res.status(409).json({ error: `Request ${id} cannot be approved because it is ${item.status}` });
+    }
+
+    const facResult = updateFacilityState(item.facilityId, item.requestedState);
+    if (!facResult.success) {
+      return res.status(500).json({ error: `Failed to update facility state: ${facResult.reason}` });
+    }
+
+    const reqResult = updateRequestStatus(id, 'approved');
+    if (!reqResult.success) {
+      return res.status(500).json({ error: `Failed to update request status: ${reqResult.reason}` });
+    }
+
+    return res.status(200).json({
+      success: true,
+      request: reqResult.request,
+      facility: facResult.facility,
+    });
+  });
+
+  // POST /api/requests/:id/reject: 申請差戻（却下）
+  app.post('/api/requests/:id/reject', (req, res) => {
+    const { id } = req.params;
+    const item = getRequestById(id);
+    if (!item) {
+      return res.status(404).json({ error: `Request ${id} not found` });
+    }
+    if (item.status !== 'pending') {
+      return res.status(409).json({ error: `Request ${id} cannot be rejected because it is ${item.status}` });
+    }
+
+    const reqResult = updateRequestStatus(id, 'rejected');
+    if (!reqResult.success) {
+      return res.status(500).json({ error: `Failed to update request status: ${reqResult.reason}` });
+    }
+
+    return res.status(200).json({
+      success: true,
+      request: reqResult.request,
+    });
   });
 
   // DELETE /api/requests/:id: 申請取り下げ（キャンセル）
