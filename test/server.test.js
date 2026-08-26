@@ -1,6 +1,11 @@
-const { test } = require('node:test');
+const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { createApp, startServer } = require('../server');
+const { resetFacilities } = require('../src/state/facilities');
+
+beforeEach(() => {
+  resetFacilities();
+});
 
 async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
   const server = startServer(options);
@@ -112,6 +117,94 @@ test('GET /api/facilities returns representative facilities with full field valu
       assert.ok(actual, `Representative facility ${expected.id} not found in response`);
       assert.deepStrictEqual(actual, expected);
     }
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/:id updates state and returns updated facility', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/higashi2-gate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'closed' }),
+    });
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /^application\/json/i);
+    const data = await res.json();
+    assert.equal(data.id, 'higashi2-gate');
+    assert.equal(data.state, 'closed');
+    assert.equal(data.name, '東2ゲート');
+
+    // Verify GET /api/facilities reflects update
+    const getRes = await fetch(`${baseUrl}/api/facilities`);
+    const all = await getRes.json();
+    const updated = all.find((f) => f.id === 'higashi2-gate');
+    assert.equal(updated.state, 'closed');
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/:id supports restricted state', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/higashi1-a-shutter`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'restricted' }),
+    });
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.id, 'higashi1-a-shutter');
+    assert.equal(data.state, 'restricted');
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/:id with invalid state returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/higashi2-gate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'invalid_state' }),
+    });
+    assert.equal(res.status, 400);
+    const data = await res.json();
+    assert.ok(data.error);
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/:id with missing body or state returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/higashi2-gate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(res.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('PUT /api/facilities/:id for non-existent facility returns 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities/non-existent-facility`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'open' }),
+    });
+    assert.equal(res.status, 404);
+    const data = await res.json();
+    assert.ok(data.error);
   } finally {
     await close();
   }

@@ -31,12 +31,36 @@ const INITIAL_FACILITIES = [
   { id: 'higashi8-b-shutter', name: '東8-B', type: 'shutter', state: 'closed', x: 566, y: 448 },
 ];
 
+const VALID_STATES = new Set(['open', 'closed', 'restricted']);
+
 const facilities = INITIAL_FACILITIES.map((facility) => ({ ...facility }));
 
 function getFacilities() {
   return facilities.map((facility) => ({ ...facility }));
 }
 
+function updateFacilityState(id, state) {
+  if (!VALID_STATES.has(state)) {
+    return { success: false, reason: 'INVALID_STATE' };
+  }
+  const facility = facilities.find((f) => f.id === id);
+  if (!facility) {
+    return { success: false, reason: 'NOT_FOUND' };
+  }
+  facility.state = state;
+  return { success: true, facility: { ...facility } };
+}
+
+function resetFacilities() {
+  facilities.length = 0;
+  INITIAL_FACILITIES.forEach((facility) => {
+    facilities.push({ ...facility });
+  });
+}
+
 module.exports = {
   getFacilities,
+  updateFacilityState,
+  resetFacilities,
+  VALID_STATES,
 };

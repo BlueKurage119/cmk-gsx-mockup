@@ -1,6 +1,10 @@
-const { test } = require('node:test');
+const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { getFacilities } = require('../src/state/facilities');
+const {
+  getFacilities,
+  updateFacilityState,
+  resetFacilities,
+} = require('../src/state/facilities');
 
 const EXPECTED_INITIAL_FACILITIES = [
   { id: 'higashi1-gate', name: '東1ゲート', type: 'gate', state: 'open', x: 2355, y: 531 },
@@ -34,6 +38,10 @@ const EXPECTED_INITIAL_FACILITIES = [
   { id: 'higashi8-a-shutter', name: '東8-A', type: 'shutter', state: 'open', x: 778, y: 457 },
   { id: 'higashi8-b-shutter', name: '東8-B', type: 'shutter', state: 'closed', x: 566, y: 448 },
 ];
+
+beforeEach(() => {
+  resetFacilities();
+});
 
 test('getFacilities() returns all 30 initial facilities with exact values', () => {
   const facilities = getFacilities();
@@ -84,13 +92,54 @@ test('all facility IDs are unique among 30 facilities', () => {
   assert.equal(new Set(ids).size, 30);
 });
 
-test('all facilities have valid type (gate|shutter|checkpoint) and state (open|closed)', () => {
+test('all facilities have valid type (gate|shutter|checkpoint) and state (open|closed|restricted)', () => {
   const validTypes = new Set(['gate', 'shutter', 'checkpoint']);
-  const validStates = new Set(['open', 'closed']);
+  const validStates = new Set(['open', 'closed', 'restricted']);
   const facilities = getFacilities();
 
   for (const f of facilities) {
     assert.ok(validTypes.has(f.type), `Facility ${f.id} has invalid type: ${f.type}`);
     assert.ok(validStates.has(f.state), `Facility ${f.id} has invalid state: ${f.state}`);
   }
+});
+
+test('updateFacilityState() successfully updates state to closed, restricted, and open', () => {
+  const res1 = updateFacilityState('higashi2-gate', 'closed');
+  assert.equal(res1.success, true);
+  assert.equal(res1.facility.state, 'closed');
+  assert.equal(res1.facility.id, 'higashi2-gate');
+
+  const facilitiesAfterClosed = getFacilities();
+  const updated1 = facilitiesAfterClosed.find((f) => f.id === 'higashi2-gate');
+  assert.equal(updated1.state, 'closed');
+
+  const res2 = updateFacilityState('higashi2-gate', 'restricted');
+  assert.equal(res2.success, true);
+  assert.equal(res2.facility.state, 'restricted');
+
+  const res3 = updateFacilityState('higashi2-gate', 'open');
+  assert.equal(res3.success, true);
+  assert.equal(res3.facility.state, 'open');
+});
+
+test('updateFacilityState() returns INVALID_STATE for unsupported state values', () => {
+  const res = updateFacilityState('higashi2-gate', 'invalid_state');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'INVALID_STATE');
+});
+
+test('updateFacilityState() returns NOT_FOUND for unknown facility ID', () => {
+  const res = updateFacilityState('non-existent-facility', 'open');
+  assert.equal(res.success, false);
+  assert.equal(res.reason, 'NOT_FOUND');
+});
+
+test('resetFacilities() restores all facilities back to initial state', () => {
+  updateFacilityState('higashi1-gate', 'closed');
+  updateFacilityState('higashi5-gate', 'open');
+  assert.equal(getFacilities().find((f) => f.id === 'higashi1-gate').state, 'closed');
+  assert.equal(getFacilities().find((f) => f.id === 'higashi5-gate').state, 'open');
+
+  resetFacilities();
+  assert.deepStrictEqual(getFacilities(), EXPECTED_INITIAL_FACILITIES);
 });
