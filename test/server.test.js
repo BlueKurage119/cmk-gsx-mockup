@@ -340,7 +340,9 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.ok(text.includes('閉鎖'));
     assert.ok(text.includes('制限'));
     assert.ok(text.includes('送信'));
-    assert.ok(text.includes('取消'));
+    assert.ok(text.includes('選択解除'));
+    assert.ok(text.includes('submit-pulse'));
+    assert.ok(text.includes('ready-to-submit'));
     assert.ok(text.includes('詳細'));
     assert.ok(text.includes('はい'));
     assert.ok(text.includes('いいえ'));
