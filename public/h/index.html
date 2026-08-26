@@ -3,11 +3,571 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>H端末（指揮所用）</title>
+  <title>概況（東地区） - H端末（指揮所用）</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --gcp-blue: #1a73e8;
+      --bg-dark: #121212;
+      --surface-dark: #202124;
+      --map-bg: #1e1e1e;
+      --border-color: #3c4043;
+      --text-primary: #ffffff;
+      --text-secondary: #e8eaed;
+      --text-muted: #9aa0a6;
+      --rail-active-bg: rgba(138, 180, 248, 0.12);
+      --rail-active-text: #8ab4f8;
+      --btn-outlined-border: #5f6368;
+      --btn-outlined-text: #8ab4f8;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-secondary);
+    }
+
+    /* アプリケーション全体コンテナ */
+    .app-root {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ヘッダーバー */
+    .app-header {
+      height: 48px;
+      background-color: var(--gcp-blue);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.24);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.25px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+    }
+
+    .datetime-display {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.95;
+    }
+
+    .terminal-name {
+      font-weight: 500;
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* 本文レイアウト（左Navigation Rail + 右Main Content） */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    /* Navigation Rail */
+    .nav-rail {
+      width: 72px;
+      background-color: var(--surface-dark);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 5;
+    }
+
+    .nav-rail-item {
+      width: 60px;
+      height: 56px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+      text-decoration: none;
+      padding: 4px 2px;
+    }
+
+    .nav-rail-item:hover:not(.active) {
+      background-color: rgba(255, 255, 255, 0.04);
+      color: #dadce0;
+    }
+
+    .nav-rail-item.active {
+      background-color: var(--rail-active-bg);
+      color: var(--rail-active-text);
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 3px;
+      fill: currentColor;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* メインコンテンツエリア */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background-color: var(--map-bg);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 上部ツールバー（空） */
+    .toolbar {
+      height: 36px;
+      background-color: var(--surface-dark);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+
+    /* エラーバナー */
+    #error-container {
+      display: none;
+      padding: 10px 16px;
+      background-color: #5c1d1d;
+      border-bottom: 1px solid #f98080;
+      color: #fde8e8;
+      font-size: 13px;
+      white-space: pre-wrap;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    /* マップラッパー＆コンテナ */
+    .map-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+      position: relative;
+      background-color: var(--map-bg);
+    }
+
+    #map-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #map-container svg {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+    }
+
+    /* 下部通知領域 */
+    .notification-area {
+      height: 48px;
+      background-color: var(--surface-dark);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+      z-index: 5;
+    }
+
+    .notification-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      letter-spacing: 0.2px;
+    }
+
+    .notification-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+
+    .btn-outlined {
+      border: 1px solid var(--btn-outlined-border);
+      background-color: transparent;
+      color: var(--btn-outlined-text);
+    }
+
+    .btn-filled {
+      border: 1px solid transparent;
+      background-color: var(--gcp-blue);
+      color: var(--text-primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      border-color: #484b50;
+      color: #80868b;
+      background-color: transparent;
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <h1>H端末（指揮所用）</h1>
-  </main>
+  <div class="app-root">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="header-title">概況（東地区）</h1>
+      </div>
+      <div class="header-right">
+        <span id="current-datetime" class="datetime-display">----/--/-- --:--:--</span>
+        <span class="terminal-name">端末名: 東地区外務H1</span>
+      </div>
+    </header>
+
+    <!-- アプリ本文 -->
+    <div class="app-body">
+      <!-- 左側 Navigation Rail -->
+      <nav class="nav-rail" aria-label="メインナビゲーション">
+        <button type="button" class="nav-rail-item active" aria-current="page" title="概況(東)">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+          </svg>
+          <span class="nav-label">概況(東)</span>
+        </button>
+        <button type="button" class="nav-rail-item" title="設備入力">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+          </svg>
+          <span class="nav-label">設備入力</span>
+        </button>
+        <button type="button" class="nav-rail-item" title="警報一覧">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+          </svg>
+          <span class="nav-label">警報一覧</span>
+        </button>
+      </nav>
+
+      <!-- メインコンテンツ -->
+      <main class="main-content">
+        <!-- 上部ツールバー（現フェーズは空領域） -->
+        <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー"></div>
+
+        <!-- 通信エラー表示 -->
+        <div id="error-container"></div>
+
+        <!-- マップ表示領域 -->
+        <div class="map-wrapper">
+          <div id="map-container"></div>
+        </div>
+
+        <!-- 下部通知領域 -->
+        <section class="notification-area" aria-label="通知領域">
+          <div class="notification-message">業務を選択してください</div>
+          <div class="notification-actions">
+            <button type="button" class="btn btn-outlined" id="btn-detail" disabled>詳細</button>
+            <button type="button" class="btn btn-filled" id="btn-yes" disabled>はい</button>
+            <button type="button" class="btn btn-outlined" id="btn-no" disabled>いいえ</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    // 設備ラベルオフセット定義
+    const LABEL_CONFIGS = {
+      'higashi1-gate': { dx: -44, dy: 58, textAnchor: 'end' },
+      'higashi2-gate': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi3-gate': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi4-gate': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi5-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
+      'higashi6-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
+      'higashi7-5-gate': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi13-gate': { dx: 0, dy: 0, textAnchor: 'start' },
+      'higashi1-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi1-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi1-c-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi1-d-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi1-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi1-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi2-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi2-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi2-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi2-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi3-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi3-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi3-c-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi3-d-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi3-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi3-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi7-a-shutter': { dx: 0, dy: -46, textAnchor: 'end' },
+      'higashi7-b-shutter': { dx: 0, dy: -46, textAnchor: 'start' },
+      'higashi7-c-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi7-d-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi8-a-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi8-b-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+    };
+
+    const DEFAULT_LABEL_CONFIG = { dx: 0, dy: -46, textAnchor: 'middle' };
+
+    // ホール名（東1H〜東8H）
+    const HALL_LABELS = [
+      { name: '東1H', x: 1952, y: 403 },
+      { name: '東2H', x: 1551, y: 403 },
+      { name: '東3H', x: 1149, y: 403 },
+      { name: '東4H', x: 1756, y: 1009 },
+      { name: '東5H', x: 1355, y: 1009 },
+      { name: '東6H', x: 953, y: 1009 },
+      { name: '東7H', x: 427, y: 1053 },
+      { name: '東8H', x: 651, y: 560 },
+    ];
+
+    // 主要地名（ガレリア、リンクスペース、東ターミナル、東棟屋外駐車場）
+    const PLACE_LABELS = [
+      { name: 'ガレリア', x: 1453, y: 706 },
+      { name: 'リンクスペース', x: 540, y: 709 },
+      { name: '東ターミナル', x: 2260, y: 430 },
+      { name: '東棟屋外駐車場', x: 280, y: 480 },
+    ];
+
+    // ガレリア側シャッター（ラベル非表示）
+    const HIDDEN_LABEL_IDS = new Set([
+      'higashi1-12-shutter',
+      'higashi1-34-shutter',
+      'higashi2-12-shutter',
+      'higashi2-34-shutter',
+      'higashi3-12-shutter',
+      'higashi3-34-shutter',
+    ]);
+
+    // リアルタイム時計更新
+    function updateDateTime() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const year = now.getFullYear();
+      const month = pad(now.getMonth() + 1);
+      const date = pad(now.getDate());
+      const hours = pad(now.getHours());
+      const minutes = pad(now.getMinutes());
+      const seconds = pad(now.getSeconds());
+      const formatted = `${year}/${month}/${date} ${hours}:${minutes}:${seconds}`;
+      const elem = document.getElementById('current-datetime');
+      if (elem) {
+        elem.textContent = formatted;
+      }
+    }
+
+    function showError(message) {
+      const errorContainer = document.getElementById('error-container');
+      if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = 'block';
+      }
+    }
+
+    // マップおよび設備データの読み込みと描画
+    async function loadMapAndFacilities() {
+      try {
+        const svgUrl = '/shared/map-east.svg';
+        const facilitiesUrl = '/api/facilities';
+
+        const svgRes = await fetch(svgUrl);
+        if (!svgRes.ok) {
+          showError(`Failed to fetch SVG: ${svgUrl} (status: ${svgRes.status})`);
+          return;
+        }
+        const svgText = await svgRes.text();
+
+        const facilitiesRes = await fetch(facilitiesUrl);
+        if (!facilitiesRes.ok) {
+          showError(`Failed to fetch facilities: ${facilitiesUrl} (status: ${facilitiesRes.status})`);
+          return;
+        }
+        const facilities = await facilitiesRes.json();
+
+        // SVGのインライン展開
+        const mapContainer = document.getElementById('map-container');
+        mapContainer.innerHTML = svgText;
+
+        const svgElement = mapContainer.querySelector('svg');
+        if (!svgElement) {
+          showError('Invalid SVG: svg root element not found');
+          return;
+        }
+
+        // ホール名・地名レイヤー（hall-label-layer）
+        const hallLabelLayer = document.createElementNS(SVG_NS, 'g');
+        hallLabelLayer.setAttribute('id', 'hall-label-layer');
+
+        HALL_LABELS.forEach((hall) => {
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', String(hall.x));
+          text.setAttribute('y', String(hall.y));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('font-size', '56');
+          text.setAttribute('font-weight', 'bold');
+          text.setAttribute('font-family', 'sans-serif');
+          text.setAttribute('fill', '#4B5563');
+          text.setAttribute('stroke', '#FFFFFF');
+          text.setAttribute('stroke-width', '8');
+          text.setAttribute('paint-order', 'stroke');
+          text.textContent = hall.name;
+          hallLabelLayer.appendChild(text);
+        });
+
+        PLACE_LABELS.forEach((place) => {
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', String(place.x));
+          text.setAttribute('y', String(place.y));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('font-size', '32');
+          text.setAttribute('font-style', 'italic');
+          text.setAttribute('font-family', 'sans-serif');
+          text.setAttribute('fill', '#0A5B8C');
+          text.setAttribute('stroke', '#FFFFFF');
+          text.setAttribute('stroke-width', '5');
+          text.setAttribute('paint-order', 'stroke');
+          text.textContent = place.name;
+          hallLabelLayer.appendChild(text);
+        });
+
+        svgElement.appendChild(hallLabelLayer);
+
+        // 設備レイヤー（facility-layer）
+        const facilityLayer = document.createElementNS(SVG_NS, 'g');
+        facilityLayer.setAttribute('id', 'facility-layer');
+
+        facilities.forEach((facility) => {
+          const group = document.createElementNS(SVG_NS, 'g');
+          group.setAttribute('data-facility-id', facility.id);
+
+          const color = facility.state === 'open' ? '#2ECC71' : '#E85C4A';
+
+          // アイコン描画
+          if (facility.type === 'gate') {
+            const circle = document.createElementNS(SVG_NS, 'circle');
+            circle.setAttribute('cx', String(facility.x));
+            circle.setAttribute('cy', String(facility.y));
+            circle.setAttribute('r', '30');
+            circle.setAttribute('fill', color);
+            circle.setAttribute('stroke', '#1B1B1B');
+            circle.setAttribute('stroke-width', '4');
+            group.appendChild(circle);
+          } else if (facility.type === 'shutter') {
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('x', String(facility.x - 28));
+            rect.setAttribute('y', String(facility.y - 28));
+            rect.setAttribute('width', '56');
+            rect.setAttribute('height', '56');
+            rect.setAttribute('fill', color);
+            rect.setAttribute('stroke', '#1B1B1B');
+            rect.setAttribute('stroke-width', '4');
+            group.appendChild(rect);
+          }
+          // checkpoint はアイコン描画なし
+
+          // ラベル描画（ガレリア側シャッターを除く）
+          if (!HIDDEN_LABEL_IDS.has(facility.id)) {
+            const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
+            const text = document.createElementNS(SVG_NS, 'text');
+            text.setAttribute('x', String(facility.x + config.dx));
+            text.setAttribute('y', String(facility.y + config.dy));
+            text.setAttribute('text-anchor', config.textAnchor);
+            text.setAttribute('font-size', '36');
+            text.setAttribute('fill', '#1B1B1B');
+            text.setAttribute('font-family', 'sans-serif');
+            text.setAttribute('stroke', '#FFFFFF');
+            text.setAttribute('stroke-width', '6');
+            text.setAttribute('paint-order', 'stroke');
+            text.textContent = facility.name;
+            group.appendChild(text);
+          }
+
+          facilityLayer.appendChild(group);
+        });
+
+        svgElement.appendChild(facilityLayer);
+      } catch (err) {
+        showError(`Unexpected error: ${err.message}`);
+      }
+    }
+
+    // 初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      loadMapAndFacilities();
+    });
+  </script>
 </body>
 </html>
