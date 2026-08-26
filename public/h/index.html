@@ -290,7 +290,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 24px;
       overflow: hidden;
       position: relative;
       background-color: var(--map-bg);
@@ -311,6 +311,7 @@
       width: auto;
       height: auto;
       object-fit: contain;
+      overflow: visible;
       filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
     }
 
@@ -332,12 +333,12 @@
 
     @keyframes pulse-ring {
       0%, 100% {
-        opacity: 0.9;
-        stroke-width: 6px;
+        opacity: 1;
+        stroke-width: 5px;
       }
       50% {
-        opacity: 0.5;
-        stroke-width: 4px;
+        opacity: 0.4;
+        stroke-width: 3px;
       }
     }
 
@@ -665,23 +666,27 @@
         const ring = document.createElementNS(SVG_NS, 'circle');
         ring.setAttribute('cx', String(facility.x));
         ring.setAttribute('cy', String(facility.y));
-        ring.setAttribute('r', '40');
+        ring.setAttribute('r', '38');
         ring.setAttribute('fill', 'none');
         ring.setAttribute('stroke', '#8AB4F8');
-        ring.setAttribute('stroke-width', '6');
-        ring.setAttribute('stroke-dasharray', '8,5');
+        ring.setAttribute('stroke-width', '5');
+        ring.setAttribute('stroke-dasharray', '8,6');
+        ring.setAttribute('stroke-linecap', 'round');
         ring.setAttribute('class', 'selection-ring');
         selectionLayer.appendChild(ring);
       } else if (facility.type === 'shutter') {
         const ring = document.createElementNS(SVG_NS, 'rect');
-        ring.setAttribute('x', String(facility.x - 36));
-        ring.setAttribute('y', String(facility.y - 36));
-        ring.setAttribute('width', '72');
-        ring.setAttribute('height', '72');
+        ring.setAttribute('x', String(facility.x - 35));
+        ring.setAttribute('y', String(facility.y - 35));
+        ring.setAttribute('width', '70');
+        ring.setAttribute('height', '70');
+        ring.setAttribute('rx', '4');
+        ring.setAttribute('ry', '4');
         ring.setAttribute('fill', 'none');
         ring.setAttribute('stroke', '#8AB4F8');
-        ring.setAttribute('stroke-width', '6');
-        ring.setAttribute('stroke-dasharray', '8,5');
+        ring.setAttribute('stroke-width', '5');
+        ring.setAttribute('stroke-dasharray', '8,6');
+        ring.setAttribute('stroke-linecap', 'round');
         ring.setAttribute('class', 'selection-ring');
         selectionLayer.appendChild(ring);
       }
