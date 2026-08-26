@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設備座標確認マップ - CMK/GSX Mockup</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background-color: #f8f9fa;
+      color: #333333;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    p.description {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #666666;
+      font-size: 14px;
+    }
+    #error-container {
+      display: none;
+      padding: 16px;
+      background-color: #fde8e8;
+      border: 1px solid #f98080;
+      border-radius: 4px;
+      color: #9b1c1c;
+      margin-bottom: 20px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    #map-container {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    #map-container svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 80vh;
+    }
+    .table-container {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    th, td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background-color: #f3f4f6;
+      font-weight: 600;
+      color: #374151;
+    }
+    tr:hover {
+      background-color: #f9fafb;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-open {
+      background-color: #def7ec;
+      color: #03543f;
+    }
+    .badge-closed {
+      background-color: #fde8e8;
+      color: #9b1c1c;
+    }
+  </style>
+</head>
+<body>
+  <h1>設備座標確認マップ（東展示棟）</h1>
+  <p class="description">東展示棟マップ上のゲート・シャッター・定点の座標と描画状態を確認するページです。</p>
+
+  <div id="error-container"></div>
+  <div id="map-container"></div>
+
+  <div class="table-container">
+    <h2>設備一覧データ (全 <span id="facility-count">0</span> 件)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ID</th>
+          <th>名称</th>
+          <th>種別 (type)</th>
+          <th>状態 (state)</th>
+          <th>X 座標</th>
+          <th>Y 座標</th>
+        </tr>
+      </thead>
+      <tbody id="facility-table-body">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    const LABEL_CONFIGS = {
+      'higashi1-gate': { dx: -44, dy: 58, textAnchor: 'end' },
+      'higashi2-gate': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi3-gate': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi4-gate': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi5-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
+      'higashi6-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
+      'higashi7-5-gate': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi13-gate': { dx: 0, dy: 0, textAnchor: 'start' },
+      'higashi1-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi1-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi1-c-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi1-d-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi1-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi1-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi2-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi2-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi2-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi2-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi3-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
+      'higashi3-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi3-c-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi3-d-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi3-12-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
+      'higashi3-34-shutter': { dx: 0, dy: 112, textAnchor: 'start' },
+      'higashi7-a-shutter': { dx: 0, dy: -46, textAnchor: 'end' },
+      'higashi7-b-shutter': { dx: 0, dy: -46, textAnchor: 'start' },
+      'higashi7-c-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi7-d-shutter': { dx: 44, dy: 12, textAnchor: 'start' },
+      'higashi8-a-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+      'higashi8-b-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
+    };
+
+    const DEFAULT_LABEL_CONFIG = { dx: 0, dy: -46, textAnchor: 'middle' };
+
+    function showError(message) {
+      const errorContainer = document.getElementById('error-container');
+      errorContainer.textContent = message;
+      errorContainer.style.display = 'block';
+    }
+
+    async function loadMapAndFacilities() {
+      try {
+        const svgUrl = '/shared/map-east.svg';
+        const facilitiesUrl = '/api/facilities';
+
+        const svgRes = await fetch(svgUrl);
+        if (!svgRes.ok) {
+          showError(`Failed to fetch SVG: ${svgUrl} (status: ${svgRes.status})`);
+          return;
+        }
+        const svgText = await svgRes.text();
+
+        const facilitiesRes = await fetch(facilitiesUrl);
+        if (!facilitiesRes.ok) {
+          showError(`Failed to fetch facilities: ${facilitiesUrl} (status: ${facilitiesRes.status})`);
+          return;
+        }
+        const facilities = await facilitiesRes.json();
+
+        // マップSVGの展開
+        const mapContainer = document.getElementById('map-container');
+        mapContainer.innerHTML = svgText;
+
+        const svgElement = mapContainer.querySelector('svg');
+        if (!svgElement) {
+          showError('Invalid SVG: svg root element not found');
+          return;
+        }
+
+        // facility-layer の作成と追加
+        const facilityLayer = document.createElementNS(SVG_NS, 'g');
+        facilityLayer.setAttribute('id', 'facility-layer');
+
+        facilities.forEach((facility) => {
+          const group = document.createElementNS(SVG_NS, 'g');
+          group.setAttribute('data-facility-id', facility.id);
+
+          const color = facility.state === 'open' ? '#2ECC71' : '#E85C4A';
+
+          // アイコン描画 (type で分岐)
+          if (facility.type === 'gate') {
+            const circle = document.createElementNS(SVG_NS, 'circle');
+            circle.setAttribute('cx', String(facility.x));
+            circle.setAttribute('cy', String(facility.y));
+            circle.setAttribute('r', '30');
+            circle.setAttribute('fill', color);
+            circle.setAttribute('stroke', '#1B1B1B');
+            circle.setAttribute('stroke-width', '4');
+            group.appendChild(circle);
+          } else if (facility.type === 'shutter') {
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('x', String(facility.x - 28));
+            rect.setAttribute('y', String(facility.y - 28));
+            rect.setAttribute('width', '56');
+            rect.setAttribute('height', '56');
+            rect.setAttribute('fill', color);
+            rect.setAttribute('stroke', '#1B1B1B');
+            rect.setAttribute('stroke-width', '4');
+            group.appendChild(rect);
+          }
+          // checkpoint はアイコンを描画しない
+
+          // ラベル描画
+          const config = LABEL_CONFIGS[facility.id] || DEFAULT_LABEL_CONFIG;
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', String(facility.x + config.dx));
+          text.setAttribute('y', String(facility.y + config.dy));
+          text.setAttribute('text-anchor', config.textAnchor);
+          text.setAttribute('font-size', '36');
+          text.setAttribute('fill', '#1B1B1B');
+          text.setAttribute('font-family', 'sans-serif');
+          text.setAttribute('stroke', '#FFFFFF');
+          text.setAttribute('stroke-width', '6');
+          text.setAttribute('paint-order', 'stroke');
+          text.textContent = facility.name;
+          group.appendChild(text);
+
+          facilityLayer.appendChild(group);
+        });
+
+        svgElement.appendChild(facilityLayer);
+
+        // テーブルの描画
+        document.getElementById('facility-count').textContent = facilities.length;
+        const tbody = document.getElementById('facility-table-body');
+        tbody.innerHTML = '';
+
+        facilities.forEach((facility, index) => {
+          const row = document.createElement('tr');
+
+          const indexCell = document.createElement('td');
+          indexCell.textContent = index + 1;
+
+          const idCell = document.createElement('td');
+          idCell.textContent = facility.id;
+
+          const nameCell = document.createElement('td');
+          nameCell.textContent = facility.name;
+
+          const typeCell = document.createElement('td');
+          typeCell.textContent = facility.type;
+
+          const stateCell = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = `badge badge-${facility.state}`;
+          badge.textContent = facility.state;
+          stateCell.appendChild(badge);
+
+          const xCell = document.createElement('td');
+          xCell.textContent = facility.x;
+
+          const yCell = document.createElement('td');
+          yCell.textContent = facility.y;
+
+          row.appendChild(indexCell);
+          row.appendChild(idCell);
+          row.appendChild(nameCell);
+          row.appendChild(typeCell);
+          row.appendChild(stateCell);
+          row.appendChild(xCell);
+          row.appendChild(yCell);
+
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        showError(`Unexpected error: ${err.message}`);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadMapAndFacilities);
+  </script>
+</body>
+</html>

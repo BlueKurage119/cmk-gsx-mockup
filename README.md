@@ -40,14 +40,21 @@ PORT=18080 npm start
 - **M端末（現場用）**: `http://localhost:8080/m`
   - **レスポンス**: `M端末（現場用）` (Content-Type: `text/html; charset=utf-8`)
 - **設備一覧 API**: `http://localhost:8080/api/facilities`
-  - **レスポンス**: 設備5件の JSON 配列 (Content-Type: `application/json; charset=utf-8`)
+  - **レスポンス**: 設備30件（ゲート7・シャッター22・定点1）の JSON 配列 (Content-Type: `application/json; charset=utf-8`)
   - **状態管理**: 設備状態はサーバープロセスのメモリ上に保持され、サーバー再起動時に初期状態へリセットされます。
+- **東展示棟マップ SVG**: `http://localhost:8080/shared/map-east.svg`
+  - **レスポンス**: SVG画像ファイル (Content-Type: `image/svg+xml`)
+- **設備座標確認マップ**: `http://localhost:8080/shared/facility-map-check.html`
+  - **レスポンス**: 座標確認用HTMLページ (Content-Type: `text/html; charset=utf-8`)
+  - **ブラウザー確認**: ブラウザで開くとマップ上に設備アイコン29件（ゲート・シャッター）とラベル30件が重ねて描画され、下部に属性値一覧テーブルが表示されます。
 
 ```bash
 curl -i http://localhost:8080/
 curl -i http://localhost:8080/h
 curl -i http://localhost:8080/m
 curl -i http://localhost:8080/api/facilities
+curl -i http://localhost:8080/shared/map-east.svg
+curl -i http://localhost:8080/shared/facility-map-check.html
 ```
 
 ## テスト手順
@@ -70,7 +77,8 @@ npm test
 - `.dockerignore`: Docker ビルドコンテキスト除外設定
 - `.gcloudignore`: Cloud Build ソースアップロード除外設定
 - `test/`: 自動テストコード
-- `src/routes/`: ルーティング実装配置先（端末画面、設備 API 等）
+- `src/routes/`: ルーティング実装配置先（端末画面、設備 API、共有アセット等）
 - `src/state/`: 設備状態モデルおよび初期値配置先
 - `public/h/`: H端末静的ファイル配置先
 - `public/m/`: M端末静的ファイル配置先
+- `public/shared/`: 共有静的ファイル配置先（マップSVG、設備座標確認HTML等）

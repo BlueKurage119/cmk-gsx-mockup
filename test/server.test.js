@@ -18,12 +18,43 @@ async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
   };
 }
 
-const EXPECTED_INITIAL_FACILITIES = [
-  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 120, y: 340 },
-  { id: 'higashi3-gate', name: '東3ゲート', type: 'gate', state: 'open', x: 180, y: 340 },
-  { id: 'higashi123-shutter', name: '東123シャッター', type: 'shutter', state: 'open', x: 100, y: 200 },
-  { id: 'higashi456-shutter', name: '東456シャッター', type: 'shutter', state: 'closed', x: 260, y: 200 },
-  { id: 'higashi78-shutter', name: '東78シャッター', type: 'shutter', state: 'open', x: 420, y: 200 },
+const EXPECTED_FACILITY_IDS = [
+  'higashi1-gate',
+  'higashi2-gate',
+  'higashi3-gate',
+  'higashi4-gate',
+  'higashi5-gate',
+  'higashi6-gate',
+  'higashi7-5-gate',
+  'higashi13-gate',
+  'higashi1-a-shutter',
+  'higashi1-b-shutter',
+  'higashi1-c-shutter',
+  'higashi1-d-shutter',
+  'higashi1-12-shutter',
+  'higashi1-34-shutter',
+  'higashi2-a-shutter',
+  'higashi2-b-shutter',
+  'higashi2-12-shutter',
+  'higashi2-34-shutter',
+  'higashi3-a-shutter',
+  'higashi3-b-shutter',
+  'higashi3-c-shutter',
+  'higashi3-d-shutter',
+  'higashi3-12-shutter',
+  'higashi3-34-shutter',
+  'higashi7-a-shutter',
+  'higashi7-b-shutter',
+  'higashi7-c-shutter',
+  'higashi7-d-shutter',
+  'higashi8-a-shutter',
+  'higashi8-b-shutter',
+];
+
+const REPRESENTATIVE_FACILITIES = [
+  { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'open', x: 2380, y: 184 },
+  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'open', x: 20, y: 1300 },
+  { id: 'higashi2-34-shutter', name: '東2-3/4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
 ];
 
 test('GET / returns 200 and plain text message', async () => {
@@ -49,7 +80,7 @@ test('GET /not-found returns 404', async () => {
   }
 });
 
-test('GET /api/facilities returns 200 and JSON array with all 5 initial facilities', async () => {
+test('GET /api/facilities returns 200 and JSON array with all 30 facility IDs in order and matching keys', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/api/facilities`);
@@ -57,7 +88,30 @@ test('GET /api/facilities returns 200 and JSON array with all 5 initial faciliti
     assert.equal(res.headers.get('content-type'), 'application/json; charset=utf-8');
     const data = await res.json();
     assert.ok(Array.isArray(data));
-    assert.deepStrictEqual(data, EXPECTED_INITIAL_FACILITIES);
+    assert.equal(data.length, 30);
+    assert.deepStrictEqual(data.map((f) => f.id), EXPECTED_FACILITY_IDS);
+
+    const expectedKeys = ['id', 'name', 'state', 'type', 'x', 'y'];
+    for (const item of data) {
+      assert.deepStrictEqual(Object.keys(item).sort(), expectedKeys);
+    }
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/facilities returns representative facilities with full field values', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities`);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+
+    for (const expected of REPRESENTATIVE_FACILITIES) {
+      const actual = data.find((f) => f.id === expected.id);
+      assert.ok(actual, `Representative facility ${expected.id} not found in response`);
+      assert.deepStrictEqual(actual, expected);
+    }
   } finally {
     await close();
   }
@@ -67,6 +121,40 @@ test('GET /api/not-found returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/api/not-found`);
+    assert.equal(res.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /shared/map-east.svg returns 200, svg content-type, and viewBox', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/shared/map-east.svg`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /image\/svg\+xml/i);
+    const text = await res.text();
+    assert.ok(text.includes('viewBox="0 0 2420.04 1386.29"'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /shared/facility-map-check.html returns 200 and html content', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /^text\/html;\s*charset=utf-8/i);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /shared/missing.svg returns 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/shared/missing.svg`);
     assert.equal(res.status, 404);
   } finally {
     await close();
