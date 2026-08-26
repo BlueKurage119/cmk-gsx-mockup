@@ -733,18 +733,18 @@
       color: inherit;
     }
 
-    /* 申請中設備アイコン点滅アニメーション（現在色 ↔ 新色） */
+    /* 申請中設備アイコン点滅アニメーション（現在色 ↔ 新色: 1秒ごと切替） */
     @keyframes icon-pending-blink {
-      0%, 100% {
+      0%, 49.9% {
         fill: var(--color-current, #D93025);
       }
-      50% {
+      50%, 100% {
         fill: var(--color-requested, #34A853);
       }
     }
 
     .facility-icon-pending {
-      animation: icon-pending-blink 1.2s infinite ease-in-out;
+      animation: icon-pending-blink 2s infinite step-end;
     }
 
     /* 変更申請 内容確認モーダル */
@@ -1265,7 +1265,7 @@
       return audioCtx;
     }
 
-    function playBeep(freq = 880, durationMs = 100) {
+    function playBeep(freq = 750, durationMs = 400) {
       try {
         const ctx = getAudioContext();
         if (!ctx) return;
@@ -1273,7 +1273,8 @@
         const gain = ctx.createGain();
         osc.type = 'square';
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime + (durationMs - 40) / 1000);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -1286,12 +1287,10 @@
 
     function startBuzzerSound() {
       if (buzzerIntervalId) return;
-      playBeep(880, 90);
-      setTimeout(() => playBeep(880, 90), 140);
+      playBeep(750, 400);
       buzzerIntervalId = setInterval(() => {
-        playBeep(880, 90);
-        setTimeout(() => playBeep(880, 90), 140);
-      }, 1500);
+        playBeep(750, 400);
+      }, 900);
     }
 
     function stopBuzzerSound() {
