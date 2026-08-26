@@ -1,6 +1,7 @@
 const express = require('express');
 const { registerTerminalRoutes } = require('./src/routes/terminal-pages');
 const { registerFacilityRoutes } = require('./src/routes/facility-api');
+const { registerRequestRoutes } = require('./src/routes/request-api');
 const { registerSharedRoutes } = require('./src/routes/shared-assets');
 
 function createApp() {
@@ -14,6 +15,7 @@ function createApp() {
 
   registerTerminalRoutes(app);
   registerFacilityRoutes(app);
+  registerRequestRoutes(app);
   registerSharedRoutes(app);
 
   return app;

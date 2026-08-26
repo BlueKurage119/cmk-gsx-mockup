@@ -2,9 +2,11 @@ const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { createApp, startServer } = require('../server');
 const { resetFacilities } = require('../src/state/facilities');
+const { resetRequests } = require('../src/state/requests');
 
 beforeEach(() => {
   resetFacilities();
+  resetRequests();
 });
 
 async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
@@ -307,6 +309,160 @@ test('PUT /api/facilities/batch with non-existent id returns 404', async () => {
   }
 });
 
+test('POST /api/requests creates pending request and returns 201', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        facilityId: 'higashi2-gate',
+        requestedState: 'open',
+        note: '開門確認',
+        applicant: '東地区外警1',
+      }),
+    });
+    assert.equal(res.status, 201);
+    assert.match(res.headers.get('content-type'), /^application\/json/i);
+    const data = await res.json();
+    assert.equal(data.id, 'req-1');
+    assert.equal(data.facilityId, 'higashi2-gate');
+    assert.equal(data.facilityName, '東2ゲート');
+    assert.equal(data.requestedState, 'open');
+    assert.equal(data.previousState, 'closed');
+    assert.equal(data.status, 'pending');
+    assert.equal(data.note, '開門確認');
+    assert.equal(data.applicant, '東地区外警1');
+
+    // Verify GET /api/requests includes this request
+    const listRes = await fetch(`${baseUrl}/api/requests?status=pending`);
+    const list = await listRes.json();
+    assert.equal(list.length, 1);
+    assert.equal(list[0].id, 'req-1');
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests with invalid requestedState returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        facilityId: 'higashi2-gate',
+        requestedState: 'invalid_state',
+      }),
+    });
+    assert.equal(res.status, 400);
+    const data = await res.json();
+    assert.ok(data.error);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests with missing body or facilityId returns 400', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const resEmpty = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(resEmpty.status, 400);
+
+    const resNoState = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate' }),
+    });
+    assert.equal(resNoState.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests for non-existent facility returns 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        facilityId: 'non-existent-facility',
+        requestedState: 'open',
+      }),
+    });
+    assert.equal(res.status, 404);
+    const data = await res.json();
+    assert.ok(data.error);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/requests and GET /api/requests/:id return requests and handle 404', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-gate', requestedState: 'closed' }),
+    });
+
+    const listRes = await fetch(`${baseUrl}/api/requests`);
+    assert.equal(listRes.status, 200);
+    const list = await listRes.json();
+    assert.equal(list.length, 1);
+    assert.equal(list[0].id, 'req-1');
+
+    const singleRes = await fetch(`${baseUrl}/api/requests/req-1`);
+    assert.equal(singleRes.status, 200);
+    const item = await singleRes.json();
+    assert.equal(item.id, 'req-1');
+
+    const notFoundRes = await fetch(`${baseUrl}/api/requests/req-999`);
+    assert.equal(notFoundRes.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('DELETE /api/requests/:id cancels pending request, returns 404 for unknown, and 409 for already cancelled', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate', requestedState: 'open' }),
+    });
+
+    // Cancel existing
+    const deleteRes = await fetch(`${baseUrl}/api/requests/req-1`, { method: 'DELETE' });
+    assert.equal(deleteRes.status, 200);
+    const deleteData = await deleteRes.json();
+    assert.equal(deleteData.success, true);
+    assert.equal(deleteData.request.status, 'cancelled');
+
+    // GET /api/requests?status=pending should now be empty
+    const pendingRes = await fetch(`${baseUrl}/api/requests?status=pending`);
+    const pendingList = await pendingRes.json();
+    assert.equal(pendingList.length, 0);
+
+    // Cancel again returns 409
+    const againRes = await fetch(`${baseUrl}/api/requests/req-1`, { method: 'DELETE' });
+    assert.equal(againRes.status, 409);
+
+    // Unknown ID returns 404
+    const notFoundRes = await fetch(`${baseUrl}/api/requests/req-999`, { method: 'DELETE' });
+    assert.equal(notFoundRes.status, 404);
+  } finally {
+    await close();
+  }
+});
+
 test('GET /api/not-found returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
@@ -479,7 +635,7 @@ test('GET /h body includes all 8 hall names and 4 place names', async () => {
   }
 });
 
-test('GET /m directly returns 200 without redirect and serves M terminal page with 2-pane layout, simplified header, summary section, and zoom modal', async () => {
+test('GET /m directly returns 200 without redirect and serves M terminal page with 2-pane layout, request modal, and facility input view', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`, { redirect: 'manual' });
@@ -504,6 +660,13 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
     assert.ok(text.includes('設備入力'));
     assert.ok(text.includes('非常通報'));
     assert.ok(text.includes('故障申告'));
+    assert.ok(text.includes('pane-facility-input'));
+    assert.ok(text.includes('filter-chip-bar'));
+    assert.ok(text.includes('facility-list-container'));
+    assert.ok(text.includes('request-modal'));
+    assert.ok(text.includes('btn-submit-request'));
+    assert.ok(text.includes('cancel-confirm-modal'));
+    assert.ok(text.includes('toast-notification'));
     assert.ok(!text.includes('current-datetime'));
     assert.ok(!text.includes('H端末（指揮所用）'));
   } finally {
@@ -511,7 +674,7 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
   }
 });
 
-test('GET /m body includes all 8 hall names, 4 place names, facility fetch logic, and 3s polling sync', async () => {
+test('GET /m body includes all 8 hall names, 4 place names, facility & request fetch logic, and 3s polling sync', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`);
@@ -524,9 +687,11 @@ test('GET /m body includes all 8 hall names, 4 place names, facility fetch logic
     }
     assert.ok(body.includes('/shared/map-east.svg'), 'M terminal should fetch map SVG');
     assert.ok(body.includes('/api/facilities'), 'M terminal should fetch facilities API');
+    assert.ok(body.includes('/api/requests'), 'M terminal should fetch requests API');
     assert.ok(body.includes('POLL_INTERVAL_MS = 3000'), 'M terminal should define 3s polling interval');
     assert.ok(body.includes('updateFacilityColors'), 'M terminal should have diff color updater');
     assert.ok(body.includes('pollFacilities'), 'M terminal should have periodic polling function');
+    assert.ok(body.includes('renderFacilityList'), 'M terminal should have facility list renderer');
   } finally {
     await close();
   }
