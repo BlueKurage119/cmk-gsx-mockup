@@ -557,3 +557,491 @@ html, body {
   min-width: 44px;
   text-align: center;
 }
+
+/* ====================================================
+   画面ペイン切り替え（概況表示 ⇄ 設備入力）
+   ==================================================== */
+.view-pane {
+  display: none;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.view-pane.active {
+  display: flex;
+}
+
+/* ====================================================
+   設備入力（申請）画面
+   ==================================================== */
+.facility-input-dashboard {
+  flex-direction: column;
+  height: calc(100vh - 48px - 60px);
+  height: calc(100dvh - 48px - 60px);
+  background-color: var(--bg-dark);
+}
+
+/* エリア・ホールフィルターチップ */
+.filter-chip-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background-color: var(--surface-dark);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-chip-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.filter-chip.active {
+  background: var(--active-bg);
+  border-color: var(--active-blue);
+  color: var(--active-blue);
+  font-weight: 600;
+}
+
+/* 設備一覧スクロールエリア */
+.facility-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.facility-list-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  font-weight: 500;
+}
+
+/* 設備カード */
+.facility-card {
+  background-color: var(--surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.15s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.facility-card.is-pending {
+  border-color: var(--color-restricted);
+  background-color: rgba(251, 188, 4, 0.05);
+}
+
+.facility-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.facility-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.facility-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.facility-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.facility-card-state-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.facility-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ボタン */
+.btn-request {
+  background-color: var(--gcp-blue);
+  color: #ffffff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s;
+}
+
+.btn-request:active {
+  background-color: #1557b0;
+}
+
+.pending-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background-color: rgba(251, 188, 4, 0.2);
+  color: #fdd663;
+  border: 1px solid #fbbc04;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: pending-pulse 2s infinite ease-in-out;
+}
+
+@keyframes pending-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.98); }
+}
+
+.btn-cancel-req {
+  background: transparent;
+  border: 1px solid var(--danger-red);
+  color: #f28b82;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-cancel-req:active {
+  background-color: rgba(234, 67, 53, 0.15);
+}
+
+/* ====================================================
+   申請モーダル（ボトムシート）
+   ==================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.bottom-sheet {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--surface-dark);
+  border-top: 1px solid var(--border-color);
+  border-radius: 16px 16px 0 0;
+  padding: 20px 20px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.8);
+  animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sheet-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 50%;
+}
+
+.sheet-current-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-card);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.sheet-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.state-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.state-option-btn {
+  background: var(--surface-card);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.state-option-btn.opt-open { border-color: rgba(52, 168, 83, 0.5); color: #81c995; }
+.state-option-btn.opt-closed { border-color: rgba(234, 67, 53, 0.5); color: #f28b82; }
+.state-option-btn.opt-restricted { border-color: rgba(251, 188, 4, 0.5); color: #fdd663; }
+
+.state-option-btn.selected.opt-open {
+  background: var(--color-open);
+  border-color: #81c995;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(52, 168, 83, 0.6);
+}
+
+.state-option-btn.selected.opt-closed {
+  background: var(--color-closed);
+  border-color: #f28b82;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(234, 67, 53, 0.6);
+}
+
+.state-option-btn.selected.opt-restricted {
+  background: var(--color-restricted);
+  border-color: #fdd663;
+  color: #202124;
+  box-shadow: 0 0 12px rgba(251, 188, 4, 0.6);
+}
+
+.sheet-note-input {
+  width: 100%;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+}
+
+.sheet-note-input:focus {
+  border-color: var(--active-blue);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btn-sheet-secondary {
+  flex: 1;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-sheet-primary {
+  flex: 2;
+  background: var(--gcp-blue);
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.btn-sheet-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ====================================================
+   確認ダイアログ（取消モーダル）
+   ==================================================== */
+.dialog-card {
+  width: 90%;
+  max-width: 380px;
+  background-color: var(--surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  margin: auto;
+}
+
+.dialog-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dialog-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-dialog-cancel {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-dialog-danger {
+  background: var(--danger-red);
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ====================================================
+   トースト通知
+   ==================================================== */
+.toast-notification {
+  position: fixed;
+  top: 56px;
+  left: 16px;
+  right: 16px;
+  background-color: var(--surface-card);
+  border: 1px solid var(--active-blue);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 300;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  transform: translateY(-20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-notification.active {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toast-notification.success {
+  border-color: var(--color-open);
+  background-color: rgba(52, 168, 83, 0.92);
+}
+
+.toast-notification.error {
+  border-color: var(--danger-red);
+  background-color: rgba(234, 67, 53, 0.92);
+}
+

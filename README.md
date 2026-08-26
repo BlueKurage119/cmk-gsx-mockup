@@ -42,7 +42,9 @@ PORT=18080 npm start
     - **設備入力画面**: 全30件の設備台帳テーブル、ホール別・種別・状態別の絞り込みフィルターバー、複数選択チェックボックス（全選択対応）、一括操作ツールバー（「一括開放」「一括閉鎖」「一括制限」「一括送信」）を備え、指揮所からの効率的な一括点検・一括操作が可能です。
 - **M端末（現場用）**: `http://localhost:8080/m`
   - **レスポンス**: HTMLページ (Content-Type: `text/html; charset=utf-8`)
-  - **ブラウザー確認**: スマートフォン（375px〜428px）に最適化された現場警備用モバイル画面（概況表示）です。上部ヘッダー（画面名称「概況表示」、端末名バッジ「東地区外警1」）、中央メインエリア（上段: 地図プレビューカード、右下拡大アイコン、下段: 現場運用サマリー「開放中・制限中ゲートおよび閉鎖中・制限中シャッターの例外一覧」）、下部ボトムナビゲーションバー（「概況表示」「設備入力」「非常通報」「故障申告」の4項目）が表示されます。地図プレビューをタップすると全画面マップ拡大モーダルが開き、ピンチ/ホイールズームおよびドラッグ移動による詳細確認が可能です。3秒ごとの自動ポーリングにより、H端末等で変更された設備状態がミニマップ・拡大モーダル・要約ペインへリアルタイムに自動反映されます。横スクロールが発生せず、スマートフォン全画面にすっきり収まる設計です。
+  - **ブラウザー確認**: スマートフォン（375px〜428px）に最適化された現場警備用モバイル画面です。上部ヘッダー（画面名称「概況表示」/「設備入力（申請）」、端末名バッジ「東地区外警1」）、下部ボトムナビゲーションバー（「概況表示」「設備入力」「非常通報」「故障申告」の4項目）による画面切り替えに対応しています。
+    - **概況表示画面**: 中央メインエリア（上段: 地図プレビューカード、右下拡大アイコン、下段: 現場運用サマリー「開放中・制限中ゲートおよび閉鎖中・制限中シャッターの例外一覧」）。地図プレビューをタップすると全画面マップ拡大モーダルが開き、ピンチ/ホイールズームおよびドラッグ移動による詳細確認が可能です。3秒ごとの自動ポーリングにより、最新の設備状態がミニマップ・拡大モーダル・要約ペインへリアルタイムに自動反映されます。
+    - **設備入力画面**: エリア・ホール別フィルターチップバー（すべて、東1H〜東8H、外周・共用部）、設備一覧カードリストを表示。各設備の「申請」ボタンから下部スライドアップの申請モーダル（ボトムシート）を開き、希望状態（開放・閉鎖・制限）と備考を入力して指揮所へ申請を送信できます。申請中の設備には「申請中: 〇〇」点滅バッジが表示され、「取消」ボタンから誤送信を取り下げ（キャンセル）可能です。
 - **設備一覧 API**: `http://localhost:8080/api/facilities`
   - **レスポンス**: 設備30件（ゲート7・シャッター22・定点1）の JSON 配列 (Content-Type: `application/json; charset=utf-8`)
   - **状態管理**: 設備状態はサーバープロセスのメモリ上に保持され、サーバー再起動時に初期状態へリセットされます。
@@ -52,6 +54,14 @@ PORT=18080 npm start
 - **設備状態一括更新 API（一括）**: `PUT http://localhost:8080/api/facilities/batch`
   - **リクエスト**: `{"ids": ["higashi1-a-shutter", "higashi1-b-shutter"], "state": "open" | "closed" | "restricted"}` (Content-Type: `application/json`)
   - **レスポンス**: `{"success": true, "updatedCount": 2, "facilities": [...]}` (Content-Type: `application/json; charset=utf-8`)
+- **設備変更申請作成 API**: `POST http://localhost:8080/api/requests`
+  - **リクエスト**: `{"facilityId": "higashi2-gate", "requestedState": "open", "note": "開門確認", "applicant": "東地区外警1"}` (Content-Type: `application/json`)
+  - **レスポンス**: `201 Created`、作成された申請オブジェクト（`status: "pending"`）
+- **設備変更申請一覧取得 API**: `GET http://localhost:8080/api/requests`
+  - **クエリ**: `?status=pending` (任意)
+  - **レスポンス**: `200 OK`、申請オブジェクトの JSON 配列
+- **設備変更申請取り下げ API**: `DELETE http://localhost:8080/api/requests/:id`
+  - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "cancelled", ...}}`
 - **東展示棟マップ SVG**: `http://localhost:8080/shared/map-east.svg`
   - **レスポンス**: SVG画像ファイル (Content-Type: `image/svg+xml`)
 - **設備座標確認マップ**: `http://localhost:8080/shared/facility-map-check.html`
@@ -65,6 +75,9 @@ curl -i http://localhost:8080/m
 curl -i http://localhost:8080/api/facilities
 curl -i -X PUT http://localhost:8080/api/facilities/higashi2-gate -H "Content-Type: application/json" -d '{"state":"closed"}'
 curl -i -X PUT http://localhost:8080/api/facilities/batch -H "Content-Type: application/json" -d '{"ids":["higashi1-a-shutter","higashi1-b-shutter"],"state":"open"}'
+curl -i -X POST http://localhost:8080/api/requests -H "Content-Type: application/json" -d '{"facilityId":"higashi2-gate","requestedState":"open","note":"開門確認","applicant":"東地区外警1"}'
+curl -i http://localhost:8080/api/requests?status=pending
+curl -i -X DELETE http://localhost:8080/api/requests/req-1
 curl -i http://localhost:8080/shared/map-east.svg
 curl -i http://localhost:8080/shared/facility-map-check.html
 ```
