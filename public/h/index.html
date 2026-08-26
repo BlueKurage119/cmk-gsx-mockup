@@ -170,95 +170,146 @@
       position: relative;
     }
 
-    /* 上部ツールバー */
+    /* 下部操作ツールバー（通知領域の上） */
     .toolbar {
-      height: 44px;
+      height: 52px;
       background-color: var(--surface-dark);
-      border-bottom: 1px solid var(--border-color);
+      border-top: 1px solid var(--border-color);
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      justify-content: space-between;
+      padding: 0 20px;
       flex-shrink: 0;
+      z-index: 10;
     }
 
     .toolbar-group {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .toolbar-divider {
-      width: 1px;
-      height: 20px;
-      background-color: var(--border-color);
-      margin: 0 4px;
+      gap: 10px;
     }
 
     .toolbar-btn {
-      min-width: 68px;
-      height: 28px;
-      padding: 0 12px;
-      font-size: 12px;
-      font-weight: 500;
+      min-width: 80px;
+      height: 36px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
       font-family: inherit;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.15s ease;
-      border: 1px solid var(--btn-outlined-border);
-      background-color: transparent;
-      color: var(--text-secondary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
 
-    .toolbar-btn:hover:not(:disabled) {
-      background-color: rgba(255, 255, 255, 0.08);
-      border-color: #8ab4f8;
-      color: #ffffff;
-    }
-
-    .toolbar-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      border-color: #484b50;
-      color: #80868b;
+    /* 状態ボタン（最初から色枠線を表示） */
+    .status-btn[data-state="open"] {
+      border: 1.5px solid var(--color-open);
+      color: #81c995;
       background-color: transparent;
     }
 
-    /* 状態ボタンの選択中スタイル */
+    .status-btn[data-state="open"]:hover:not(:disabled) {
+      background-color: rgba(52, 168, 83, 0.15);
+      color: #ffffff;
+    }
+
     .status-btn.selected[data-state="open"] {
-      background-color: rgba(52, 168, 83, 0.2);
+      background-color: var(--color-open);
       border-color: var(--color-open);
-      color: var(--color-open);
+      color: #ffffff;
       font-weight: 700;
-      box-shadow: 0 0 6px rgba(52, 168, 83, 0.35);
+      box-shadow: 0 0 10px rgba(52, 168, 83, 0.5);
+    }
+
+    .status-btn[data-state="open"]:disabled {
+      border-color: rgba(52, 168, 83, 0.35);
+      color: rgba(129, 201, 149, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-btn[data-state="closed"] {
+      border: 1.5px solid var(--color-closed);
+      color: #f28b82;
+      background-color: transparent;
+    }
+
+    .status-btn[data-state="closed"]:hover:not(:disabled) {
+      background-color: rgba(234, 67, 53, 0.15);
+      color: #ffffff;
     }
 
     .status-btn.selected[data-state="closed"] {
-      background-color: rgba(234, 67, 53, 0.2);
+      background-color: var(--color-closed);
       border-color: var(--color-closed);
-      color: var(--color-closed);
+      color: #ffffff;
       font-weight: 700;
-      box-shadow: 0 0 6px rgba(234, 67, 53, 0.35);
+      box-shadow: 0 0 10px rgba(234, 67, 53, 0.5);
+    }
+
+    .status-btn[data-state="closed"]:disabled {
+      border-color: rgba(234, 67, 53, 0.35);
+      color: rgba(242, 139, 130, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-btn[data-state="restricted"] {
+      border: 1.5px solid var(--color-restricted);
+      color: #fdd663;
+      background-color: transparent;
+    }
+
+    .status-btn[data-state="restricted"]:hover:not(:disabled) {
+      background-color: rgba(251, 188, 4, 0.15);
+      color: #ffffff;
     }
 
     .status-btn.selected[data-state="restricted"] {
-      background-color: rgba(251, 188, 4, 0.2);
+      background-color: var(--color-restricted);
       border-color: var(--color-restricted);
-      color: var(--color-restricted);
+      color: #202124;
       font-weight: 700;
-      box-shadow: 0 0 6px rgba(251, 188, 4, 0.35);
+      box-shadow: 0 0 10px rgba(251, 188, 4, 0.5);
     }
 
-    /* アクションボタン（送信・取消） */
-    .action-btn-submit:not(:disabled) {
+    .status-btn[data-state="restricted"]:disabled {
+      border-color: rgba(251, 188, 4, 0.35);
+      color: rgba(253, 214, 99, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* 送信・選択解除アクションボタン */
+    @keyframes submit-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.7);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 14px 4px rgba(138, 180, 248, 0.85);
+        transform: scale(1.03);
+      }
+    }
+
+    .action-btn-submit {
+      border: 1px solid var(--btn-outlined-border);
+      background-color: transparent;
+      color: var(--text-muted);
+    }
+
+    .action-btn-submit.ready-to-submit:not(:disabled) {
       background-color: var(--gcp-blue);
-      border-color: var(--gcp-blue);
+      border-color: var(--active-blue);
       color: #ffffff;
-      font-weight: 600;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      font-weight: 700;
+      animation: submit-pulse 1.2s infinite ease-in-out;
     }
 
     .action-btn-submit:hover:not(:disabled) {
@@ -266,9 +317,25 @@
       border-color: #1b66ca;
     }
 
-    .action-btn-cancel:not(:disabled) {
-      border-color: var(--btn-outlined-border);
-      color: #dadce0;
+    .action-btn-cancel {
+      border: 1px solid var(--btn-outlined-border);
+      background-color: transparent;
+      color: var(--text-secondary);
+    }
+
+    .action-btn-cancel:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      border-color: #dadce0;
+    }
+
+    .action-btn-cancel:disabled,
+    .action-btn-submit:disabled:not(.ready-to-submit) {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: #484b50;
+      color: #80868b;
+      background-color: transparent;
     }
 
     /* エラーバナー */
@@ -472,26 +539,25 @@
 
       <!-- メインコンテンツ -->
       <main class="main-content">
-        <!-- 上部ツールバー -->
-        <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー">
-          <div class="toolbar-group status-buttons">
-            <button type="button" class="toolbar-btn status-btn" id="btn-status-open" data-state="open" disabled>開放</button>
-            <button type="button" class="toolbar-btn status-btn" id="btn-status-closed" data-state="closed" disabled>閉鎖</button>
-            <button type="button" class="toolbar-btn status-btn" id="btn-status-restricted" data-state="restricted" disabled>制限</button>
-          </div>
-          <div class="toolbar-divider"></div>
-          <div class="toolbar-group action-buttons">
-            <button type="button" class="toolbar-btn action-btn-submit" id="btn-submit-status" disabled>送信</button>
-            <button type="button" class="toolbar-btn action-btn-cancel" id="btn-cancel-selection" disabled>取消</button>
-          </div>
-        </div>
-
         <!-- 通信エラー表示 -->
         <div id="error-container"></div>
 
         <!-- マップ表示領域 -->
         <div class="map-wrapper" id="map-wrapper">
           <div id="map-container"></div>
+        </div>
+
+        <!-- 下部操作ツールバー（通知領域の上） -->
+        <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー">
+          <div class="toolbar-group status-buttons">
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-open" data-state="open" disabled>開放</button>
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-closed" data-state="closed" disabled>閉鎖</button>
+            <button type="button" class="toolbar-btn status-btn" id="btn-status-restricted" data-state="restricted" disabled>制限</button>
+          </div>
+          <div class="toolbar-group action-buttons">
+            <button type="button" class="toolbar-btn action-btn-cancel" id="btn-cancel-selection" disabled>選択解除</button>
+            <button type="button" class="toolbar-btn action-btn-submit" id="btn-submit-status" disabled>送信</button>
+          </div>
         </div>
 
         <!-- 下部通知領域 -->
@@ -705,6 +771,7 @@
           btn.classList.remove('selected');
         });
         submitBtn.disabled = true;
+        submitBtn.classList.remove('ready-to-submit');
         cancelBtn.disabled = true;
         setNotification('状態を変更する設備を選択してください', 'default');
         renderSelectionRing(null);
@@ -725,10 +792,16 @@
       if (!currentSelection.targetState) {
         // Step 1: 状態未選択
         submitBtn.disabled = true;
+        submitBtn.classList.remove('ready-to-submit');
         setNotification(`<span class="notification-highlight">${escapeHtml(currentSelection.facility.name)}:</span> 状態を選択してください`, 'active');
       } else {
         // Step 2: 状態選択済み
         submitBtn.disabled = isSubmitting;
+        if (!isSubmitting) {
+          submitBtn.classList.add('ready-to-submit');
+        } else {
+          submitBtn.classList.remove('ready-to-submit');
+        }
         const stateText = STATE_LABELS[currentSelection.targetState] || currentSelection.targetState;
         setNotification(`<span class="notification-highlight">${escapeHtml(currentSelection.facility.name)}／${escapeHtml(stateText)}:</span> 送信をクリックして変更を反映させてください`, 'active');
       }
@@ -870,7 +943,7 @@
           text.setAttribute('y', String(hall.y));
           text.setAttribute('text-anchor', 'middle');
           text.setAttribute('dominant-baseline', 'middle');
-          text.setAttribute('font-size', '56');
+          text.setAttribute('font-size', '48');
           text.setAttribute('font-weight', 'bold');
           text.setAttribute('font-family', 'sans-serif');
           text.setAttribute('fill', '#E8EAED');
@@ -884,7 +957,7 @@
           text.setAttribute('y', String(place.y));
           text.setAttribute('text-anchor', 'middle');
           text.setAttribute('dominant-baseline', 'middle');
-          text.setAttribute('font-size', '32');
+          text.setAttribute('font-size', '26');
           text.setAttribute('font-style', 'italic');
           text.setAttribute('font-family', 'sans-serif');
           text.setAttribute('fill', '#8AB4F8');
@@ -942,7 +1015,7 @@
             text.setAttribute('x', String(facility.x + config.dx));
             text.setAttribute('y', String(facility.y + config.dy));
             text.setAttribute('text-anchor', config.textAnchor);
-            text.setAttribute('font-size', '36');
+            text.setAttribute('font-size', '28');
             text.setAttribute('fill', '#FFFFFF');
             text.setAttribute('font-family', 'sans-serif');
             text.textContent = facility.name;
