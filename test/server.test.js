@@ -611,8 +611,19 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.ok(text.includes('詳細'));
     assert.ok(text.includes('はい'));
     assert.ok(text.includes('いいえ'));
+    assert.ok(text.includes('header-buzzer-blink'));
+    assert.ok(text.includes('alarm-active'));
+    assert.ok(text.includes('stopBuzzer'));
+    assert.ok(text.includes('F8'));
+    assert.ok(text.includes('request-detail-modal'));
+    assert.ok(text.includes('btn-close-request-detail'));
+    assert.ok(text.includes('btn-modal-dismiss'));
+    assert.ok(text.includes('updateNotificationArea'));
+    assert.ok(text.includes('pollFacilitiesAndRequests'));
+    assert.ok(text.includes('POLL_INTERVAL_MS = 3000'));
     assert.ok(text.includes('/shared/map-east.svg'));
     assert.ok(text.includes('/api/facilities'));
+    assert.ok(text.includes('/api/requests?status=pending'));
     assert.ok(!text.includes('M端末（現場用）'));
   } finally {
     await close();
@@ -630,6 +641,38 @@ test('GET /h body includes all 8 hall names and 4 place names', async () => {
     for (const placeName of EXPECTED_PLACE_NAMES) {
       assert.ok(body.includes(placeName), `H terminal should include place name: ${placeName}`);
     }
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes notification area controls, buzzer alarm animation, F8 stop handler, and request detail modal markup', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+
+    // Notification area and buttons
+    assert.ok(text.includes('id="notification-area"'));
+    assert.ok(text.includes('id="btn-detail"'));
+    assert.ok(text.includes('id="btn-yes"'));
+    assert.ok(text.includes('id="btn-no"'));
+    assert.ok(text.includes('設備状態変更:'));
+
+    // Buzzer stop logic and F8 key binding
+    assert.ok(text.includes('header-buzzer-blink'));
+    assert.ok(text.includes('alarm-active'));
+    assert.ok(text.includes('stopBuzzer()'));
+    assert.ok(text.includes("e.key === 'F8'"));
+
+    // Request detail modal
+    assert.ok(text.includes('id="request-detail-modal"'));
+    assert.ok(text.includes('id="request-detail-body"'));
+    assert.ok(text.includes('id="btn-close-request-detail"'));
+    assert.ok(text.includes('id="btn-modal-dismiss"'));
+    assert.ok(text.includes('設備状態変更 申請内容'));
+    assert.ok(text.includes('openRequestDetailModal'));
+    assert.ok(text.includes('closeRequestDetailModal'));
   } finally {
     await close();
   }
