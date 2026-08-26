@@ -160,6 +160,19 @@
 
     const DEFAULT_LABEL_CONFIG = { dx: 0, dy: -46, textAnchor: 'middle' };
 
+    // ホール名（東1H〜東8H）。設備ではなく状態を持たない静的な地図情報のため、
+    // GET /api/facilities には含めず、このページ内の定数として持つ。
+    const HALL_LABELS = [
+      { name: '東1H', x: 1952, y: 403 },
+      { name: '東2H', x: 1551, y: 403 },
+      { name: '東3H', x: 1149, y: 403 },
+      { name: '東4H', x: 1756, y: 1009 },
+      { name: '東5H', x: 1355, y: 1009 },
+      { name: '東6H', x: 953, y: 1009 },
+      { name: '東7H', x: 427, y: 1053 },
+      { name: '東8H', x: 651, y: 560 },
+    ];
+
     // ガレリア（中央通路）側シャッターの id/name は内部管理名称であり、地図上には表示しない。
     // PoC第2弾で階段・エスカレーター等が増えた際にラベルが密集するのを避けるため。
     const HIDDEN_LABEL_IDS = new Set([
@@ -205,6 +218,29 @@
           showError('Invalid SVG: svg root element not found');
           return;
         }
+
+        // hall-label-layer の作成と追加（ホール名。facility-layer より先に描画する）
+        const hallLabelLayer = document.createElementNS(SVG_NS, 'g');
+        hallLabelLayer.setAttribute('id', 'hall-label-layer');
+
+        HALL_LABELS.forEach((hall) => {
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', String(hall.x));
+          text.setAttribute('y', String(hall.y));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.setAttribute('font-size', '56');
+          text.setAttribute('font-weight', 'bold');
+          text.setAttribute('font-family', 'sans-serif');
+          text.setAttribute('fill', '#4B5563');
+          text.setAttribute('stroke', '#FFFFFF');
+          text.setAttribute('stroke-width', '8');
+          text.setAttribute('paint-order', 'stroke');
+          text.textContent = hall.name;
+          hallLabelLayer.appendChild(text);
+        });
+
+        svgElement.appendChild(hallLabelLayer);
 
         // facility-layer の作成と追加
         const facilityLayer = document.createElementNS(SVG_NS, 'g');

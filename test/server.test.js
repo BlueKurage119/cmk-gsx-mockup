@@ -151,6 +151,21 @@ test('GET /shared/facility-map-check.html returns 200 and html content', async (
   }
 });
 
+const EXPECTED_HALL_NAMES = ['東1H', '東2H', '東3H', '東4H', '東5H', '東6H', '東7H', '東8H'];
+
+test('GET /shared/facility-map-check.html body includes all 8 hall names', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
+    const body = await res.text();
+    for (const hallName of EXPECTED_HALL_NAMES) {
+      assert.ok(body.includes(hallName), `body should include hall name: ${hallName}`);
+    }
+  } finally {
+    await close();
+  }
+});
+
 test('GET /shared/missing.svg returns 404', async () => {
   const { baseUrl, close } = await listenServer();
   try {
