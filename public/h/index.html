@@ -1295,6 +1295,85 @@
       color: #ffffff;
       border-color: #1e8e3e;
     }
+
+    /* ピタネット用スタイル */
+    .toolbar-divider {
+      width: 1px;
+      height: 24px;
+      background-color: var(--border-color);
+      margin: 0 4px;
+    }
+
+    .toolbar-group-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-right: 4px;
+      align-self: center;
+    }
+
+    #map-container.note-mode-cursor,
+    #map-container.note-mode-cursor svg {
+      cursor: crosshair !important;
+    }
+
+    .toolbar-btn.active {
+      background-color: var(--color-primary-dark) !important;
+      color: #ffffff !important;
+      border-color: var(--color-primary) !important;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .note-marker {
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .note-marker:hover {
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+    }
+
+    .note-marker-pending path {
+      stroke-dasharray: 6 4;
+      stroke-width: 3.5;
+    }
+
+    .note-marker-deleted {
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
+
+    .note-status-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .note-status-badge.badge-new {
+      background-color: rgba(26, 115, 232, 0.2);
+      color: #8ab4f8;
+      border: 1px solid #1a73e8;
+    }
+
+    .note-status-badge.badge-edit {
+      background-color: rgba(251, 188, 4, 0.2);
+      color: #fdd663;
+      border: 1px solid #fbbc04;
+    }
+
+    .note-status-badge.badge-delete {
+      background-color: rgba(217, 48, 37, 0.2);
+      color: #f28b82;
+      border: 1px solid #d93025;
+    }
+
+    .note-table-row-deleted {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
   </style>
 </head>
 <body>
@@ -1358,9 +1437,17 @@
           <!-- 下部操作ツールバー（通知領域の上） -->
           <div class="toolbar" id="toolbar" role="toolbar" aria-label="操作ツールバー">
             <div class="toolbar-group status-buttons">
+              <span class="toolbar-group-label">状態入力</span>
               <button type="button" class="toolbar-btn status-btn" id="btn-status-open" data-state="open" disabled>開放</button>
               <button type="button" class="toolbar-btn status-btn" id="btn-status-closed" data-state="closed" disabled>閉鎖</button>
               <button type="button" class="toolbar-btn status-btn" id="btn-status-restricted" data-state="restricted" disabled>制限</button>
+            </div>
+            <div class="toolbar-divider" aria-hidden="true"></div>
+            <div class="toolbar-group note-buttons">
+              <span class="toolbar-group-label">ピタネット</span>
+              <button type="button" class="toolbar-btn" id="btn-note-create-mode">新規作成</button>
+              <button type="button" class="toolbar-btn" id="btn-note-list">ピタ一覧</button>
+              <button type="button" class="toolbar-btn action-btn-submit" id="btn-note-submit" disabled>ピタ送信</button>
             </div>
             <div class="toolbar-group action-buttons">
               <button type="button" class="toolbar-btn action-btn-cancel" id="btn-cancel-selection" disabled>選択解除</button>
@@ -1692,6 +1779,113 @@
     </div>
   </div>
 
+  <!-- ピタネット 新規作成モーダル -->
+  <div class="modal-overlay" id="note-create-modal" role="dialog" aria-modal="true" aria-label="ピタネット新規作成">
+    <div class="modal-card" style="max-width: 480px;">
+      <header class="modal-header">
+        <div class="modal-title">
+          <svg style="width: 18px; height: 18px; fill: #fbbc04;" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <span>ピタネット新規作成</span>
+        </div>
+        <button type="button" class="btn-modal-close" id="btn-close-note-create" aria-label="閉じる">✕</button>
+      </header>
+      <div class="modal-body">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          配置座標: <span id="note-create-coords" style="color: #ffffff; font-family: monospace; font-weight: 700;">(0, 0)</span>
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">表示層（公開範囲）:</label>
+          <div style="display: flex; gap: 12px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+              <input type="radio" name="note-create-layer" value="summary" checked>
+              <span style="color: #fdd663; font-weight: 700;">概要層</span>（現場にも表示）
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+              <input type="radio" name="note-create-layer" value="detail">
+              <span style="color: #bdc1c6; font-weight: 700;">詳細層</span>（指揮所限定）
+            </label>
+          </div>
+        </div>
+        <div>
+          <label for="note-create-text" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">注記本文 <span style="color: #ea4335;">*</span>:</label>
+          <textarea id="note-create-text" rows="4" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #ffffff; border-radius: 6px; padding: 10px; font-size: 14px; line-height: 1.4; resize: vertical;" placeholder="注記や指示内容を入力してください（例: 看板設置済み、警備員待機）"></textarea>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-filled" id="btn-note-create-add" style="font-weight: 700;">追加（未送信）</button>
+        <button type="button" class="btn btn-outlined" id="btn-note-create-cancel">キャンセル</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ピタネット 編集/削除モーダル -->
+  <div class="modal-overlay" id="note-edit-modal" role="dialog" aria-modal="true" aria-label="ピタネット編集">
+    <div class="modal-card" style="max-width: 480px;">
+      <header class="modal-header">
+        <div class="modal-title">
+          <svg style="width: 18px; height: 18px; fill: #fbbc04;" viewBox="0 0 24 24">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+          <span>ピタネット注記の確認・編集</span>
+        </div>
+        <button type="button" class="btn-modal-close" id="btn-close-note-edit" aria-label="閉じる">✕</button>
+      </header>
+      <div class="modal-body">
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
+          <span>座標: <span id="note-edit-coords" style="color: #ffffff; font-family: monospace;">-</span></span>
+          <span>作成者: <span id="note-edit-author" style="color: #ffffff;">-</span></span>
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">表示層（公開範囲）:</label>
+          <div style="display: flex; gap: 12px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+              <input type="radio" name="note-edit-layer" value="summary">
+              <span style="color: #fdd663; font-weight: 700;">概要層</span>（現場にも表示）
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+              <input type="radio" name="note-edit-layer" value="detail">
+              <span style="color: #bdc1c6; font-weight: 700;">詳細層</span>（指揮所限定）
+            </label>
+          </div>
+        </div>
+        <div>
+          <label for="note-edit-text" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">注記本文 <span style="color: #ea4335;">*</span>:</label>
+          <textarea id="note-edit-text" rows="4" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #ffffff; border-radius: 6px; padding: 10px; font-size: 14px; line-height: 1.4; resize: vertical;"></textarea>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-filled" id="btn-note-edit-save" style="font-weight: 700;">変更を保存（未送信）</button>
+        <button type="button" class="btn btn-outlined" id="btn-note-edit-delete" style="color: #f28b82; border-color: #d93025;">削除予定にする</button>
+        <button type="button" class="btn btn-outlined" id="btn-note-edit-close">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ピタネット一覧モーダルダイアログ -->
+  <div class="modal-overlay" id="note-list-modal" role="dialog" aria-modal="true" aria-label="ピタネット一覧">
+    <div class="modal-card" style="max-width: 900px; width: 90%;">
+      <header class="modal-header">
+        <div class="modal-title">
+          <svg style="width: 20px; height: 20px; fill: #fbbc04;" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          <span>ピタネット一覧</span>
+        </div>
+        <button type="button" class="btn-modal-close" id="btn-close-note-list" aria-label="閉じる">✕</button>
+      </header>
+      <div class="modal-body" id="note-list-body" style="max-height: 500px; overflow-y: auto; padding: 0;">
+        <!-- renderNoteListModal() で動的にテーブル描画 -->
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-outlined" id="btn-note-discard">変更を破棄</button>
+        <button type="button" class="btn btn-approve" id="btn-note-list-submit" style="background-color: #1a73e8; color: #ffffff; font-weight: 700; border: none;" disabled>ピタ送信</button>
+        <button type="button" class="btn btn-outlined" id="btn-note-list-close">閉じる</button>
+      </footer>
+    </div>
+  </div>
+
   <script>
     const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -1807,6 +2001,16 @@
     const buzzerAcknowledgedReqIds = new Set();
     const POLL_INTERVAL_MS = 3000;
     let isProcessingRequest = false;
+
+    // ピタネット（付箋注記）状態管理
+    let isNoteCreateMode = false;
+    let confirmedNotes = []; // GET /api/notes のサーバー確定分
+    let pendingCreates = []; // [{ tempId, x, y, layer, text, author, createdAt }]
+    let pendingUpdates = new Map(); // id -> { text?, layer? }
+    let pendingDeletes = new Set(); // id の集合
+    let nextTempNoteId = 1;
+    let pendingCreateCoords = { x: 0, y: 0 };
+    let activeEditNoteId = null;
 
     // Web Audio API による電子音合成
     let audioCtx = null;
@@ -2863,6 +3067,492 @@
       });
     }
 
+    // =========================================================================
+    // Issue #69: ピタネット（付箋注記）機能
+    // =========================================================================
+
+    // 座標変換関数 (Screen -> SVG)
+    function getMapCoordinatesFromEvent(svgElement, evt) {
+      const pt = svgElement.createSVGPoint();
+      pt.x = evt.clientX;
+      pt.y = evt.clientY;
+      const ctm = svgElement.getScreenCTM();
+      if (!ctm) return null;
+      const svgPt = pt.matrixTransform(ctm.inverse());
+      return { x: Math.round(svgPt.x), y: Math.round(svgPt.y) };
+    }
+
+    // モード切り替え
+    function toggleNoteCreateMode() {
+      isNoteCreateMode = !isNoteCreateMode;
+      const btn = document.getElementById('btn-note-create-mode');
+      const container = document.getElementById('map-container');
+      if (btn) btn.classList.toggle('active', isNoteCreateMode);
+      if (container) container.classList.toggle('note-mode-cursor', isNoteCreateMode);
+      if (isNoteCreateMode) {
+        clearSelection();
+        setAlertNotification('ピタネット新規作成モード: マップ上の任意の地点をクリックしてください', 'info', 3000);
+      }
+    }
+
+    // 送信ボタンの有効・無効 & カウント表示
+    function updateNoteSubmitButtonState() {
+      const totalPending = pendingCreates.length + pendingUpdates.size + pendingDeletes.size;
+      const btnSubmit = document.getElementById('btn-note-submit');
+      const btnListSubmit = document.getElementById('btn-note-list-submit');
+      const hasPending = totalPending > 0;
+
+      if (btnSubmit) {
+        btnSubmit.disabled = !hasPending || isConnectionError;
+        btnSubmit.textContent = hasPending ? `ピタ送信 (${totalPending})` : 'ピタ送信';
+      }
+      if (btnListSubmit) {
+        btnListSubmit.disabled = !hasPending || isConnectionError;
+        btnListSubmit.textContent = hasPending ? `ピタ送信 (${totalPending})` : 'ピタ送信';
+      }
+    }
+
+    // 新規作成モーダル
+    function openNoteCreateModal(x, y) {
+      pendingCreateCoords = { x, y };
+      const modal = document.getElementById('note-create-modal');
+      const coordsElem = document.getElementById('note-create-coords');
+      const textInput = document.getElementById('note-create-text');
+      const defaultRadio = document.querySelector('input[name="note-create-layer"][value="summary"]');
+      if (coordsElem) coordsElem.textContent = `(${x}, ${y})`;
+      if (textInput) {
+        textInput.value = '';
+        setTimeout(() => textInput.focus(), 50);
+      }
+      if (defaultRadio) defaultRadio.checked = true;
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeNoteCreateModal() {
+      const modal = document.getElementById('note-create-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function handleAddPendingCreate() {
+      const textInput = document.getElementById('note-create-text');
+      const text = textInput ? textInput.value.trim() : '';
+      if (!text) {
+        setAlertNotification('注記本文を入力してください', 'error', 3000);
+        return;
+      }
+      const selectedRadio = document.querySelector('input[name="note-create-layer"]:checked');
+      const layer = selectedRadio ? selectedRadio.value : 'summary';
+
+      pendingCreates.push({
+        tempId: `tmp-${nextTempNoteId++}`,
+        x: pendingCreateCoords.x,
+        y: pendingCreateCoords.y,
+        layer,
+        text,
+        author: '東地区外務H1',
+        createdAt: Date.now(),
+      });
+
+      closeNoteCreateModal();
+      renderNoteLayer();
+      updateNoteSubmitButtonState();
+      setAlertNotification(`ピタネット注記を仮追加しました（未送信: 計${pendingCreates.length + pendingUpdates.size + pendingDeletes.size}件）`, 'info', 2500);
+    }
+
+    // 編集/削除モーダル
+    function openNoteEditModal(noteId) {
+      activeEditNoteId = noteId;
+      const modal = document.getElementById('note-edit-modal');
+      if (!modal) return;
+
+      let note = pendingCreates.find((n) => n.tempId === noteId);
+      const isTemp = !!note;
+      if (!note) {
+        note = confirmedNotes.find((n) => n.id === noteId);
+      }
+      if (!note) return;
+
+      const patch = pendingUpdates.get(noteId) || {};
+      const currentLayer = patch.layer !== undefined ? patch.layer : note.layer;
+      const currentText = patch.text !== undefined ? patch.text : note.text;
+
+      const coordsElem = document.getElementById('note-edit-coords');
+      const authorElem = document.getElementById('note-edit-author');
+      const textInput = document.getElementById('note-edit-text');
+      const deleteBtn = document.getElementById('btn-note-edit-delete');
+
+      if (coordsElem) coordsElem.textContent = `(${note.x}, ${note.y})`;
+      if (authorElem) authorElem.textContent = note.author || '東地区外務H1';
+      if (textInput) {
+        textInput.value = currentText;
+        setTimeout(() => textInput.focus(), 50);
+      }
+
+      const radio = document.querySelector(`input[name="note-edit-layer"][value="${currentLayer}"]`);
+      if (radio) radio.checked = true;
+
+      if (deleteBtn) {
+        if (isTemp) {
+          deleteBtn.textContent = '仮追加を取り消す';
+        } else if (pendingDeletes.has(noteId)) {
+          deleteBtn.textContent = '削除予定を取り消す';
+        } else {
+          deleteBtn.textContent = '削除予定にする';
+        }
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeNoteEditModal() {
+      activeEditNoteId = null;
+      const modal = document.getElementById('note-edit-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function handleSavePendingEdit() {
+      if (!activeEditNoteId) return;
+      const textInput = document.getElementById('note-edit-text');
+      const text = textInput ? textInput.value.trim() : '';
+      if (!text) {
+        setAlertNotification('注記本文を入力してください', 'error', 3000);
+        return;
+      }
+      const selectedRadio = document.querySelector('input[name="note-edit-layer"]:checked');
+      const layer = selectedRadio ? selectedRadio.value : 'summary';
+
+      const tempIdx = pendingCreates.findIndex((n) => n.tempId === activeEditNoteId);
+      if (tempIdx !== -1) {
+        pendingCreates[tempIdx].text = text;
+        pendingCreates[tempIdx].layer = layer;
+      } else {
+        pendingUpdates.set(activeEditNoteId, { text, layer });
+      }
+
+      closeNoteEditModal();
+      renderNoteLayer();
+      if (document.getElementById('note-list-modal')?.classList.contains('active')) {
+        renderNoteListModal();
+      }
+      updateNoteSubmitButtonState();
+      setAlertNotification('ピタネットの変更を仮保存しました（未送信）', 'info', 2000);
+    }
+
+    function handleDeletePendingNote() {
+      if (!activeEditNoteId) return;
+      const tempIdx = pendingCreates.findIndex((n) => n.tempId === activeEditNoteId);
+      if (tempIdx !== -1) {
+        pendingCreates.splice(tempIdx, 1);
+      } else {
+        if (pendingDeletes.has(activeEditNoteId)) {
+          pendingDeletes.delete(activeEditNoteId);
+        } else {
+          pendingDeletes.add(activeEditNoteId);
+        }
+      }
+
+      closeNoteEditModal();
+      renderNoteLayer();
+      if (document.getElementById('note-list-modal')?.classList.contains('active')) {
+        renderNoteListModal();
+      }
+      updateNoteSubmitButtonState();
+    }
+
+    // 付箋レイヤー描画（SVG上）
+    function renderNoteLayer() {
+      const mapContainer = document.getElementById('map-container');
+      if (!mapContainer) return;
+      const svg = mapContainer.querySelector('svg');
+      if (!svg) return;
+
+      let layer = svg.querySelector('#note-layer');
+      if (!layer) {
+        layer = document.createElementNS(SVG_NS, 'g');
+        layer.setAttribute('id', 'note-layer');
+        svg.appendChild(layer);
+      }
+      layer.innerHTML = '';
+
+      // 1. サーバー確定分 (confirmedNotes)
+      confirmedNotes.forEach((note) => {
+        const isDeleted = pendingDeletes.has(note.id);
+        const patch = pendingUpdates.get(note.id) || {};
+        const effectiveLayer = patch.layer !== undefined ? patch.layer : note.layer;
+        const effectiveText = patch.text !== undefined ? patch.text : note.text;
+        const isSummary = effectiveLayer === 'summary';
+        const fillColor = isSummary ? '#FBBC04' : '#9AA0A6';
+
+        const g = document.createElementNS(SVG_NS, 'g');
+        g.setAttribute('class', 'note-marker' + (isDeleted ? ' note-marker-deleted' : '') + (patch.text || patch.layer ? ' note-marker-pending' : ''));
+        g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
+        g.setAttribute('data-note-id', note.id);
+
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
+        path.setAttribute('fill', fillColor);
+        path.setAttribute('stroke', isDeleted ? '#ea4335' : '#1B1B1B');
+        path.setAttribute('stroke-width', '3');
+        g.appendChild(path);
+
+        const innerText = document.createElementNS(SVG_NS, 'text');
+        innerText.setAttribute('x', '0');
+        innerText.setAttribute('y', '-2');
+        innerText.setAttribute('text-anchor', 'middle');
+        innerText.setAttribute('font-size', '14');
+        innerText.setAttribute('font-weight', 'bold');
+        innerText.setAttribute('fill', '#000000');
+        innerText.textContent = isSummary ? '概' : '詳';
+        g.appendChild(innerText);
+
+        const title = document.createElementNS(SVG_NS, 'title');
+        title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${effectiveText} (${note.author || '東地区外務H1'})${isDeleted ? ' 【削除予定】' : (patch.text || patch.layer ? ' 【未送信変更あり】' : '')}`;
+        g.appendChild(title);
+
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isNoteCreateMode) {
+            const coords = getMapCoordinatesFromEvent(svg, e);
+            if (coords) openNoteCreateModal(coords.x, coords.y);
+            return;
+          }
+          openNoteEditModal(note.id);
+        });
+
+        layer.appendChild(g);
+      });
+
+      // 2. ローカル未送信作成分 (pendingCreates)
+      pendingCreates.forEach((note) => {
+        const isSummary = note.layer === 'summary';
+        const fillColor = isSummary ? '#FBBC04' : '#9AA0A6';
+
+        const g = document.createElementNS(SVG_NS, 'g');
+        g.setAttribute('class', 'note-marker note-marker-pending');
+        g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
+        g.setAttribute('data-temp-id', note.tempId);
+
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
+        path.setAttribute('fill', fillColor);
+        path.setAttribute('fill-opacity', '0.85');
+        path.setAttribute('stroke', '#1a73e8');
+        path.setAttribute('stroke-width', '3.5');
+        g.appendChild(path);
+
+        const innerText = document.createElementNS(SVG_NS, 'text');
+        innerText.setAttribute('x', '0');
+        innerText.setAttribute('y', '-2');
+        innerText.setAttribute('text-anchor', 'middle');
+        innerText.setAttribute('font-size', '14');
+        innerText.setAttribute('font-weight', 'bold');
+        innerText.setAttribute('fill', '#000000');
+        innerText.textContent = isSummary ? '概' : '詳';
+        g.appendChild(innerText);
+
+        const title = document.createElementNS(SVG_NS, 'title');
+        title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${note.text} (未送信)`;
+        g.appendChild(title);
+
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isNoteCreateMode) {
+            const coords = getMapCoordinatesFromEvent(svg, e);
+            if (coords) openNoteCreateModal(coords.x, coords.y);
+            return;
+          }
+          openNoteEditModal(note.tempId);
+        });
+
+        layer.appendChild(g);
+      });
+    }
+
+    // 送信 & 破棄処理
+    async function commitPendingNoteChanges() {
+      const totalPending = pendingCreates.length + pendingUpdates.size + pendingDeletes.size;
+      if (totalPending === 0) return;
+
+      try {
+        const body = {
+          creates: pendingCreates.map(({ x, y, layer, text }) => ({ x, y, layer, text })),
+          updates: Array.from(pendingUpdates.entries()).map(([id, patch]) => ({ id, ...patch })),
+          deletes: Array.from(pendingDeletes),
+        };
+
+        const res = await fetch('/api/notes/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.reason || err.error || `HTTP ${res.status}`);
+        }
+
+        pendingCreates = [];
+        pendingUpdates.clear();
+        pendingDeletes.clear();
+
+        // サーバーから最新取得
+        const notesRes = await fetch('/api/notes');
+        if (notesRes.ok) {
+          confirmedNotes = await notesRes.json();
+        }
+
+        renderNoteLayer();
+        if (document.getElementById('note-list-modal')?.classList.contains('active')) {
+          renderNoteListModal();
+        }
+        closeNoteListModal();
+        updateNoteSubmitButtonState();
+        setAlertNotification('ピタネットの変更を一括送信しました', 'success', 3000);
+      } catch (err) {
+        console.error('Commit notes error:', err);
+        setAlertNotification(`ピタネットの送信に失敗しました: ${escapeHtml(err.message)}`, 'error');
+      }
+    }
+
+    function discardPendingNoteChanges() {
+      pendingCreates = [];
+      pendingUpdates.clear();
+      pendingDeletes.clear();
+      renderNoteLayer();
+      if (document.getElementById('note-list-modal')?.classList.contains('active')) {
+        renderNoteListModal();
+      }
+      updateNoteSubmitButtonState();
+      setAlertNotification('ピタネットの未送信変更を破棄しました', 'info', 2000);
+    }
+
+    // ピタネット一覧ダイアログ
+    function openNoteListModal() {
+      renderNoteListModal();
+      const modal = document.getElementById('note-list-modal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeNoteListModal() {
+      const modal = document.getElementById('note-list-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function renderNoteListModal() {
+      const body = document.getElementById('note-list-body');
+      if (!body) return;
+
+      const items = [];
+
+      // 確定済みノート
+      confirmedNotes.forEach((n) => {
+        const isDeleted = pendingDeletes.has(n.id);
+        const patch = pendingUpdates.get(n.id) || {};
+        const effectiveLayer = patch.layer !== undefined ? patch.layer : n.layer;
+        const effectiveText = patch.text !== undefined ? patch.text : n.text;
+
+        let statusBadgeHtml = '<span style="color: var(--text-muted);">-</span>';
+        if (isDeleted) {
+          statusBadgeHtml = '<span class="note-status-badge badge-delete">削除予定(未送信)</span>';
+        } else if (patch.text !== undefined || patch.layer !== undefined) {
+          statusBadgeHtml = '<span class="note-status-badge badge-edit">編集(未送信)</span>';
+        }
+
+        items.push({
+          id: n.id,
+          isTemp: false,
+          x: n.x,
+          y: n.y,
+          layer: effectiveLayer,
+          text: effectiveText,
+          author: n.author || '東地区外務H1',
+          isDeleted,
+          statusBadgeHtml,
+        });
+      });
+
+      // 新規仮作成ノート
+      pendingCreates.forEach((n) => {
+        items.push({
+          id: n.tempId,
+          isTemp: true,
+          x: n.x,
+          y: n.y,
+          layer: n.layer,
+          text: n.text,
+          author: n.author || '東地区外務H1',
+          isDeleted: false,
+          statusBadgeHtml: '<span class="note-status-badge badge-new">新規(未送信)</span>',
+        });
+      });
+
+      if (items.length === 0) {
+        body.innerHTML = '<div style="padding: 32px; text-align: center; color: var(--text-muted); font-size: 14px;">登録されているピタネット注記はありません。「新規作成」からマップ上に追加できます。</div>';
+        return;
+      }
+
+      let html = `
+        <table class="alert-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="width: 90px;">位置 (x, y)</th>
+              <th style="width: 90px;">層</th>
+              <th>注記本文</th>
+              <th style="width: 110px;">作成者</th>
+              <th style="width: 130px;">状態</th>
+              <th style="width: 130px; text-align: center;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      items.forEach((item) => {
+        const isSummary = item.layer === 'summary';
+        const layerBadge = isSummary
+          ? '<span style="color: #fdd663; font-weight: 700; background: rgba(251, 188, 4, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #fbbc04;">概要層</span>'
+          : '<span style="color: #bdc1c6; font-weight: 700; background: rgba(154, 160, 166, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #9aa0a6;">詳細層</span>';
+
+        const rowClass = item.isDeleted ? 'note-table-row-deleted' : '';
+
+        html += `
+          <tr class="${rowClass}">
+            <td style="font-family: monospace; font-size: 12px;">(${item.x}, ${item.y})</td>
+            <td>${layerBadge}</td>
+            <td style="font-size: 13px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</td>
+            <td style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(item.author)}</td>
+            <td>${item.statusBadgeHtml}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-row-action" style="font-size: 11px; padding: 2px 6px; margin-right: 4px;" onclick="openNoteEditModal('${item.id}')">編集</button>
+              <button type="button" class="btn-row-action" style="font-size: 11px; padding: 2px 6px; color: #f28b82;" onclick="handleDeleteFromTable('${item.id}', ${item.isTemp})">${item.isDeleted ? '取消' : '削除'}</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      body.innerHTML = html;
+    }
+
+    function handleDeleteFromTable(noteId, isTemp) {
+      if (isTemp) {
+        const idx = pendingCreates.findIndex((n) => n.tempId === noteId);
+        if (idx !== -1) pendingCreates.splice(idx, 1);
+      } else {
+        if (pendingDeletes.has(noteId)) {
+          pendingDeletes.delete(noteId);
+        } else {
+          pendingDeletes.add(noteId);
+        }
+      }
+      renderNoteLayer();
+      renderNoteListModal();
+      updateNoteSubmitButtonState();
+    }
+
     // 警報一覧用 統一データマッパー（非常通報・傷病者・故障申告・設備申請）
     function mapToAlertItem(item) {
       if (item.category === 'emergency' || item.category === 'emergency_injury' || item.category === 'incident' || item.category === 'injury') {
@@ -3852,18 +4542,19 @@
       });
     }
 
-    // 定期ポーリング処理（設備データ＋全申請データ＋故障報告データ＋緊急発報データ）
+    // 定期ポーリング処理（設備データ＋全申請データ＋故障報告データ＋緊急発報データ＋ピタネットデータ）
     async function pollFacilitiesAndRequests() {
       try {
-        const [facRes, reqRes, faultRes, emgRes] = await Promise.all([
+        const [facRes, reqRes, faultRes, emgRes, noteRes] = await Promise.all([
           fetch('/api/facilities'),
           fetch('/api/requests'),
           fetch('/api/fault-reports'),
           fetch('/api/emergency-alerts'),
+          fetch('/api/notes'),
         ]);
 
-        if (!facRes.ok || !reqRes.ok || !faultRes.ok || !emgRes.ok) {
-          throw new Error(`HTTP Error (facilities: ${facRes.status}, requests: ${reqRes.status}, faults: ${faultRes.status}, emergency: ${emgRes.status})`);
+        if (!facRes.ok || !reqRes.ok || !faultRes.ok || !emgRes.ok || !noteRes.ok) {
+          throw new Error(`HTTP Error (facilities: ${facRes.status}, requests: ${reqRes.status}, faults: ${faultRes.status}, emergency: ${emgRes.status}, notes: ${noteRes.status})`);
         }
 
         const facilitiesData = await facRes.json();
@@ -3883,6 +4574,10 @@
         const prevActiveIds = new Set(activeEmergencyAlerts.map((e) => e.id));
         allEmergencyAlerts = emgs;
         activeEmergencyAlerts = emgs.filter((e) => e.status === 'active');
+
+        // ピタネットデータ（サーバー確定分のみ更新）
+        const notes = await noteRes.json();
+        confirmedNotes = notes;
 
         // pendingRequests は時系列順（先着順でスタック処理）
         const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
@@ -3925,6 +4620,10 @@
 
         updateFacilityColors(facilitiesData);
         updateEmergencyMarkers();
+        renderNoteLayer();
+        if (document.getElementById('note-list-modal')?.classList.contains('active')) {
+          renderNoteListModal();
+        }
         updateNotificationArea();
 
         // 申請詳細モーダル表示中
@@ -3971,13 +4670,15 @@
         const requestsUrl = '/api/requests';
         const faultsUrl = '/api/fault-reports';
         const emgUrl = '/api/emergency-alerts';
+        const noteUrl = '/api/notes';
 
-        const [svgRes, facilitiesRes, reqRes, faultRes, emgRes] = await Promise.all([
+        const [svgRes, facilitiesRes, reqRes, faultRes, emgRes, noteRes] = await Promise.all([
           fetch(svgUrl),
           fetch(facilitiesUrl),
           fetch(requestsUrl),
           fetch(faultsUrl),
           fetch(emgUrl),
+          fetch(noteUrl),
         ]);
 
         if (!svgRes.ok) {
@@ -4011,6 +4712,11 @@
           activeEmergencyAlerts = emgs.filter((e) => e.status === 'active');
         }
 
+        if (noteRes.ok) {
+          const notes = await noteRes.json();
+          confirmedNotes = notes;
+        }
+
         // 音声・点滅アラーム初期化
         if (activeEmergencyAlerts.length > 0) {
           startEmergencyAlarm();
@@ -4035,8 +4741,13 @@
           return;
         }
 
-        // マップ背景クリックで選択解除
+        // マップ背景クリックで選択解除（作成モード中は新規作成モーダルを開く）
         svgElement.addEventListener('click', (e) => {
+          if (isNoteCreateMode) {
+            const coords = getMapCoordinatesFromEvent(svgElement, e);
+            if (coords) openNoteCreateModal(coords.x, coords.y);
+            return;
+          }
           if (e.target === svgElement || e.target.tagName === 'polygon' || e.target.tagName === 'path') {
             clearSelection();
           }
@@ -4088,6 +4799,11 @@
             group.setAttribute('class', 'facility-clickable');
             group.addEventListener('click', (e) => {
               e.stopPropagation();
+              if (isNoteCreateMode) {
+                const coords = getMapCoordinatesFromEvent(svgElement, e);
+                if (coords) openNoteCreateModal(coords.x, coords.y);
+                return;
+              }
               selectFacility(facility);
             });
           }
@@ -4146,9 +4862,15 @@
         emergencyLayer.setAttribute('id', 'emergency-layer');
         svgElement.appendChild(emergencyLayer);
 
-        // アイコン点滅状態、緊急マーカー、通知領域の初期更新
+        // ピタネットレイヤー（note-layer: emergency-layer の上）
+        const noteLayer = document.createElementNS(SVG_NS, 'g');
+        noteLayer.setAttribute('id', 'note-layer');
+        svgElement.appendChild(noteLayer);
+
+        // アイコン点滅状態、緊急マーカー、ピタネット、通知領域の初期更新
         updateFacilityColors(facilities);
         updateEmergencyMarkers();
+        renderNoteLayer();
         updateNotificationArea();
 
         // 各ビューの初期描画
@@ -4219,6 +4941,37 @@
 
       document.getElementById('btn-submit-status').addEventListener('click', () => {
         submitStatusChange();
+      });
+
+      // ピタネット用ツールバーボタンイベント
+      document.getElementById('btn-note-create-mode')?.addEventListener('click', toggleNoteCreateMode);
+      document.getElementById('btn-note-list')?.addEventListener('click', openNoteListModal);
+      document.getElementById('btn-note-submit')?.addEventListener('click', commitPendingNoteChanges);
+
+      // ピタネット 新規作成モーダル内ボタンイベント
+      document.getElementById('btn-note-create-add')?.addEventListener('click', handleAddPendingCreate);
+      document.getElementById('btn-note-create-cancel')?.addEventListener('click', closeNoteCreateModal);
+      document.getElementById('btn-close-note-create')?.addEventListener('click', closeNoteCreateModal);
+      document.getElementById('note-create-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'note-create-modal') closeNoteCreateModal();
+      });
+
+      // ピタネット 編集/削除モーダル内ボタンイベント
+      document.getElementById('btn-note-edit-save')?.addEventListener('click', handleSavePendingEdit);
+      document.getElementById('btn-note-edit-delete')?.addEventListener('click', handleDeletePendingNote);
+      document.getElementById('btn-note-edit-close')?.addEventListener('click', closeNoteEditModal);
+      document.getElementById('btn-close-note-edit')?.addEventListener('click', closeNoteEditModal);
+      document.getElementById('note-edit-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'note-edit-modal') closeNoteEditModal();
+      });
+
+      // ピタネット 一覧モーダル内ボタンイベント
+      document.getElementById('btn-note-discard')?.addEventListener('click', discardPendingNoteChanges);
+      document.getElementById('btn-note-list-submit')?.addEventListener('click', commitPendingNoteChanges);
+      document.getElementById('btn-note-list-close')?.addEventListener('click', closeNoteListModal);
+      document.getElementById('btn-close-note-list')?.addEventListener('click', closeNoteListModal);
+      document.getElementById('note-list-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'note-list-modal') closeNoteListModal();
       });
 
       // 通知領域アクションボタンイベント（詳細・対応完了・はい（承認）・いいえ（差戻））

@@ -1457,6 +1457,63 @@ test('GET /m/style.css includes styles for emergency-card-container and emergenc
   }
 });
 
+test('GET /h includes Pitanet toolbar group, modals, and client logic (Issue #69)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    // ツールバー
+    assert.ok(text.includes('id="btn-note-create-mode"'), 'H terminal should have btn-note-create-mode');
+    assert.ok(text.includes('id="btn-note-list"'), 'H terminal should have btn-note-list (ピタ一覧)');
+    assert.ok(text.includes('id="btn-note-submit"'), 'H terminal should have btn-note-submit (ピタ送信)');
+    assert.ok(text.includes('ピタネット'), 'H terminal should have label ピタネット');
+    assert.ok(text.includes('ピタ一覧'), 'H terminal should have button ピタ一覧');
+    assert.ok(text.includes('ピタ送信'), 'H terminal should have button ピタ送信');
+
+    // モーダル
+    assert.ok(text.includes('id="note-create-modal"'), 'H terminal should have note-create-modal');
+    assert.ok(text.includes('id="note-edit-modal"'), 'H terminal should have note-edit-modal');
+    assert.ok(text.includes('id="note-list-modal"'), 'H terminal should have note-list-modal');
+    assert.ok(text.includes('id="btn-note-discard"'), 'H terminal should have btn-note-discard');
+
+    // JSロジック
+    assert.ok(text.includes('getMapCoordinatesFromEvent'), 'H terminal should define getMapCoordinatesFromEvent');
+    assert.ok(text.includes('renderNoteLayer'), 'H terminal should define renderNoteLayer');
+    assert.ok(text.includes('commitPendingNoteChanges'), 'H terminal should define commitPendingNoteChanges');
+    assert.ok(text.includes('discardPendingNoteChanges'), 'H terminal should define discardPendingNoteChanges');
+    assert.ok(text.includes('/api/notes'), 'H terminal should poll /api/notes');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes summary note layer rendering, popover modal, and polling (Issue #69)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="m-note-modal"'), 'M terminal should have m-note-modal');
+    assert.ok(text.includes('id="btn-close-m-note"'), 'M terminal should have btn-close-m-note');
+    assert.ok(text.includes('syncNoteLayers'), 'M terminal should define syncNoteLayers');
+    assert.ok(text.includes('showNotePopover'), 'M terminal should define showNotePopover');
+    assert.ok(text.includes('/api/notes?layer=summary'), 'M terminal should poll /api/notes?layer=summary');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes .m-note-marker (Issue #69)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.m-note-marker'), 'M style.css should define .m-note-marker');
+  } finally {
+    await close();
+  }
+});
+
+
 
 
 
