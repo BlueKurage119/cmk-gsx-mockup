@@ -1259,8 +1259,432 @@ html, body {
 }
 
 .btn-submit-fault:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* ==========================================================================
+   緊急発報モーダル（4ステップ）
+   ========================================================================== */
+.emergency-modal-card {
+  width: 92%;
+  max-width: 480px;
+  max-height: 90vh;
+  background-color: var(--surface-card);
+  border: 2px solid #d93025;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 36px rgba(217, 48, 37, 0.35);
+  overflow: hidden;
+  animation: modal-appear 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
 
+.emg-modal-header {
+  height: 52px;
+  background-color: rgba(217, 48, 37, 0.15);
+  border-bottom: 1px solid rgba(217, 48, 37, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.emg-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #f28b82;
+  letter-spacing: 0.5px;
+}
+
+.emg-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.emg-step-dot {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.emg-step-dot.active {
+  background-color: #d93025;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.emg-step-dot.completed {
+  background-color: rgba(52, 168, 83, 0.2);
+  color: #81c995;
+}
+
+.emg-step-line {
+  flex: 1;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+}
+
+.emg-modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.emg-step-pane {
+  display: none;
+}
+
+.emg-step-pane.active {
+  display: block;
+}
+
+.emg-pane-instruction {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+/* ステップ1: カテゴリ選択 */
+.emg-category-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emg-category-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  text-align: left;
+}
+
+.emg-category-btn:active {
+  transform: scale(0.98);
+}
+
+.emg-category-btn.btn-category-incident {
+  border-color: rgba(217, 48, 37, 0.4);
+  background-color: rgba(217, 48, 37, 0.08);
+}
+
+.emg-category-btn.btn-category-incident:hover {
+  background-color: rgba(217, 48, 37, 0.18);
+  border-color: #d93025;
+}
+
+.emg-category-btn.btn-category-incident svg {
+  color: #f28b82;
+  margin-bottom: 6px;
+}
+
+.emg-category-btn.btn-category-injury {
+  border-color: rgba(251, 188, 4, 0.4);
+  background-color: rgba(251, 188, 4, 0.08);
+}
+
+.emg-category-btn.btn-category-injury:hover {
+  background-color: rgba(251, 188, 4, 0.18);
+  border-color: #fbbc04;
+}
+
+.emg-category-btn.btn-category-injury svg {
+  color: #fdd663;
+  margin-bottom: 6px;
+}
+
+.emg-cat-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.emg-cat-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ステップ2: 理由選択リスト */
+.emg-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emg-option-btn {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.emg-option-btn:hover {
+  background-color: rgba(217, 48, 37, 0.15);
+  border-color: #d93025;
+}
+
+.emg-option-btn:active {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+/* ステップ2: 問診カード */
+.triage-card {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 16px;
+}
+
+.triage-question-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.triage-q-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fdd663;
+  letter-spacing: 0.5px;
+}
+
+.triage-q-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.triage-btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-triage-yes {
+  flex: 1;
+  padding: 14px 8px;
+  background-color: #d93025;
+  color: #ffffff;
+  border: 1px solid #d93025;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-triage-yes:hover {
+  background-color: #b3261e;
+}
+
+.btn-triage-no {
+  flex: 1;
+  padding: 14px 8px;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-triage-no:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ステップ3: エリア選択グリッド */
+.emg-area-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.emg-area-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.emg-area-btn {
+  padding: 12px 8px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.emg-area-btn:hover {
+  background-color: rgba(26, 115, 232, 0.15);
+  border-color: var(--gcp-blue);
+  color: #8ab4f8;
+}
+
+.emg-area-btn:active {
+  background-color: var(--gcp-blue);
+  color: #ffffff;
+}
+
+.emg-area-btn.emg-area-outdoor {
+  border-color: rgba(138, 180, 248, 0.25);
+  background-color: rgba(138, 180, 248, 0.04);
+}
+
+/* ステップ4: 確認画面 */
+.emg-confirm-summary-card {
+  background-color: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emg-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emg-summary-label {
+  width: 76px;
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.emg-summary-val {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.emg-highlight-area {
+  font-size: 16px;
+  color: #8ab4f8;
+  font-weight: 700;
+}
+
+.badge-category-emg {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-category-emg.incident {
+  background-color: rgba(217, 48, 37, 0.2);
+  color: #f28b82;
+  border: 1px solid #d93025;
+}
+
+.badge-category-emg.injury {
+  background-color: rgba(251, 188, 4, 0.2);
+  color: #fdd663;
+  border: 1px solid #fbbc04;
+}
+
+/* モーダルフッター */
+.emg-modal-footer {
+  padding: 12px 16px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-emg-back {
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-emg-back:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.btn-emg-cancel {
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-emg-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.btn-emg-submit {
+  padding: 10px 20px;
+  background-color: #d93025;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: submit-pulse 1.2s infinite ease-in-out;
+}
+
+.btn-emg-submit:hover:not(:disabled) {
+  background-color: #b3261e;
+}
+
+.btn-emg-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  animation: none;
+}

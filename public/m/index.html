@@ -335,6 +335,157 @@
         </button>
       </div>
     </div>
+
+    <!-- 緊急発報モーダル（4ステップ） -->
+    <div class="modal-overlay" id="emergency-modal" role="dialog" aria-modal="true" aria-label="緊急発報">
+      <div class="emergency-modal-card">
+        <header class="emg-modal-header">
+          <div class="emg-header-title">
+            <svg style="width: 22px; height: 22px; fill: #ea4335;" viewBox="0 0 24 24">
+              <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+            </svg>
+            <span>緊急発報</span>
+          </div>
+          <button type="button" class="btn-modal-close" id="btn-close-emg-modal" aria-label="閉じる">✕</button>
+        </header>
+
+        <!-- ステップインジケーター -->
+        <div class="emg-stepper">
+          <div class="emg-step-dot active" data-step="1">1.種別</div>
+          <div class="emg-step-line"></div>
+          <div class="emg-step-dot" data-step="2">2.詳細</div>
+          <div class="emg-step-line"></div>
+          <div class="emg-step-dot" data-step="3">3.場所</div>
+          <div class="emg-step-line"></div>
+          <div class="emg-step-dot" data-step="4">4.確認</div>
+        </div>
+
+        <div class="emg-modal-body">
+          <!-- ステップ1: 種別選択 -->
+          <div class="emg-step-pane active" id="emg-step-1">
+            <div class="emg-pane-instruction">発報する種別を選択してください</div>
+            <div class="emg-category-grid">
+              <button type="button" class="emg-category-btn btn-category-incident" data-category="incident">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+                  <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+                </svg>
+                <span class="emg-cat-title">非常通報</span>
+                <span class="emg-cat-desc">暴力行為・窃盗・迷惑行為・不審物など</span>
+              </button>
+
+              <button type="button" class="emg-category-btn btn-category-injury" data-category="injury">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+                  <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+                </svg>
+                <span class="emg-cat-title">傷病者通報</span>
+                <span class="emg-cat-desc">急病人・ケガ人・救護要請</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ステップ2: 理由 または 容態問診 -->
+          <div class="emg-step-pane" id="emg-step-2">
+            <!-- 2-A: 非常通報の理由 -->
+            <div id="emg-incident-reasons" style="display: none;">
+              <div class="emg-pane-instruction">事象の理由を選択してください</div>
+              <div class="emg-options-list">
+                <button type="button" class="emg-option-btn" data-reason="暴力行為">暴力行為・暴れる人物</button>
+                <button type="button" class="emg-option-btn" data-reason="窃盗">窃盗・置き引き</button>
+                <button type="button" class="emg-option-btn" data-reason="迷惑行為">迷惑行為・トラブル</button>
+                <button type="button" class="emg-option-btn" data-reason="不審物">不審物・危険物発見</button>
+                <button type="button" class="emg-option-btn" data-reason="その他">その他（係員招集）</button>
+              </div>
+            </div>
+
+            <!-- 2-B: 傷病者の容態問診 -->
+            <div id="emg-injury-triage" style="display: none;">
+              <div class="emg-pane-instruction">傷病者の容態を確認してください（該当した時点で次へ進みます）</div>
+              <div class="triage-card">
+                <div class="triage-question-box" id="triage-q1-box">
+                  <div class="triage-q-num">質問 1 / 3</div>
+                  <div class="triage-q-text">意識はありますか？</div>
+                  <div class="triage-btn-group">
+                    <button type="button" class="btn-triage-yes" data-q="consciousness" data-val="yes">はい（意識あり）</button>
+                    <button type="button" class="btn-triage-no" data-q="consciousness" data-val="no">いいえ</button>
+                  </div>
+                </div>
+
+                <div class="triage-question-box" id="triage-q2-box" style="display: none;">
+                  <div class="triage-q-num">質問 2 / 3</div>
+                  <div class="triage-q-text">会話できますか？（受け答えが可能か）</div>
+                  <div class="triage-btn-group">
+                    <button type="button" class="btn-triage-yes" data-q="speech" data-val="yes">はい（会話可能）</button>
+                    <button type="button" class="btn-triage-no" data-q="speech" data-val="no">いいえ</button>
+                  </div>
+                </div>
+
+                <div class="triage-question-box" id="triage-q3-box" style="display: none;">
+                  <div class="triage-q-num">質問 3 / 3</div>
+                  <div class="triage-q-text">自力で歩けますか？</div>
+                  <div class="triage-btn-group">
+                    <button type="button" class="btn-triage-yes" data-q="walking" data-val="yes">はい（歩行可能）</button>
+                    <button type="button" class="btn-triage-no" data-q="walking" data-val="no">いいえ（歩行困難・不能）</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ステップ3: エリア選択 -->
+          <div class="emg-step-pane" id="emg-step-3">
+            <div class="emg-pane-instruction">発生場所（エリア）を選択してください</div>
+            <div class="emg-area-section-title">ホール内</div>
+            <div class="emg-area-grid">
+              <button type="button" class="emg-area-btn" data-area="東1ホール">東1ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東2ホール">東2ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東3ホール">東3ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東4ホール">東4ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東5ホール">東5ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東6ホール">東6ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東7ホール">東7ホール</button>
+              <button type="button" class="emg-area-btn" data-area="東8ホール">東8ホール</button>
+            </div>
+            <div class="emg-area-section-title" style="margin-top: 14px;">屋外・共用部</div>
+            <div class="emg-area-grid">
+              <button type="button" class="emg-area-btn emg-area-outdoor" data-area="東123屋外">東123屋外</button>
+              <button type="button" class="emg-area-btn emg-area-outdoor" data-area="東456屋外">東456屋外</button>
+              <button type="button" class="emg-area-btn emg-area-outdoor" data-area="東78屋外">東78屋外</button>
+              <button type="button" class="emg-area-btn emg-area-outdoor" data-area="ガレリア">ガレリア</button>
+            </div>
+          </div>
+
+          <!-- ステップ4: 確認画面 兼 備考入力 -->
+          <div class="emg-step-pane" id="emg-step-4">
+            <div class="emg-pane-instruction">内容を確認し、必要に応じて備考を追記して発報してください</div>
+            <div class="emg-confirm-summary-card">
+              <div class="emg-summary-row">
+                <span class="emg-summary-label">発報種別:</span>
+                <span id="emg-confirm-category-badge" class="badge-category-emg">-</span>
+              </div>
+              <div class="emg-summary-row">
+                <span class="emg-summary-label">詳細/理由:</span>
+                <span id="emg-confirm-reason" class="emg-summary-val">-</span>
+              </div>
+              <div class="emg-summary-row">
+                <span class="emg-summary-label">発生場所:</span>
+                <span id="emg-confirm-area" class="emg-summary-val emg-highlight-area">-</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <label for="emg-note" class="sheet-section-label" style="display: block; margin-bottom: 6px;">備考・状況メモ（追記可能）:</label>
+              <textarea id="emg-note" class="sheet-note-input" style="height: 72px;" placeholder="状況や特徴などがあれば入力してください"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <footer class="emg-modal-footer">
+          <button type="button" class="btn-emg-back" id="btn-emg-prev" style="display: none;">戻る</button>
+          <button type="button" class="btn-emg-cancel" id="btn-emg-cancel">閉じる</button>
+          <button type="button" class="btn-emg-submit" id="btn-submit-emergency" style="display: none;">緊急発報を送信</button>
+        </footer>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1128,6 +1279,307 @@
       }
     }
 
+    // 緊急発報状態管理
+    const emergencyFormState = {
+      step: 1,
+      category: null,
+      reason: '',
+      triageAnswers: {
+        consciousness: null,
+        speech: null,
+        walking: null,
+      },
+      area: null,
+      note: '',
+      isSubmitting: false,
+    };
+
+    function resetEmergencyForm() {
+      emergencyFormState.step = 1;
+      emergencyFormState.category = null;
+      emergencyFormState.reason = '';
+      emergencyFormState.triageAnswers = {
+        consciousness: null,
+        speech: null,
+        walking: null,
+      };
+      emergencyFormState.area = null;
+      emergencyFormState.note = '';
+      emergencyFormState.isSubmitting = false;
+
+      // 問診ボックスの初期化
+      const q1 = document.getElementById('triage-q1-box');
+      const q2 = document.getElementById('triage-q2-box');
+      const q3 = document.getElementById('triage-q3-box');
+      if (q1) q1.style.display = 'flex';
+      if (q2) q2.style.display = 'none';
+      if (q3) q3.style.display = 'none';
+
+      const noteElem = document.getElementById('emg-note');
+      if (noteElem) noteElem.value = '';
+
+      goToEmgStep(1);
+    }
+
+    function openEmergencyModal() {
+      resetEmergencyForm();
+      const modal = document.getElementById('emergency-modal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeEmergencyModal() {
+      const modal = document.getElementById('emergency-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function goToEmgStep(stepNum) {
+      emergencyFormState.step = stepNum;
+
+      // ペイン切り替え
+      for (let i = 1; i <= 4; i++) {
+        const pane = document.getElementById(`emg-step-${i}`);
+        if (pane) {
+          if (i === stepNum) {
+            pane.classList.add('active');
+          } else {
+            pane.classList.remove('active');
+          }
+        }
+      }
+
+      // インジケーター切り替え
+      document.querySelectorAll('.emg-step-dot').forEach((dot) => {
+        const s = parseInt(dot.dataset.step, 10);
+        dot.classList.remove('active', 'completed');
+        if (s === stepNum) {
+          dot.classList.add('active');
+        } else if (s < stepNum) {
+          dot.classList.add('completed');
+        }
+      });
+
+      // フッターボタン表示制御
+      const btnPrev = document.getElementById('btn-emg-prev');
+      const btnSubmit = document.getElementById('btn-submit-emergency');
+      const btnCancel = document.getElementById('btn-emg-cancel');
+
+      if (btnPrev) {
+        btnPrev.style.display = stepNum > 1 ? 'inline-block' : 'none';
+      }
+      if (btnSubmit) {
+        btnSubmit.style.display = stepNum === 4 ? 'inline-block' : 'none';
+      }
+      if (btnCancel) {
+        btnCancel.textContent = stepNum === 4 ? 'キャンセル' : '閉じる';
+      }
+    }
+
+    function selectEmgCategory(category) {
+      emergencyFormState.category = category;
+      const incidentBox = document.getElementById('emg-incident-reasons');
+      const injuryBox = document.getElementById('emg-injury-triage');
+
+      if (category === 'incident') {
+        if (incidentBox) incidentBox.style.display = 'block';
+        if (injuryBox) injuryBox.style.display = 'none';
+      } else {
+        if (incidentBox) incidentBox.style.display = 'none';
+        if (injuryBox) injuryBox.style.display = 'block';
+        const q1 = document.getElementById('triage-q1-box');
+        const q2 = document.getElementById('triage-q2-box');
+        const q3 = document.getElementById('triage-q3-box');
+        if (q1) q1.style.display = 'flex';
+        if (q2) q2.style.display = 'none';
+        if (q3) q3.style.display = 'none';
+      }
+
+      goToEmgStep(2);
+    }
+
+    function selectEmgIncidentReason(reason) {
+      emergencyFormState.reason = `非常: ${reason}`;
+      goToEmgStep(3);
+    }
+
+    function handleTriageAnswer(qKey, val) {
+      emergencyFormState.triageAnswers[qKey] = val;
+
+      if (qKey === 'consciousness') {
+        if (val === 'no') {
+          // 意識なし: 最重篤のため即座に問診完了してステップ3へ
+          emergencyFormState.reason = '傷病者: 意識なし';
+          goToEmgStep(3);
+        } else {
+          // 意識あり: 問診継続してQ2へ
+          const q1 = document.getElementById('triage-q1-box');
+          const q2 = document.getElementById('triage-q2-box');
+          if (q1) q1.style.display = 'none';
+          if (q2) q2.style.display = 'flex';
+        }
+        return;
+      }
+
+      if (qKey === 'speech') {
+        if (val === 'no') {
+          // 会話不可: 重篤のため即座に問診完了してステップ3へ
+          emergencyFormState.reason = '傷病者: 会話不可';
+          goToEmgStep(3);
+        } else {
+          // 会話可能: 問診継続してQ3へ
+          const q2 = document.getElementById('triage-q2-box');
+          const q3 = document.getElementById('triage-q3-box');
+          if (q2) q2.style.display = 'none';
+          if (q3) q3.style.display = 'flex';
+        }
+        return;
+      }
+
+      if (qKey === 'walking') {
+        if (val === 'no') {
+          // 歩行困難
+          emergencyFormState.reason = '傷病者: 歩行不可';
+        } else {
+          // 歩行可能（意識あり・会話可能・歩行可能）
+          emergencyFormState.reason = '傷病者: 意識あり';
+        }
+        goToEmgStep(3);
+      }
+    }
+
+    function selectEmgArea(area) {
+      emergencyFormState.area = area;
+
+      // ステップ4のサマリー描画
+      const catBadge = document.getElementById('emg-confirm-category-badge');
+      const reasonElem = document.getElementById('emg-confirm-reason');
+      const areaElem = document.getElementById('emg-confirm-area');
+      const noteInput = document.getElementById('emg-note');
+
+      const isIncident = emergencyFormState.category === 'incident';
+      if (catBadge) {
+        catBadge.className = `badge-category-emg ${isIncident ? 'incident' : 'injury'}`;
+        catBadge.textContent = isIncident ? '非常通報' : '傷病者通報';
+      }
+
+      if (reasonElem) {
+        reasonElem.textContent = emergencyFormState.reason || '-';
+      }
+
+      if (areaElem) {
+        areaElem.textContent = emergencyFormState.area || '-';
+      }
+
+      // 備考欄の自動要約テキスト
+      if (noteInput) {
+        if (isIncident) {
+          noteInput.value = `【事象】${emergencyFormState.reason}`;
+        } else {
+          const ans = emergencyFormState.triageAnswers;
+          const parts = [];
+          if (ans.consciousness) parts.push(`意識: ${ans.consciousness === 'yes' ? 'あり' : 'なし'}`);
+          if (ans.speech) parts.push(`会話: ${ans.speech === 'yes' ? '可能' : '不可'}`);
+          if (ans.walking) parts.push(`歩行: ${ans.walking === 'yes' ? '可能' : '困難・不能'}`);
+          noteInput.value = `【容態問診】${parts.join(', ')}`;
+        }
+      }
+
+      goToEmgStep(4);
+    }
+
+    async function submitEmergencyAlert() {
+      if (emergencyFormState.isSubmitting) return;
+
+      const noteElem = document.getElementById('emg-note');
+      const note = noteElem ? noteElem.value.trim() : '';
+
+      emergencyFormState.isSubmitting = true;
+      const submitBtn = document.getElementById('btn-submit-emergency');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '送信中...';
+      }
+
+      try {
+        const res = await fetch('/api/emergency-alerts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category: emergencyFormState.category,
+            reason: emergencyFormState.reason,
+            area: emergencyFormState.area,
+            note: note,
+            reporter: '東地区外警1',
+          }),
+        });
+
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || `送信失敗 (${res.status})`);
+        }
+
+        closeEmergencyModal();
+        showToast('緊急発報を指揮所に送信しました', 'error');
+      } catch (err) {
+        console.error('Emergency submit error:', err);
+        showToast(`緊急発報の送信に失敗しました: ${err.message}`, 'error');
+      } finally {
+        emergencyFormState.isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '緊急発報を送信';
+        }
+      }
+    }
+
+    function initEmergencyModal() {
+      // ナビの非常通報ボタン
+      document.getElementById('nav-emergency')?.addEventListener('click', openEmergencyModal);
+
+      // モーダル閉じるボタン
+      document.getElementById('btn-close-emg-modal')?.addEventListener('click', closeEmergencyModal);
+      document.getElementById('btn-emg-cancel')?.addEventListener('click', closeEmergencyModal);
+
+      // 戻るボタン
+      document.getElementById('btn-emg-prev')?.addEventListener('click', () => {
+        if (emergencyFormState.step > 1) {
+          goToEmgStep(emergencyFormState.step - 1);
+        }
+      });
+
+      // ステップ1: カテゴリボタン
+      document.querySelectorAll('.emg-category-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectEmgCategory(btn.dataset.category);
+        });
+      });
+
+      // ステップ2: 非常通報理由ボタン
+      document.querySelectorAll('.emg-option-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectEmgIncidentReason(btn.dataset.reason);
+        });
+      });
+
+      // ステップ2: 傷病者問診ボタン
+      document.querySelectorAll('#emg-injury-triage button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          handleTriageAnswer(btn.dataset.q, btn.dataset.val);
+        });
+      });
+
+      // ステップ3: エリアボタン
+      document.querySelectorAll('.emg-area-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectEmgArea(btn.dataset.area);
+        });
+      });
+
+      // ステップ4: 送信ボタン
+      document.getElementById('btn-submit-emergency')?.addEventListener('click', submitEmergencyAlert);
+    }
+
     // 初期化
     async function init() {
       try {
@@ -1172,6 +1624,9 @@
 
         // 故障申告フォームの初期化
         initFaultReportForm();
+
+        // 緊急発報モーダルの初期化
+        initEmergencyModal();
 
         // 5. フィルターチップ切り替え
         document.getElementById('filter-chip-bar')?.addEventListener('click', (e) => {
