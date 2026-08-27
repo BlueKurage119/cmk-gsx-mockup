@@ -1,4 +1,5 @@
 const path = require('node:path');
+const os = require('node:os');
 const fs = require('node:fs');
 const multer = require('multer');
 const {
@@ -9,7 +10,9 @@ const {
 } = require('../state/faultReports');
 
 // uploads ディレクトリの設定
-const uploadDir = path.join(process.cwd(), 'uploads');
+// OSの一時ディレクトリ配下に置く。Cloud Run等、アプリのソースディレクトリ（process.cwd()）が
+// 実行ユーザーから書き込めない環境でも、os.tmpdir() は常に書き込み可能なため起動時クラッシュを避けられる。
+const uploadDir = path.join(os.tmpdir(), 'cmk-gsx-uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -119,4 +122,4 @@ function registerFaultRoutes(app) {
   });
 }
 
-module.exports = { registerFaultRoutes };
+module.exports = { registerFaultRoutes, uploadDir };
