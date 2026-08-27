@@ -523,6 +523,144 @@ test('POST /api/requests/:id/reject updates request status to rejected without c
   }
 });
 
+test('Manual facility state update (single PUT /api/facilities/:id) automatically rejects pending request for that facility', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // 1. Create pending request for higashi2-gate (open)
+    const createRes = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate', requestedState: 'open' }),
+    });
+    const reqData = await createRes.json();
+    assert.equal(reqData.status, 'pending');
+
+    // 2. Command center manually updates higashi2-gate to restricted
+    const putRes = await fetch(`${baseUrl}/api/facilities/higashi2-gate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'restricted' }),
+    });
+    assert.equal(putRes.status, 200);
+
+    // 3. Verify request is now automatically rejected
+    const getReqRes = await fetch(`${baseUrl}/api/requests/${reqData.id}`);
+    const updatedReq = await getReqRes.json();
+    assert.equal(updatedReq.status, 'rejected');
+    assert.equal(updatedReq.rejectReason, '手動変更により自動差戻し');
+  } finally {
+    await close();
+  }
+});
+
+test('Manual facility state update (batch PUT /api/facilities/batch) automatically rejects pending requests for targeted facilities', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // Create pending requests for higashi1-a-shutter and higashi1-b-shutter
+    const res1 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-a-shutter', requestedState: 'open' }),
+    });
+    const req1 = await res1.json();
+
+    const res2 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-b-shutter', requestedState: 'open' }),
+    });
+    const req2 = await res2.json();
+
+    // Batch update both
+    const batchRes = await fetch(`${baseUrl}/api/facilities/batch`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ['higashi1-a-shutter', 'higashi1-b-shutter'], state: 'open' }),
+    });
+    assert.equal(batchRes.status, 200);
+    const batchData = await batchRes.json();
+    assert.equal(batchData.autoRejectedCount, 2);
+
+    // Verify both requests are now rejected
+    const check1 = await (await fetch(`${baseUrl}/api/requests/${req1.id}`)).json();
+    const check2 = await (await fetch(`${baseUrl}/api/requests/${req2.id}`)).json();
+    assert.equal(check1.status, 'rejected');
+    assert.equal(check2.status, 'rejected');
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests/batch-approve batch approves multiple requests and updates facilities', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res1 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate', requestedState: 'open' }),
+    });
+    const req1 = await res1.json();
+
+    const res2 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-a-shutter', requestedState: 'open' }),
+    });
+    const req2 = await res2.json();
+
+    const batchApproveRes = await fetch(`${baseUrl}/api/requests/batch-approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [req1.id, req2.id] }),
+    });
+    assert.equal(batchApproveRes.status, 200);
+    const data = await batchApproveRes.json();
+    assert.equal(data.success, true);
+    assert.equal(data.approvedCount, 2);
+
+    // Invalid body returns 400
+    const errRes = await fetch(`${baseUrl}/api/requests/batch-approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(errRes.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/requests/batch-reject batch rejects multiple requests', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res1 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi2-gate', requestedState: 'open' }),
+    });
+    const req1 = await res1.json();
+
+    const res2 = await fetch(`${baseUrl}/api/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ facilityId: 'higashi1-a-shutter', requestedState: 'open' }),
+    });
+    const req2 = await res2.json();
+
+    const batchRejectRes = await fetch(`${baseUrl}/api/requests/batch-reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [req1.id, req2.id], reason: '一括差戻テスト' }),
+    });
+    assert.equal(batchRejectRes.status, 200);
+    const data = await batchRejectRes.json();
+    assert.equal(data.success, true);
+    assert.equal(data.rejectedCount, 2);
+  } finally {
+    await close();
+  }
+});
+
 test('DELETE /api/requests/:id cancels pending request, returns 404 for unknown, and 409 for already cancelled', async () => {
   const { baseUrl, close } = await listenServer();
   try {
@@ -697,8 +835,56 @@ test('GET /h directly returns 200 without redirect and serves H terminal page wi
     assert.ok(text.includes('POLL_INTERVAL_MS = 3000'));
     assert.ok(text.includes('/shared/map-east.svg'));
     assert.ok(text.includes('/api/facilities'));
-    assert.ok(text.includes('/api/requests?status=pending'));
+    assert.ok(text.includes('/api/requests'));
     assert.ok(!text.includes('M端末（現場用）'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes Alerts view markup (view-alerts, alert-table, category/status/hall filters, and batch action toolbar)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+
+    // Alert view container & headers
+    assert.ok(text.includes('id="view-alerts"'));
+    assert.ok(text.includes('aria-label="警報一覧（東地区）"'));
+    assert.ok(text.includes('警報一覧（東地区）'));
+
+    // Filter controls
+    assert.ok(text.includes('id="filter-alert-category"'));
+    assert.ok(text.includes('id="filter-alert-status"'));
+    assert.ok(text.includes('id="filter-alert-hall"'));
+    assert.ok(text.includes('id="alert-count-info"'));
+    assert.ok(text.includes('設備変更申請'));
+    assert.ok(text.includes('非常通報'));
+    assert.ok(text.includes('故障申告'));
+
+    // Alert table and columns
+    assert.ok(text.includes('id="alert-table"'));
+    assert.ok(text.includes('id="alert-table-body"'));
+    assert.ok(text.includes('id="check-all-alerts"'));
+    assert.ok(text.includes('badge-category'));
+
+    // Batch toolbar
+    assert.ok(text.includes('id="alert-toolbar"'));
+    assert.ok(text.includes('id="alert-selected-count"'));
+    assert.ok(text.includes('id="btn-alert-batch-approve"'));
+    assert.ok(text.includes('id="btn-alert-batch-reject"'));
+    assert.ok(text.includes('id="btn-alert-batch-cancel"'));
+    assert.ok(text.includes('id="btn-alert-batch-submit"'));
+    assert.ok(text.includes('id="alert-notification-area"'));
+
+    // JavaScript handlers
+    assert.ok(text.includes('renderAlertTable'));
+    assert.ok(text.includes('updateAlertBatchUIState'));
+    assert.ok(text.includes('selectAlertBatchAction'));
+    assert.ok(text.includes('submitAlertBatchAction'));
+    assert.ok(text.includes('submitAlertBatchApprove'));
+    assert.ok(text.includes('submitAlertBatchReject'));
+    assert.ok(text.includes('mapToAlertItem'));
   } finally {
     await close();
   }

@@ -1,4 +1,5 @@
 const { getFacilities, updateFacilityState, updateFacilitiesBatch } = require('../state/facilities');
+const { rejectPendingRequestsForFacilities } = require('../state/requests');
 
 function registerFacilityRoutes(app) {
   app.get('/api/facilities', (req, res) => {
@@ -29,10 +30,15 @@ function registerFacilityRoutes(app) {
       return res.status(400).json({ error: 'Failed to update facilities' });
     }
 
+    // 手動更新された設備に対する保留中申請を自動差戻し
+    const autoRejected = rejectPendingRequestsForFacilities(ids, '手動変更により自動差戻し');
+
     return res.status(200).json({
       success: true,
       updatedCount: result.updatedCount,
       facilities: result.facilities,
+      autoRejectedCount: autoRejected.length,
+      autoRejectedRequests: autoRejected,
     });
   });
 
@@ -54,6 +60,9 @@ function registerFacilityRoutes(app) {
       }
       return res.status(400).json({ error: 'Failed to update facility state' });
     }
+
+    // 手動更新された設備に対する保留中申請を自動差戻し
+    rejectPendingRequestsForFacilities(id, '手動変更により自動差戻し');
 
     return res.status(200).json(result.facility);
   });

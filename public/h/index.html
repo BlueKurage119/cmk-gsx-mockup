@@ -286,6 +286,61 @@
       cursor: not-allowed;
     }
 
+    /* 警報一覧用 一括操作ボタン（承認・差戻） */
+    .status-btn[data-action="approve"] {
+      border: 1.5px solid var(--color-open);
+      color: #81c995;
+      background-color: transparent;
+    }
+
+    .status-btn[data-action="approve"]:hover:not(:disabled) {
+      background-color: rgba(52, 168, 83, 0.15);
+      color: #ffffff;
+    }
+
+    .status-btn.selected[data-action="approve"] {
+      background-color: var(--color-open);
+      border-color: var(--color-open);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(52, 168, 83, 0.5);
+    }
+
+    .status-btn[data-action="approve"]:disabled {
+      border-color: rgba(52, 168, 83, 0.35);
+      color: rgba(129, 201, 149, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-btn[data-action="reject"] {
+      border: 1.5px solid var(--color-closed);
+      color: #f28b82;
+      background-color: transparent;
+    }
+
+    .status-btn[data-action="reject"]:hover:not(:disabled) {
+      background-color: rgba(234, 67, 53, 0.15);
+      color: #ffffff;
+    }
+
+    .status-btn.selected[data-action="reject"] {
+      background-color: var(--color-closed);
+      border-color: var(--color-closed);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(234, 67, 53, 0.5);
+    }
+
+    .status-btn[data-action="reject"]:disabled {
+      border-color: rgba(234, 67, 53, 0.35);
+      color: rgba(242, 139, 130, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     /* 送信・選択解除アクションボタン */
     @keyframes submit-pulse {
       0%, 100% {
@@ -364,8 +419,9 @@
       z-index: 20;
     }
 
-    /* 設備入力：フィルターバー */
-    .facility-filter-bar {
+    /* 設備入力・警報一覧：フィルターバー */
+    .facility-filter-bar,
+    .filter-bar {
       height: 48px;
       background-color: var(--surface-dark);
       border-bottom: 1px solid var(--border-color);
@@ -555,6 +611,114 @@
     .target-badge.closed { background: rgba(234, 67, 53, 0.2); color: #f28b82; }
     .target-badge.restricted { background: rgba(251, 188, 4, 0.2); color: #fdd663; }
     .target-badge.pending { background: rgba(251, 188, 4, 0.25); color: #fdd663; border: 1px dashed #fbbc04; }
+
+    /* 警報一覧画面スタイル */
+    .alert-table th,
+    .alert-table td {
+      vertical-align: middle;
+    }
+
+    .badge-category {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-category.facility_request {
+      background-color: rgba(26, 115, 232, 0.15);
+      color: #8ab4f8;
+      border: 1px solid rgba(26, 115, 232, 0.4);
+    }
+
+    .badge-category.emergency {
+      background-color: rgba(217, 48, 37, 0.25);
+      color: #f28b82;
+      border: 1px solid rgba(217, 48, 37, 0.6);
+      animation: emergency-badge-pulse 1.2s infinite ease-in-out;
+    }
+
+    .badge-category.facility_failure {
+      background-color: rgba(251, 188, 4, 0.2);
+      color: #fdd663;
+      border: 1px solid rgba(251, 188, 4, 0.5);
+    }
+
+    @keyframes emergency-badge-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.85; }
+    }
+
+    .status-badge-inline {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge-inline.open { background: rgba(52, 168, 83, 0.2); color: #81c995; }
+    .status-badge-inline.closed { background: rgba(234, 67, 53, 0.2); color: #f28b82; }
+    .status-badge-inline.restricted { background: rgba(251, 188, 4, 0.2); color: #fdd663; }
+
+    .alert-table tr.row-pending {
+      background-color: rgba(251, 188, 4, 0.04);
+    }
+
+    .alert-table tr.row-pending:hover {
+      background-color: rgba(251, 188, 4, 0.08);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-row-action {
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background-color 0.15s, color 0.15s, opacity 0.15s;
+    }
+
+    .btn-row-detail {
+      background: transparent;
+      color: #8ab4f8;
+      border-color: rgba(138, 180, 248, 0.4);
+    }
+    .btn-row-detail:hover {
+      background: rgba(138, 180, 248, 0.12);
+    }
+
+    .btn-row-approve {
+      background: #1a73e8;
+      color: #ffffff;
+    }
+    .btn-row-approve:hover:not(:disabled) {
+      background: #1557b0;
+    }
+
+    .btn-row-reject {
+      background: transparent;
+      color: #f28b82;
+      border-color: rgba(217, 48, 37, 0.6);
+    }
+    .btn-row-reject:hover:not(:disabled) {
+      background: rgba(217, 48, 37, 0.15);
+    }
+
+    .btn-row-action:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
     .toolbar-selection-info {
       font-size: 13px;
@@ -1120,6 +1284,95 @@
             </div>
           </section>
         </div>
+
+        <!-- 警報一覧 ビューパネル -->
+        <div id="view-alerts" class="view-panel" role="region" aria-label="警報一覧（東地区）">
+          <!-- フィルターツールバー -->
+          <div class="facility-filter-bar filter-bar">
+            <div class="filter-group">
+              <label for="filter-alert-category" class="filter-label">種別:</label>
+              <select id="filter-alert-category" class="filter-select">
+                <option value="all">すべて</option>
+                <option value="facility_request">設備変更申請</option>
+                <option value="emergency">非常通報</option>
+                <option value="facility_failure">故障申告</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-alert-status" class="filter-label">状態:</label>
+              <select id="filter-alert-status" class="filter-select">
+                <option value="pending">承認待ち（未処理）</option>
+                <option value="all">すべて</option>
+                <option value="approved">承認済</option>
+                <option value="rejected">差戻</option>
+                <option value="cancelled">取消</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-alert-hall" class="filter-label">エリア/ホール:</label>
+              <select id="filter-alert-hall" class="filter-select">
+                <option value="all">すべて</option>
+                <option value="東1H">東1H</option>
+                <option value="東2H">東2H</option>
+                <option value="東3H">東3H</option>
+                <option value="東4H">東4H</option>
+                <option value="東5H">東5H</option>
+                <option value="東6H">東6H</option>
+                <option value="東7H">東7H</option>
+                <option value="東8H">東8H</option>
+                <option value="外周・共用部">外周・共用部</option>
+              </select>
+            </div>
+            <div class="filter-summary">
+              <span id="alert-count-info" class="count-badge">表示: 0件 / 選択中: 0件 (承認待ち: 0件)</span>
+            </div>
+          </div>
+
+          <!-- 警報一覧テーブル領域 -->
+          <div class="facility-table-wrapper">
+            <table class="facility-table alert-table" id="alert-table">
+              <thead>
+                <tr>
+                  <th class="col-checkbox"><input type="checkbox" id="check-all-alerts" title="全選択/解除" aria-label="全選択"></th>
+                  <th style="width: 130px;">種別</th>
+                  <th style="width: 140px;">発生日時</th>
+                  <th style="width: 180px;">対象 / エリア</th>
+                  <th style="width: 190px;">内容</th>
+                  <th style="width: 130px;">発信元</th>
+                  <th style="width: 120px;">状態</th>
+                  <th>備考</th>
+                  <th style="width: 190px; text-align: center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="alert-table-body">
+                <!-- JSで動的生成 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 警報一覧用 下部操作ツールバー -->
+          <div class="toolbar" id="alert-toolbar" role="toolbar" aria-label="警報一覧一括操作ツールバー">
+            <div class="toolbar-group status-buttons">
+              <span class="toolbar-selection-info" id="alert-selected-count">選択: 0件</span>
+              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-approve" data-action="approve" disabled>一括承認</button>
+              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-reject" data-action="reject" disabled>一括差戻</button>
+            </div>
+            <div class="toolbar-group action-buttons">
+              <button type="button" class="toolbar-btn action-btn-cancel" id="btn-alert-batch-cancel" disabled>選択解除</button>
+              <button type="button" class="toolbar-btn action-btn-submit" id="btn-alert-batch-submit" disabled>一括送信</button>
+            </div>
+          </div>
+
+          <!-- 警報一覧用 下部通知領域 -->
+          <section class="notification-area status-default" id="alert-notification-area" aria-label="警報一覧通知領域">
+            <div class="notification-message" id="alert-notification-message">警報または申請を選択して承認・差戻操作を行えます</div>
+            <div class="notification-actions">
+              <button type="button" class="btn btn-outlined" disabled>詳細</button>
+              <button type="button" class="btn btn-filled" disabled>はい</button>
+              <button type="button" class="btn btn-outlined" disabled>いいえ</button>
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   </div>
@@ -1316,6 +1569,14 @@
     let isBatchSubmitting = false;
     let batchNotificationTimer = null;
 
+    // 警報一覧・全申請状態管理
+    let allRequests = [];
+    const selectedAlertIds = new Set();
+    let alertBatchAction = null; // 'approve' | 'reject' | null
+    let isAlertBatchSubmitting = false;
+    let alertNotificationTimer = null;
+    let activeModalRequestId = null;
+
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -1413,6 +1674,11 @@
         if (panel) panel.classList.add('active');
         renderFacilityTable();
         updateBatchUIState();
+      } else if (viewName === 'alerts') {
+        const panel = document.getElementById('view-alerts');
+        if (panel) panel.classList.add('active');
+        renderAlertTable();
+        updateAlertBatchUIState();
       } else {
         const panel = document.getElementById('view-overview');
         if (panel) panel.classList.add('active');
@@ -1470,8 +1736,9 @@
       }
     }
 
-    // 変更申請 内容確認モーダル制御（スタック先頭1件表示）
-    function openRequestDetailModal() {
+    // 変更申請 内容確認モーダル制御（指定IDまたはスタック先頭1件表示）
+    function openRequestDetailModal(targetId = null) {
+      activeModalRequestId = targetId;
       stopBuzzer();
       renderRequestDetailModal();
       const modal = document.getElementById('request-detail-modal');
@@ -1479,6 +1746,7 @@
     }
 
     function closeRequestDetailModal() {
+      activeModalRequestId = null;
       const modal = document.getElementById('request-detail-modal');
       if (modal) modal.classList.remove('active');
     }
@@ -1490,26 +1758,38 @@
       const btnReject = document.getElementById('btn-modal-reject');
       if (!body) return;
 
-      if (pendingRequests.length === 0) {
+      let req = null;
+      if (activeModalRequestId) {
+        req = allRequests.find((r) => r.id === activeModalRequestId) || pendingRequests.find((r) => r.id === activeModalRequestId);
+      } else {
+        req = pendingRequests[0];
+      }
+
+      if (!req) {
         if (badge) badge.style.display = 'none';
         if (btnApprove) btnApprove.disabled = true;
         if (btnReject) btnReject.disabled = true;
-        body.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted);">現在、未承認の申請はありません</div>';
+        body.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted);">現在、表示できる申請はありません</div>';
         return;
       }
 
+      const isPending = req.status === 'pending';
       if (badge) {
-        badge.style.display = 'inline-block';
-        badge.textContent = `承認待ち: ${pendingRequests.length}件`;
+        if (isPending) {
+          badge.style.display = 'inline-block';
+          badge.textContent = `承認待ち: ${pendingRequests.length}件`;
+        } else {
+          badge.style.display = 'none';
+        }
       }
-      if (btnApprove) btnApprove.disabled = false;
-      if (btnReject) btnReject.disabled = false;
 
-      const req = pendingRequests[0];
+      if (btnApprove) btnApprove.disabled = !isPending;
+      if (btnReject) btnReject.disabled = !isPending;
+
       const area = getFacilityArea({ id: req.facilityId, type: req.facilityType });
       const typeName = getFacilityTypeName(req.facilityType);
-      const prevStateLabel = STATE_LABELS[req.previousState] || req.previousState;
-      const reqStateLabel = STATE_LABELS[req.requestedState] || req.requestedState;
+      const prevStateLabel = STATE_LABELS[req.previousState] || req.previousState || '閉鎖';
+      const reqStateLabel = STATE_LABELS[req.requestedState] || req.requestedState || '開放';
       const timeStr = req.createdAt ? new Date(req.createdAt).toLocaleTimeString('ja-JP', { hour12: false }) : '-';
 
       body.innerHTML = `
@@ -1538,6 +1818,13 @@
             <span class="detail-req-val"><strong>${escapeHtml(req.applicant || '現場端末')}</strong></span>
             <span class="detail-req-label">申請時刻:</span>
             <span class="detail-req-val">${escapeHtml(timeStr)}</span>
+            <span class="detail-req-label">ステータス:</span>
+            <span class="detail-req-val">
+              <strong style="color: ${req.status === 'approved' ? '#81c995' : (req.status === 'rejected' ? '#f28b82' : (req.status === 'cancelled' ? '#fdd663' : '#fdd663'))};">
+                ${req.status === 'approved' ? '承認済' : (req.status === 'rejected' ? '差戻' : (req.status === 'cancelled' ? '取消' : '承認待ち'))}
+              </strong>
+              ${req.rejectReason ? `<span style="font-size: 12px; color: var(--text-muted);"> (${escapeHtml(req.rejectReason)})</span>` : ''}
+            </span>
             <span class="detail-req-label">備考:</span>
             <span class="detail-req-val">${req.note ? `<div class="detail-req-note">${escapeHtml(req.note)}</div>` : '<span style="color: var(--text-muted);">なし</span>'}</span>
           </div>
@@ -1547,8 +1834,10 @@
 
     // 1件承認処理
     async function approveCurrentRequest() {
-      if (isProcessingRequest || pendingRequests.length === 0) return;
-      const targetReq = pendingRequests[0];
+      if (isProcessingRequest) return;
+      const targetReq = activeModalRequestId ? allRequests.find((r) => r.id === activeModalRequestId) : pendingRequests[0];
+      if (!targetReq || targetReq.status !== 'pending') return;
+
       isProcessingRequest = true;
       stopBuzzer();
 
@@ -1571,11 +1860,18 @@
           'success',
           2500
         );
+        if (currentView === 'alerts') {
+          setAlertNotification(
+            `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 状態変更（${escapeHtml(STATE_LABELS[targetReq.requestedState] || targetReq.requestedState)}）を承認しました`,
+            'success',
+            2500
+          );
+        }
       } catch (err) {
         showError(`承認処理に失敗しました: ${err.message}`);
       } finally {
         isProcessingRequest = false;
-        if (pendingRequests.length === 0) {
+        if (activeModalRequestId || pendingRequests.length === 0) {
           closeRequestDetailModal();
         }
       }
@@ -1583,8 +1879,10 @@
 
     // 1件差戻処理
     async function rejectCurrentRequest() {
-      if (isProcessingRequest || pendingRequests.length === 0) return;
-      const targetReq = pendingRequests[0];
+      if (isProcessingRequest) return;
+      const targetReq = activeModalRequestId ? allRequests.find((r) => r.id === activeModalRequestId) : pendingRequests[0];
+      if (!targetReq || targetReq.status !== 'pending') return;
+
       isProcessingRequest = true;
       stopBuzzer();
 
@@ -1602,13 +1900,502 @@
           'default',
           2500
         );
+        if (currentView === 'alerts') {
+          setAlertNotification(
+            `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 申請を差戻しました`,
+            'default',
+            2500
+          );
+        }
       } catch (err) {
         showError(`差戻処理に失敗しました: ${err.message}`);
       } finally {
         isProcessingRequest = false;
-        if (pendingRequests.length === 0) {
+        if (activeModalRequestId || pendingRequests.length === 0) {
           closeRequestDetailModal();
         }
+      }
+    }
+
+    // ID指定で直接承認
+    async function approveRequestById(id) {
+      if (isProcessingRequest || !id) return;
+      const targetReq = allRequests.find((r) => r.id === id) || pendingRequests.find((r) => r.id === id);
+      if (!targetReq || targetReq.status !== 'pending') return;
+
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(id)}/approve`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.facility) {
+          const cached = facilitiesMap.get(data.facility.id);
+          if (cached) cached.state = data.facility.state;
+        }
+        await pollFacilitiesAndRequests();
+        setAlertNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 状態変更（${escapeHtml(STATE_LABELS[targetReq.requestedState] || targetReq.requestedState)}）を承認しました`,
+          'success',
+          3000
+        );
+      } catch (err) {
+        setAlertNotification(`承認処理に失敗しました: ${escapeHtml(err.message)}`, 'error');
+      } finally {
+        isProcessingRequest = false;
+      }
+    }
+
+    // ID指定で直接差戻し
+    async function rejectRequestById(id) {
+      if (isProcessingRequest || !id) return;
+      const targetReq = allRequests.find((r) => r.id === id) || pendingRequests.find((r) => r.id === id);
+      if (!targetReq || targetReq.status !== 'pending') return;
+
+      isProcessingRequest = true;
+      stopBuzzer();
+
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(id)}/reject`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        await pollFacilitiesAndRequests();
+        setAlertNotification(
+          `<span class="notification-highlight">${escapeHtml(targetReq.facilityName)}:</span> 申請を差戻しました`,
+          'default',
+          3000
+        );
+      } catch (err) {
+        setAlertNotification(`差戻処理に失敗しました: ${escapeHtml(err.message)}`, 'error');
+      } finally {
+        isProcessingRequest = false;
+      }
+    }
+
+    // 警報一覧用 統一データマッパー（非常通報・故障申告の将来拡張対応）
+    function mapToAlertItem(item) {
+      if (item.category === 'emergency') {
+        return {
+          id: item.id,
+          category: 'emergency',
+          categoryLabel: '非常通報',
+          severity: 'high',
+          timestamp: item.createdAt || item.timestamp || Date.now(),
+          targetName: item.locationName || item.facilityName || '非常通報場所',
+          facilityId: item.facilityId || '',
+          area: item.area || '東地区',
+          summaryHtml: `<span style="color: #f28b82; font-weight: bold;">${escapeHtml(item.detail || '非常ボタン押下')}</span>`,
+          sourceName: item.applicant || item.reporter || '現場端末',
+          status: item.status || 'pending',
+          statusLabel: item.status === 'pending' ? '未対応' : (item.status === 'approved' ? '対応済' : item.status),
+          statusClass: item.status === 'pending' ? 'closed' : 'open',
+          note: item.note || '',
+          rejectReason: item.rejectReason || '',
+          raw: item,
+        };
+      }
+      if (item.category === 'facility_failure') {
+        return {
+          id: item.id,
+          category: 'facility_failure',
+          categoryLabel: '故障申告',
+          severity: 'medium',
+          timestamp: item.createdAt || item.timestamp || Date.now(),
+          targetName: item.facilityName || '設備',
+          facilityId: item.facilityId || '',
+          area: item.area || '東地区',
+          summaryHtml: `<span style="color: #fdd663; font-weight: bold;">${escapeHtml(item.failureDetail || item.detail || '設備異常')}</span>`,
+          sourceName: item.applicant || item.reporter || '現場端末',
+          status: item.status || 'pending',
+          statusLabel: item.status === 'pending' ? '受付' : (item.status === 'approved' ? '対応中' : item.status),
+          statusClass: item.status === 'pending' ? 'restricted' : 'open',
+          note: item.note || '',
+          rejectReason: item.rejectReason || '',
+          raw: item,
+        };
+      }
+
+      // 設備変更申請（facility_request）
+      const area = getFacilityArea({ id: item.facilityId, type: item.facilityType });
+      const prevStateLabel = STATE_LABELS[item.previousState] || item.previousState || '閉鎖';
+      const reqStateLabel = STATE_LABELS[item.requestedState] || item.requestedState || '開放';
+
+      let statusLabel = '承認待ち';
+      let statusClass = 'restricted';
+      if (item.status === 'approved') {
+        statusLabel = '承認済';
+        statusClass = 'open';
+      } else if (item.status === 'rejected') {
+        statusLabel = item.rejectReason ? `差戻 (${item.rejectReason})` : '差戻';
+        statusClass = 'closed';
+      } else if (item.status === 'cancelled') {
+        statusLabel = '取消';
+        statusClass = 'closed';
+      }
+
+      return {
+        id: item.id,
+        category: 'facility_request',
+        categoryLabel: '設備変更申請',
+        severity: 'medium',
+        timestamp: item.createdAt || Date.now(),
+        targetName: item.facilityName,
+        facilityId: item.facilityId,
+        facilityType: item.facilityType,
+        area: area,
+        requestedState: item.requestedState,
+        previousState: item.previousState,
+        summaryHtml: `<span class="status-badge-inline ${escapeHtml(item.previousState)}">${escapeHtml(prevStateLabel)}</span> ➔ <span class="status-badge-inline ${escapeHtml(item.requestedState)}">${escapeHtml(reqStateLabel)}</span>`,
+        sourceName: item.applicant || '東地区外警1',
+        status: item.status,
+        statusLabel: statusLabel,
+        statusClass: statusClass,
+        note: item.note || '',
+        rejectReason: item.rejectReason || '',
+        raw: item,
+      };
+    }
+
+    // 警報一覧用 通知領域の一元制御関数
+    function setAlertNotification(html, type = 'default', duration = 0) {
+      const area = document.getElementById('alert-notification-area');
+      const messageElem = document.getElementById('alert-notification-message');
+      if (!area || !messageElem) return;
+
+      if (alertNotificationTimer) {
+        clearTimeout(alertNotificationTimer);
+        alertNotificationTimer = null;
+      }
+
+      area.className = `notification-area status-${type}`;
+      messageElem.innerHTML = html;
+
+      if (duration > 0) {
+        alertNotificationTimer = setTimeout(() => {
+          updateAlertBatchUIState();
+        }, duration);
+      }
+    }
+
+    // 警報一覧テーブルの描画
+    function renderAlertTable() {
+      const tbody = document.getElementById('alert-table-body');
+      const countInfo = document.getElementById('alert-count-info');
+      const checkAll = document.getElementById('check-all-alerts');
+      if (!tbody) return;
+
+      const filterCategory = document.getElementById('filter-alert-category')?.value || 'all';
+      const filterStatus = document.getElementById('filter-alert-status')?.value || 'pending';
+      const filterHall = document.getElementById('filter-alert-hall')?.value || 'all';
+
+      // 統一データマッピング
+      const alertItems = allRequests.map(mapToAlertItem);
+
+      // フィルタリング
+      const filtered = alertItems.filter((item) => {
+        if (filterCategory !== 'all' && item.category !== filterCategory) return false;
+        if (filterStatus !== 'all' && item.status !== filterStatus) return false;
+        if (filterHall !== 'all' && item.area !== filterHall) return false;
+        return true;
+      });
+
+      // 承認待ち件数
+      const pendingCount = alertItems.filter((item) => item.status === 'pending').length;
+
+      if (countInfo) {
+        countInfo.textContent = `表示: ${filtered.length}件 / 選択中: ${selectedAlertIds.size}件 (承認待ち: ${pendingCount}件)`;
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              条件に一致する警報・申請はありません
+            </td>
+          </tr>
+        `;
+        if (checkAll) {
+          checkAll.checked = false;
+          checkAll.indeterminate = false;
+        }
+        return;
+      }
+
+      // 全選択チェックボックス状態の更新（未処理＝pendingのアイテムのみ選択対象）
+      const selectableItems = filtered.filter((item) => item.status === 'pending');
+      const allSelected = selectableItems.length > 0 && selectableItems.every((item) => selectedAlertIds.has(item.id));
+      const someSelected = selectableItems.some((item) => selectedAlertIds.has(item.id));
+      if (checkAll) {
+        checkAll.checked = allSelected;
+        checkAll.indeterminate = !allSelected && someSelected;
+      }
+
+      tbody.innerHTML = filtered.map((item) => {
+        const isSelected = selectedAlertIds.has(item.id);
+        const isPending = item.status === 'pending';
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString('ja-JP', {
+          month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        }) : '-';
+
+        return `
+          <tr class="${isPending ? 'row-pending' : ''} ${isSelected ? 'row-selected' : ''}" data-alert-id="${escapeHtml(item.id)}">
+            <td class="col-checkbox">
+              <input type="checkbox" class="check-alert-item" data-id="${escapeHtml(item.id)}" ${isSelected ? 'checked' : ''} ${!isPending ? 'disabled' : ''} aria-label="選択">
+            </td>
+            <td>
+              <span class="badge-category ${escapeHtml(item.category)}">${escapeHtml(item.categoryLabel)}</span>
+            </td>
+            <td style="font-family: monospace; font-size: 12px; color: var(--text-secondary);">${escapeHtml(dateStr)}</td>
+            <td>
+              <div style="font-weight: 600; color: #ffffff;">${escapeHtml(item.targetName)}</div>
+              <div style="font-size: 11px; color: #8ab4f8;">${escapeHtml(item.area)}</div>
+            </td>
+            <td>${item.summaryHtml}</td>
+            <td style="color: var(--text-secondary);">${escapeHtml(item.sourceName)}</td>
+            <td>
+              <span class="status-badge ${escapeHtml(item.statusClass)}">
+                <span class="status-badge-dot"></span>${escapeHtml(item.statusLabel)}
+              </span>
+            </td>
+            <td style="font-size: 12px; color: var(--text-muted); word-break: break-all;">
+              ${item.note ? `<div>${escapeHtml(item.note)}</div>` : ''}
+              ${item.rejectReason ? `<div style="color: #f28b82; font-size: 11px;">理由: ${escapeHtml(item.rejectReason)}</div>` : ''}
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn-row-action btn-row-detail" data-action="detail" data-id="${escapeHtml(item.id)}">詳細</button>
+                <button type="button" class="btn-row-action btn-row-approve" data-action="approve" data-id="${escapeHtml(item.id)}" ${!isPending ? 'disabled' : ''}>承認</button>
+                <button type="button" class="btn-row-action btn-row-reject" data-action="reject" data-id="${escapeHtml(item.id)}" ${!isPending ? 'disabled' : ''}>差戻</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 警報一覧 一括操作状態選択（承認／差戻）
+    function selectAlertBatchAction(action) {
+      if (selectedAlertIds.size === 0 || isAlertBatchSubmitting) return;
+      if (alertBatchAction === action) {
+        alertBatchAction = null;
+      } else {
+        alertBatchAction = action;
+      }
+      updateAlertBatchUIState();
+    }
+
+    // 警報一覧 一括操作UI状態更新
+    function updateAlertBatchUIState() {
+      const selectedCount = selectedAlertIds.size;
+      const countElem = document.getElementById('alert-selected-count');
+      if (countElem) {
+        countElem.textContent = `選択: ${selectedCount}件`;
+      }
+
+      const approveBtn = document.getElementById('btn-alert-batch-approve');
+      const rejectBtn = document.getElementById('btn-alert-batch-reject');
+      const cancelBtn = document.getElementById('btn-alert-batch-cancel');
+      const submitBtn = document.getElementById('btn-alert-batch-submit');
+
+      const hasSelection = selectedCount > 0;
+      if (approveBtn) {
+        approveBtn.disabled = !hasSelection || isAlertBatchSubmitting;
+        if (alertBatchAction === 'approve') {
+          approveBtn.classList.add('selected');
+        } else {
+          approveBtn.classList.remove('selected');
+        }
+      }
+
+      if (rejectBtn) {
+        rejectBtn.disabled = !hasSelection || isAlertBatchSubmitting;
+        if (alertBatchAction === 'reject') {
+          rejectBtn.classList.add('selected');
+        } else {
+          rejectBtn.classList.remove('selected');
+        }
+      }
+
+      if (cancelBtn) {
+        cancelBtn.disabled = (!hasSelection && !alertBatchAction) || isAlertBatchSubmitting;
+      }
+
+      if (submitBtn) {
+        const canSubmit = hasSelection && alertBatchAction !== null && !isAlertBatchSubmitting;
+        submitBtn.disabled = !canSubmit;
+        if (canSubmit) {
+          submitBtn.classList.add('ready-to-submit');
+        } else {
+          submitBtn.classList.remove('ready-to-submit');
+        }
+      }
+
+      if (!hasSelection) {
+        setAlertNotification('警報または申請を選択して承認・差戻操作を行えます', 'default');
+      } else if (!alertBatchAction) {
+        setAlertNotification(
+          `<span class="notification-highlight">${selectedCount}件選択中:</span> 操作（一括承認／一括差戻）を選択してください`,
+          'active'
+        );
+      } else if (alertBatchAction === 'approve') {
+        setAlertNotification(
+          `<span class="notification-highlight">${selectedCount}件を「一括承認」:</span> 一括送信をクリックして反映させてください`,
+          'active'
+        );
+      } else if (alertBatchAction === 'reject') {
+        setAlertNotification(
+          `<span class="notification-highlight">${selectedCount}件を「一括差戻」:</span> 一括送信をクリックして反映させてください`,
+          'active'
+        );
+      }
+    }
+
+    // 警報一覧 全選択/全解除切り替え
+    function toggleSelectAllAlerts(checked) {
+      const filterCategory = document.getElementById('filter-alert-category')?.value || 'all';
+      const filterStatus = document.getElementById('filter-alert-status')?.value || 'pending';
+      const filterHall = document.getElementById('filter-alert-hall')?.value || 'all';
+
+      const alertItems = allRequests.map(mapToAlertItem);
+      const filteredPending = alertItems.filter((item) => {
+        if (item.status !== 'pending') return false;
+        if (filterCategory !== 'all' && item.category !== filterCategory) return false;
+        if (filterStatus !== 'all' && item.status !== filterStatus) return false;
+        if (filterHall !== 'all' && item.area !== filterHall) return false;
+        return true;
+      });
+
+      if (checked) {
+        filteredPending.forEach((item) => selectedAlertIds.add(item.id));
+      } else {
+        filteredPending.forEach((item) => selectedAlertIds.delete(item.id));
+      }
+
+      if (selectedAlertIds.size === 0) {
+        alertBatchAction = null;
+      }
+
+      renderAlertTable();
+      updateAlertBatchUIState();
+    }
+
+    // 警報一覧 個別チェック切り替え
+    function toggleSelectAlert(id, checked) {
+      if (checked) {
+        selectedAlertIds.add(id);
+      } else {
+        selectedAlertIds.delete(id);
+      }
+
+      if (selectedAlertIds.size === 0) {
+        alertBatchAction = null;
+      }
+
+      renderAlertTable();
+      updateAlertBatchUIState();
+    }
+
+    // 警報一覧 選択解除
+    function clearAlertBatchSelection() {
+      selectedAlertIds.clear();
+      alertBatchAction = null;
+      renderAlertTable();
+      updateAlertBatchUIState();
+    }
+
+    // 警報一覧 一括操作送信
+    async function submitAlertBatchAction() {
+      if (isAlertBatchSubmitting || selectedAlertIds.size === 0 || !alertBatchAction) return;
+      if (alertBatchAction === 'approve') {
+        await submitAlertBatchApprove();
+      } else if (alertBatchAction === 'reject') {
+        await submitAlertBatchReject();
+      }
+    }
+
+    // 警報一覧 一括承認
+    async function submitAlertBatchApprove() {
+      if (isAlertBatchSubmitting || selectedAlertIds.size === 0) return;
+      const ids = Array.from(selectedAlertIds);
+      isAlertBatchSubmitting = true;
+      updateAlertBatchUIState();
+
+      try {
+        const res = await fetch('/api/requests/batch-approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const result = await res.json();
+        const approvedCount = result.approvedCount || 0;
+        selectedAlertIds.clear();
+        alertBatchAction = null;
+        isAlertBatchSubmitting = false;
+
+        await pollFacilitiesAndRequests();
+        setAlertNotification(
+          `<span class="notification-highlight">${approvedCount}件の申請:</span> 一括承認を完了しました`,
+          'success',
+          3000
+        );
+      } catch (err) {
+        isAlertBatchSubmitting = false;
+        updateAlertBatchUIState();
+        setAlertNotification(`一括承認に失敗しました: ${escapeHtml(err.message)}`, 'error');
+      }
+    }
+
+    // 警報一覧 一括差戻
+    async function submitAlertBatchReject() {
+      if (isAlertBatchSubmitting || selectedAlertIds.size === 0) return;
+      const ids = Array.from(selectedAlertIds);
+      isAlertBatchSubmitting = true;
+      updateAlertBatchUIState();
+
+      try {
+        const res = await fetch('/api/requests/batch-reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids, reason: '指揮所による一括差戻' }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+
+        const result = await res.json();
+        const rejectedCount = result.rejectedCount || 0;
+        selectedAlertIds.clear();
+        alertBatchAction = null;
+        isAlertBatchSubmitting = false;
+
+        await pollFacilitiesAndRequests();
+        setAlertNotification(
+          `<span class="notification-highlight">${rejectedCount}件の申請:</span> 一括差戻しを行いました`,
+          'default',
+          3000
+        );
+      } catch (err) {
+        isAlertBatchSubmitting = false;
+        updateAlertBatchUIState();
+        setAlertNotification(`一括差戻に失敗しました: ${escapeHtml(err.message)}`, 'error');
       }
     }
 
@@ -2097,12 +2884,12 @@
       });
     }
 
-    // 定期ポーリング処理（設備データ＋未承認申請データ）
+    // 定期ポーリング処理（設備データ＋全申請データ）
     async function pollFacilitiesAndRequests() {
       try {
         const [facRes, reqRes] = await Promise.all([
           fetch('/api/facilities'),
-          fetch('/api/requests?status=pending'),
+          fetch('/api/requests'),
         ]);
 
         let facilitiesData = null;
@@ -2112,7 +2899,13 @@
         }
 
         if (reqRes.ok) {
-          const newPending = await reqRes.json();
+          const reqs = await reqRes.json();
+          // 作成日時降順
+          reqs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          allRequests = reqs;
+
+          // pendingRequests は時系列順（先着順でスタック処理）
+          const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
           pendingRequests = newPending;
 
           // 新しい未確認申請があるかチェック
@@ -2142,6 +2935,12 @@
           if (modal && modal.classList.contains('active')) {
             renderRequestDetailModal();
           }
+
+          // 警報一覧画面表示中の場合はテーブルと一括UIを更新
+          if (currentView === 'alerts') {
+            renderAlertTable();
+            updateAlertBatchUIState();
+          }
         }
 
         if (facilitiesData) {
@@ -2162,7 +2961,7 @@
       try {
         const svgUrl = '/shared/map-east.svg';
         const facilitiesUrl = '/api/facilities';
-        const requestsUrl = '/api/requests?status=pending';
+        const requestsUrl = '/api/requests';
 
         const [svgRes, facilitiesRes, reqRes] = await Promise.all([
           fetch(svgUrl),
@@ -2183,7 +2982,11 @@
         const facilities = await facilitiesRes.json();
 
         if (reqRes.ok) {
-          pendingRequests = await reqRes.json();
+          const reqs = await reqRes.json();
+          reqs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          allRequests = reqs;
+          pendingRequests = reqs.filter((r) => r.status === 'pending').slice().reverse();
+
           if (pendingRequests.length > 0) {
             isBuzzerActive = true;
             startBuzzerSound();
@@ -2316,10 +3119,13 @@
         updateFacilityColors(facilities);
         updateNotificationArea();
 
-        // 台帳テーブルの初期描画
+        // 各ビューの初期描画
         if (currentView === 'facilities') {
           renderFacilityTable();
           updateBatchUIState();
+        } else if (currentView === 'alerts') {
+          renderAlertTable();
+          updateAlertBatchUIState();
         }
 
         // 定期ポーリング開始（3秒間隔）
@@ -2428,11 +3234,11 @@
         }
       });
 
-      // 全選択チェックボックス
-      const checkAll = document.getElementById('check-all-facilities');
-      if (checkAll) {
-        checkAll.addEventListener('change', () => {
-          toggleSelectAll(checkAll.checked);
+      // 設備入力 全選択チェックボックス
+      const checkAllFacilities = document.getElementById('check-all-facilities');
+      if (checkAllFacilities) {
+        checkAllFacilities.addEventListener('change', () => {
+          toggleSelectAll(checkAllFacilities.checked);
         });
       }
 
@@ -2443,12 +3249,72 @@
         });
       });
 
-      document.getElementById('btn-batch-cancel').addEventListener('click', () => {
+      document.getElementById('btn-batch-cancel')?.addEventListener('click', () => {
         clearBatchSelection();
       });
 
-      document.getElementById('btn-batch-submit').addEventListener('click', () => {
+      document.getElementById('btn-batch-submit')?.addEventListener('click', () => {
         submitBatchStatusChange();
+      });
+
+      // 警報一覧 フィルター変更イベント
+      ['filter-alert-category', 'filter-alert-status', 'filter-alert-hall'].forEach((id) => {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.addEventListener('change', () => {
+            renderAlertTable();
+          });
+        }
+      });
+
+      // 警報一覧 全選択チェックボックス
+      const checkAllAlerts = document.getElementById('check-all-alerts');
+      if (checkAllAlerts) {
+        checkAllAlerts.addEventListener('change', () => {
+          toggleSelectAllAlerts(checkAllAlerts.checked);
+        });
+      }
+
+      // 警報一覧 テーブル内操作イベント（イベント委譲）
+      const alertTableBody = document.getElementById('alert-table-body');
+      if (alertTableBody) {
+        alertTableBody.addEventListener('click', (e) => {
+          const target = e.target;
+          // チェックボックス
+          if (target.classList.contains('check-alert-item')) {
+            const id = target.dataset.id;
+            toggleSelectAlert(id, target.checked);
+            return;
+          }
+          // 行アクションボタン
+          const actionBtn = target.closest('.btn-row-action');
+          if (actionBtn) {
+            const action = actionBtn.dataset.action;
+            const id = actionBtn.dataset.id;
+            if (action === 'detail') {
+              openRequestDetailModal(id);
+            } else if (action === 'approve') {
+              approveRequestById(id);
+            } else if (action === 'reject') {
+              rejectRequestById(id);
+            }
+          }
+        });
+      }
+
+      // 警報一覧 一括操作ツールバーイベント
+      document.querySelectorAll('#alert-toolbar .status-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectAlertBatchAction(btn.dataset.action);
+        });
+      });
+
+      document.getElementById('btn-alert-batch-cancel')?.addEventListener('click', () => {
+        clearAlertBatchSelection();
+      });
+
+      document.getElementById('btn-alert-batch-submit')?.addEventListener('click', () => {
+        submitAlertBatchAction();
       });
     });
   </script>
