@@ -118,6 +118,90 @@ function updateRequestStatus(id, newStatus) {
 }
 
 /**
+ * 特定の設備に対する保留中（pending）の申請を自動差戻し（手動変更時）
+ * @param {string|Array<string>} facilityIds 設備IDまたはその配列
+ * @param {string} [reasonNote='手動変更により自動差戻し']
+ * @returns {Array<Object>} 差戻された申請オブジェクトの配列
+ */
+function rejectPendingRequestsForFacilities(facilityIds, reasonNote = '手動変更により自動差戻し') {
+  const ids = Array.isArray(facilityIds) ? new Set(facilityIds) : new Set([facilityIds]);
+  const rejected = [];
+  requests.forEach((req) => {
+    if (ids.has(req.facilityId) && req.status === 'pending') {
+      req.status = 'rejected';
+      req.updatedAt = Date.now();
+      req.rejectReason = reasonNote;
+      rejected.push({ ...req });
+    }
+  });
+  return rejected;
+}
+
+/**
+ * 複数申請を一括承認
+ * @param {Array<string>} ids 申請IDの配列
+ * @returns {Object} { success: boolean, approvedCount: number, requests: Array, facilities: Array }
+ */
+function batchApproveRequests(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { success: false, reason: 'INVALID_IDS' };
+  }
+  const idSet = new Set(ids);
+  const approvedRequests = [];
+  const updatedFacilities = [];
+  const { updateFacilityState } = require('./facilities');
+
+  requests.forEach((req) => {
+    if (idSet.has(req.id) && req.status === 'pending') {
+      req.status = 'approved';
+      req.updatedAt = Date.now();
+      approvedRequests.push({ ...req });
+
+      const facResult = updateFacilityState(req.facilityId, req.requestedState);
+      if (facResult.success && facResult.facility) {
+        updatedFacilities.push(facResult.facility);
+      }
+    }
+  });
+
+  return {
+    success: true,
+    approvedCount: approvedRequests.length,
+    requests: approvedRequests,
+    facilities: updatedFacilities,
+  };
+}
+
+/**
+ * 複数申請を一括差戻し
+ * @param {Array<string>} ids 申請IDの配列
+ * @param {string} [reason='一括差戻']
+ * @returns {Object} { success: boolean, rejectedCount: number, requests: Array }
+ */
+function batchRejectRequests(ids, reason = '一括差戻') {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { success: false, reason: 'INVALID_IDS' };
+  }
+  const idSet = new Set(ids);
+  const rejectedRequests = [];
+
+  requests.forEach((req) => {
+    if (idSet.has(req.id) && req.status === 'pending') {
+      req.status = 'rejected';
+      req.updatedAt = Date.now();
+      req.rejectReason = reason;
+      rejectedRequests.push({ ...req });
+    }
+  });
+
+  return {
+    success: true,
+    rejectedCount: rejectedRequests.length,
+    requests: rejectedRequests,
+  };
+}
+
+/**
  * 申請状態を初期化
  */
 function resetRequests() {
@@ -133,5 +217,8 @@ module.exports = {
   createRequest,
   cancelRequest,
   updateRequestStatus,
+  rejectPendingRequestsForFacilities,
+  batchApproveRequests,
+  batchRejectRequests,
   resetRequests,
 };

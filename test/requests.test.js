@@ -6,9 +6,12 @@ const {
   createRequest,
   cancelRequest,
   updateRequestStatus,
+  rejectPendingRequestsForFacilities,
+  batchApproveRequests,
+  batchRejectRequests,
   resetRequests,
 } = require('../src/state/requests');
-const { resetFacilities } = require('../src/state/facilities');
+const { resetFacilities, getFacilities } = require('../src/state/facilities');
 
 beforeEach(() => {
   resetFacilities();
@@ -153,6 +156,78 @@ test('updateRequestStatus() updates status to approved/rejected', () => {
   const resInvalid = updateRequestStatus('req-1', 'invalid_status');
   assert.equal(resInvalid.success, false);
   assert.equal(resInvalid.reason, 'INVALID_STATUS');
+});
+
+test('rejectPendingRequestsForFacilities() automatically rejects pending requests for specified facility IDs', () => {
+  createRequest({ facilityId: 'higashi1-gate', requestedState: 'closed' });
+  createRequest({ facilityId: 'higashi2-gate', requestedState: 'open' });
+  createRequest({ facilityId: 'higashi3-gate', requestedState: 'open' });
+
+  const rejected = rejectPendingRequestsForFacilities(['higashi1-gate', 'higashi2-gate'], '手動変更により自動差戻し');
+  assert.equal(rejected.length, 2);
+  assert.equal(rejected[0].id, 'req-1');
+  assert.equal(rejected[0].status, 'rejected');
+  assert.equal(rejected[0].rejectReason, '手動変更により自動差戻し');
+  assert.equal(rejected[1].id, 'req-2');
+  assert.equal(rejected[1].status, 'rejected');
+
+  // req-3 remains pending
+  const pending = getRequests({ status: 'pending' });
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].id, 'req-3');
+
+  // Calling again for single string ID
+  const singleReject = rejectPendingRequestsForFacilities('higashi3-gate');
+  assert.equal(singleReject.length, 1);
+  assert.equal(singleReject[0].id, 'req-3');
+  assert.equal(getRequests({ status: 'pending' }).length, 0);
+});
+
+test('batchApproveRequests() approves multiple requests and updates facility states', () => {
+  createRequest({ facilityId: 'higashi2-gate', requestedState: 'open' });
+  createRequest({ facilityId: 'higashi1-a-shutter', requestedState: 'open' });
+  createRequest({ facilityId: 'higashi3-gate', requestedState: 'restricted' });
+
+  const res = batchApproveRequests(['req-1', 'req-2']);
+  assert.equal(res.success, true);
+  assert.equal(res.approvedCount, 2);
+  assert.equal(res.requests.length, 2);
+  assert.equal(res.requests[0].status, 'approved');
+  assert.equal(res.requests[1].status, 'approved');
+
+  // Check facility states updated
+  const facilities = getFacilities();
+  const f2 = facilities.find((f) => f.id === 'higashi2-gate');
+  const f1a = facilities.find((f) => f.id === 'higashi1-a-shutter');
+  const f3 = facilities.find((f) => f.id === 'higashi3-gate');
+  assert.equal(f2.state, 'open');
+  assert.equal(f1a.state, 'open');
+  assert.equal(f3.state, 'closed'); // unchanged
+
+  // req-3 is still pending
+  assert.equal(getRequests({ status: 'pending' }).length, 1);
+
+  // Invalid ids returns INVALID_IDS
+  const resInvalid = batchApproveRequests('not-array');
+  assert.equal(resInvalid.success, false);
+  assert.equal(resInvalid.reason, 'INVALID_IDS');
+});
+
+test('batchRejectRequests() rejects multiple requests', () => {
+  createRequest({ facilityId: 'higashi2-gate', requestedState: 'open' });
+  createRequest({ facilityId: 'higashi3-gate', requestedState: 'open' });
+
+  const res = batchRejectRequests(['req-1', 'req-2'], '不要な申請のため一括差戻');
+  assert.equal(res.success, true);
+  assert.equal(res.rejectedCount, 2);
+  assert.equal(res.requests[0].status, 'rejected');
+  assert.equal(res.requests[0].rejectReason, '不要な申請のため一括差戻');
+  assert.equal(res.requests[1].status, 'rejected');
+  assert.equal(getRequests({ status: 'pending' }).length, 0);
+
+  const resInvalid = batchRejectRequests([]);
+  assert.equal(resInvalid.success, false);
+  assert.equal(resInvalid.reason, 'INVALID_IDS');
 });
 
 test('resetRequests() clears all requests and resets counter', () => {

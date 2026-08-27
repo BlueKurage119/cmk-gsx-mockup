@@ -4,6 +4,8 @@ const {
   createRequest,
   cancelRequest,
   updateRequestStatus,
+  batchApproveRequests,
+  batchRejectRequests,
 } = require('../state/requests');
 const { updateFacilityState } = require('../state/facilities');
 
@@ -17,6 +19,36 @@ function registerRequestRoutes(app) {
 
     const list = getRequests(filter);
     res.status(200).json(list);
+  });
+
+  // POST /api/requests/batch-approve: 複数申請一括承認
+  app.post('/api/requests/batch-approve', (req, res) => {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid ids field. Expected non-empty array of request IDs' });
+    }
+
+    const result = batchApproveRequests(ids);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Failed to batch approve requests' });
+    }
+
+    return res.status(200).json(result);
+  });
+
+  // POST /api/requests/batch-reject: 複数申請一括差戻
+  app.post('/api/requests/batch-reject', (req, res) => {
+    const { ids, reason } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid ids field. Expected non-empty array of request IDs' });
+    }
+
+    const result = batchRejectRequests(ids, reason || '一括差戻');
+    if (!result.success) {
+      return res.status(400).json({ error: 'Failed to batch reject requests' });
+    }
+
+    return res.status(200).json(result);
   });
 
   // GET /api/requests/:id: 単一申請取得

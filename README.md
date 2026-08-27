@@ -68,6 +68,14 @@ PORT=18080 npm start
   - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "approved", ...}, "facility": {...}}`（対象設備の運用状態も希望状態へ即時更新）
 - **設備変更申請差戻 API**: `POST http://localhost:8080/api/requests/:id/reject`
   - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "rejected", ...}}`（設備状態は更新されず現状維持）
+- **設備変更申請 一括承認 API**: `POST http://localhost:8080/api/requests/batch-approve`
+  - **リクエスト**: `{"ids": ["req-1", "req-2"]}`
+  - **レスポンス**: `200 OK`、`{"success": true, "approvedCount": 2, "requests": [...], "facilities": [...]}`（対象設備の状態が一括更新）
+- **設備変更申請 一括差戻 API**: `POST http://localhost:8080/api/requests/batch-reject`
+  - **リクエスト**: `{"ids": ["req-1", "req-2"], "reason": "指揮所による一括差戻"}`
+  - **レスポンス**: `200 OK`、`{"success": true, "rejectedCount": 2, "requests": [...]}`
+- **設備手動変更時の自動差戻し（競合解消）**:
+  - `PUT /api/facilities/:id` または `PUT /api/facilities/batch` で設備を手動更新した際、該当設備に `pending`（保留中）の申請が存在すれば自動的に `status: "rejected"`（`rejectReason: "手動変更により自動差戻し"`）に更新されます。
 - **設備変更申請取り下げ API**: `DELETE http://localhost:8080/api/requests/:id`
   - **レスポンス**: `200 OK`、`{"success": true, "request": {"id": "req-1", "status": "cancelled", ...}}`
 - **東展示棟マップ SVG**: `http://localhost:8080/shared/map-east.svg`
@@ -87,6 +95,8 @@ curl -i -X POST http://localhost:8080/api/requests -H "Content-Type: application
 curl -i http://localhost:8080/api/requests?status=pending
 curl -i -X POST http://localhost:8080/api/requests/req-1/approve
 curl -i -X POST http://localhost:8080/api/requests/req-1/reject
+curl -i -X POST http://localhost:8080/api/requests/batch-approve -H "Content-Type: application/json" -d '{"ids":["req-1","req-2"]}'
+curl -i -X POST http://localhost:8080/api/requests/batch-reject -H "Content-Type: application/json" -d '{"ids":["req-1","req-2"],"reason":"一括差戻"}'
 curl -i -X DELETE http://localhost:8080/api/requests/req-1
 curl -i http://localhost:8080/shared/map-east.svg
 curl -i http://localhost:8080/shared/facility-map-check.html
