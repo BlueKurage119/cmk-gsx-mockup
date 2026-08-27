@@ -1397,39 +1397,51 @@
     }
 
     function selectEmgIncidentReason(reason) {
-      emergencyFormState.reason = reason;
+      emergencyFormState.reason = `非常: ${reason}`;
       goToEmgStep(3);
     }
 
     function handleTriageAnswer(qKey, val) {
       emergencyFormState.triageAnswers[qKey] = val;
 
-      if (val === 'yes') {
-        // 「はい」がついた時点で問診完了してステップ3へ
-        if (qKey === 'consciousness') {
-          emergencyFormState.reason = '意識あり';
-        } else if (qKey === 'speech') {
-          emergencyFormState.reason = '意識なし・会話可能';
-        } else if (qKey === 'walking') {
-          emergencyFormState.reason = '意識なし・会話不可・歩行可能';
+      if (qKey === 'consciousness') {
+        if (val === 'no') {
+          // 意識なし: 最重篤のため即座に問診完了してステップ3へ
+          emergencyFormState.reason = '傷病者: 意識なし';
+          goToEmgStep(3);
+        } else {
+          // 意識あり: 問診継続してQ2へ
+          const q1 = document.getElementById('triage-q1-box');
+          const q2 = document.getElementById('triage-q2-box');
+          if (q1) q1.style.display = 'none';
+          if (q2) q2.style.display = 'flex';
         }
-        goToEmgStep(3);
         return;
       }
 
-      // 「いいえ」の場合
-      if (qKey === 'consciousness') {
-        const q1 = document.getElementById('triage-q1-box');
-        const q2 = document.getElementById('triage-q2-box');
-        if (q1) q1.style.display = 'none';
-        if (q2) q2.style.display = 'flex';
-      } else if (qKey === 'speech') {
-        const q2 = document.getElementById('triage-q2-box');
-        const q3 = document.getElementById('triage-q3-box');
-        if (q2) q2.style.display = 'none';
-        if (q3) q3.style.display = 'flex';
-      } else if (qKey === 'walking') {
-        emergencyFormState.reason = '意識なし・会話不可・歩行不可';
+      if (qKey === 'speech') {
+        if (val === 'no') {
+          // 会話不可: 重篤のため即座に問診完了してステップ3へ
+          emergencyFormState.reason = '傷病者: 会話不可';
+          goToEmgStep(3);
+        } else {
+          // 会話可能: 問診継続してQ3へ
+          const q2 = document.getElementById('triage-q2-box');
+          const q3 = document.getElementById('triage-q3-box');
+          if (q2) q2.style.display = 'none';
+          if (q3) q3.style.display = 'flex';
+        }
+        return;
+      }
+
+      if (qKey === 'walking') {
+        if (val === 'no') {
+          // 歩行困難
+          emergencyFormState.reason = '傷病者: 歩行不可';
+        } else {
+          // 歩行可能（意識あり・会話可能・歩行可能）
+          emergencyFormState.reason = '傷病者: 意識あり';
+        }
         goToEmgStep(3);
       }
     }

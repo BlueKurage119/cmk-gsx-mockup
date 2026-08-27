@@ -949,7 +949,7 @@
     }
 
     .app-header.emergency-alarm-active {
-      animation: header-emergency-blink 0.3s infinite ease-in-out !important;
+      animation: header-emergency-blink 0.8s infinite ease-in-out !important;
     }
 
     .app-header.emergency-alarm-active .header-title,
@@ -1806,6 +1806,9 @@
     let buzzerIntervalId = null;
     let isEmergencyAlarmActive = false;
     let emergencyAlarmIntervalId = null;
+    let isEmergencySnoozed = false;
+    let emergencySnoozeTimeoutId = null;
+    const SNOOZE_DURATION_MS = 120000; // 2分間（120秒）
 
     function getAudioContext() {
       if (!audioCtx) {
@@ -1868,28 +1871,34 @@
 
     // 緊急サイレン音（880Hz / 587Hz 交互ウーウー音）
     function startEmergencyAlarm() {
+      const header = document.querySelector('.app-header');
+      if (header) {
+        header.classList.remove('alarm-active');
+        header.classList.add('emergency-alarm-active');
+      }
+
+      if (isEmergencySnoozed) return; // 2分スヌーズ中は鳴動しない
       if (isEmergencyAlarmActive) return;
       isEmergencyAlarmActive = true;
       stopBuzzerSound(); // 通常ブザーを停止
 
       let isHigh = true;
       const playSirenStep = () => {
-        if (!isEmergencyAlarmActive) return;
+        if (!isEmergencyAlarmActive || isEmergencySnoozed) return;
         playBeep(isHigh ? 880 : 587, 140);
         isHigh = !isHigh;
       };
       playSirenStep();
       emergencyAlarmIntervalId = setInterval(playSirenStep, 150);
-
-      const header = document.querySelector('.app-header');
-      if (header) {
-        header.classList.remove('alarm-active');
-        header.classList.add('emergency-alarm-active');
-      }
     }
 
     function stopEmergencyAlarm() {
       isEmergencyAlarmActive = false;
+      isEmergencySnoozed = false;
+      if (emergencySnoozeTimeoutId) {
+        clearTimeout(emergencySnoozeTimeoutId);
+        emergencySnoozeTimeoutId = null;
+      }
       if (emergencyAlarmIntervalId) {
         clearInterval(emergencyAlarmIntervalId);
         emergencyAlarmIntervalId = null;
@@ -1908,6 +1917,27 @@
           if (header) header.classList.add('alarm-active');
         }
       }
+    }
+
+    // 緊急サイレン 2分間スヌーズ（F8キー押下またはダイアログ表示時）
+    function snoozeEmergencyAlarm() {
+      if (activeEmergencyAlerts.length === 0) return;
+      isEmergencyAlarmActive = false;
+      isEmergencySnoozed = true;
+      if (emergencyAlarmIntervalId) {
+        clearInterval(emergencyAlarmIntervalId);
+        emergencyAlarmIntervalId = null;
+      }
+      if (emergencySnoozeTimeoutId) {
+        clearTimeout(emergencySnoozeTimeoutId);
+      }
+      emergencySnoozeTimeoutId = setTimeout(() => {
+        isEmergencySnoozed = false;
+        emergencySnoozeTimeoutId = null;
+        if (activeEmergencyAlerts.length > 0) {
+          startEmergencyAlarm();
+        }
+      }, SNOOZE_DURATION_MS);
     }
 
     // 画面・設備入力（一括操作）の状態管理
@@ -2546,6 +2576,7 @@
     // 緊急発報 内容確認モーダル制御
     function openEmergencyDetailModal(targetId = null) {
       activeModalEmergencyId = targetId;
+      snoozeEmergencyAlarm(); // 詳細確認時はサイレンを2分間スヌーズ
       renderEmergencyDetailModal();
       const modal = document.getElementById('emergency-detail-modal');
       if (modal) modal.classList.add('active');
@@ -2700,26 +2731,29 @@
         }
         g.appendChild(iconPath);
 
-        // テキストラベル背景
+        // テキストラベル（拡大 font-size: 16px、理由表示）
+        const labelText = alert.reason || (isIncident ? '非常: 緊急事態' : '傷病者: 救護要請');
+        const rectWidth = Math.max(140, labelText.length * 15 + 24);
+
         const textBg = document.createElementNS(SVG_NS, 'rect');
-        textBg.setAttribute('x', '-55');
-        textBg.setAttribute('y', '-52');
-        textBg.setAttribute('width', '110');
-        textBg.setAttribute('height', '22');
-        textBg.setAttribute('rx', '4');
-        textBg.setAttribute('fill', 'rgba(0, 0, 0, 0.85)');
+        textBg.setAttribute('x', String(-rectWidth / 2));
+        textBg.setAttribute('y', '-62');
+        textBg.setAttribute('width', String(rectWidth));
+        textBg.setAttribute('height', '28');
+        textBg.setAttribute('rx', '6');
+        textBg.setAttribute('fill', 'rgba(0, 0, 0, 0.88)');
         textBg.setAttribute('stroke', color);
-        textBg.setAttribute('stroke-width', '1.5');
+        textBg.setAttribute('stroke-width', '2');
         g.appendChild(textBg);
 
         const text = document.createElementNS(SVG_NS, 'text');
         text.setAttribute('x', '0');
-        text.setAttribute('y', '-37');
+        text.setAttribute('y', '-42');
         text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('font-size', '13');
-        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '16');
+        text.setAttribute('font-weight', '800');
         text.setAttribute('fill', '#FFFFFF');
-        text.textContent = isIncident ? '【非常通報】' : '【傷病者】';
+        text.textContent = labelText;
         g.appendChild(text);
 
         g.addEventListener('click', (e) => {
@@ -3748,12 +3782,19 @@
 
         // 緊急発報データ
         const emgs = await emgRes.json();
+        const prevActiveIds = new Set(activeEmergencyAlerts.map((e) => e.id));
         allEmergencyAlerts = emgs;
         activeEmergencyAlerts = emgs.filter((e) => e.status === 'active');
 
-        // pendingRequests は時系列順（先着順でスタック処理）
-        const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
-        pendingRequests = newPending;
+        // 新たな緊急発報が加わった場合はスヌーズを解除して即座にサイレン鳴動
+        const hasBrandNewEmergency = activeEmergencyAlerts.some((e) => !prevActiveIds.has(e.id));
+        if (hasBrandNewEmergency && isEmergencySnoozed) {
+          isEmergencySnoozed = false;
+          if (emergencySnoozeTimeoutId) {
+            clearTimeout(emergencySnoozeTimeoutId);
+            emergencySnoozeTimeoutId = null;
+          }
+        }
 
         // 緊急サイレン音・承認ブザー音の制御
         if (activeEmergencyAlerts.length > 0) {
@@ -4044,11 +4085,12 @@
       window.addEventListener('pointerdown', unlockAudio, { once: true });
       window.addEventListener('keydown', unlockAudio, { once: true });
 
-      // キーボードイベント（F8キーでブザー停止。※緊急サイレンはF8で停止しない）
+      // キーボードイベント（F8キーで承認ブザー停止 & 緊急サイレン2分間スヌーズ）
       window.addEventListener('keydown', (e) => {
         if (e.key === 'F8') {
           e.preventDefault();
           stopBuzzer();
+          snoozeEmergencyAlarm();
         }
       });
 

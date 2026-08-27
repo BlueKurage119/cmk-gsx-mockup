@@ -1394,7 +1394,7 @@ test('GET /m includes emergency-modal and 4-step wizard markup and JS logic', as
   }
 });
 
-test('GET /h includes emergency-detail-modal, siren alarm, map markers, and resolve handling', async () => {
+test('GET /h includes emergency-detail-modal, siren alarm, snooze logic, map markers, and resolve handling', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`);
@@ -1403,6 +1403,8 @@ test('GET /h includes emergency-detail-modal, siren alarm, map markers, and reso
     assert.ok(text.includes('id="btn-modal-emg-resolve"'), 'H terminal should have btn-modal-emg-resolve');
     assert.ok(text.includes('AREA_COORDINATES'), 'H terminal should define AREA_COORDINATES');
     assert.ok(text.includes('startEmergencyAlarm'), 'H terminal should define startEmergencyAlarm');
+    assert.ok(text.includes('snoozeEmergencyAlarm'), 'H terminal should define snoozeEmergencyAlarm');
+    assert.ok(text.includes('header-emergency-blink 0.8s'), 'H terminal should blink header with 0.8s duration');
     assert.ok(text.includes('updateEmergencyMarkers'), 'H terminal should define updateEmergencyMarkers');
     assert.ok(text.includes('resolveEmergencyAlertById'), 'H terminal should define resolveEmergencyAlertById');
     assert.ok(text.includes('/api/emergency-alerts'), 'H terminal should poll /api/emergency-alerts');
