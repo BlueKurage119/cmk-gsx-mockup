@@ -4,11 +4,13 @@ const { startServer } = require('../server');
 const { resetFacilities } = require('../src/state/facilities');
 const { resetRequests } = require('../src/state/requests');
 const { resetFaultReports } = require('../src/state/faultReports');
+const { resetEmergencyAlerts } = require('../src/state/emergencyAlerts');
 
 beforeEach(() => {
   resetFacilities();
   resetRequests();
   resetFaultReports();
+  resetEmergencyAlerts();
 });
 
 async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
@@ -1245,3 +1247,168 @@ test('GET /h includes fault-detail-modal, photo tag, and fault action handling',
     await close();
   }
 });
+
+// ============================================================================
+// Issue #68: 緊急発報（非常通報・傷病者通報）API & UI テスト
+// ============================================================================
+
+test('POST /api/emergency-alerts creates emergency alert with validation', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // 正常系: 非常通報 (incident)
+    const res1 = await fetch(`${baseUrl}/api/emergency-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: 'incident',
+        reason: '暴力行為',
+        area: '東1ホール',
+        note: '【事象】暴力行為 ケンカ発生',
+        reporter: '東地区外警1',
+      }),
+    });
+    assert.equal(res1.status, 201);
+    const data1 = await res1.json();
+    assert.equal(data1.success, true);
+    assert.equal(data1.alert.category, 'incident');
+    assert.equal(data1.alert.reason, '暴力行為');
+    assert.equal(data1.alert.area, '東1ホール');
+    assert.equal(data1.alert.status, 'active');
+
+    // 正常系: 傷病者通報 (injury)
+    const res2 = await fetch(`${baseUrl}/api/emergency-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: 'injury',
+        reason: '意識あり',
+        area: 'ガレリア',
+        note: '【容態問診】意識: あり',
+      }),
+    });
+    assert.equal(res2.status, 201);
+    const data2 = await res2.json();
+    assert.equal(data2.alert.category, 'injury');
+    assert.equal(data2.alert.area, 'ガレリア');
+
+    // 異常系: 無効なカテゴリ
+    const invalidCat = await fetch(`${baseUrl}/api/emergency-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: 'invalid', area: '東1ホール' }),
+    });
+    assert.equal(invalidCat.status, 400);
+
+    // 異常系: 無効なエリア
+    const invalidArea = await fetch(`${baseUrl}/api/emergency-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: 'incident', area: '西ホール' }),
+    });
+    assert.equal(invalidArea.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/emergency-alerts returns list and supports status filter', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const listRes = await fetch(`${baseUrl}/api/emergency-alerts`);
+    assert.equal(listRes.status, 200);
+    const list = await listRes.json();
+    assert.ok(Array.isArray(list));
+
+    const activeRes = await fetch(`${baseUrl}/api/emergency-alerts?status=active`);
+    assert.equal(activeRes.status, 200);
+    const activeList = await activeRes.json();
+    assert.ok(activeList.every((a) => a.status === 'active'));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/emergency-alerts/:id and POST /api/emergency-alerts/:id/resolve', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // 発報作成
+    const createRes = await fetch(`${baseUrl}/api/emergency-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: 'incident',
+        reason: '不審物',
+        area: '東456屋外',
+        note: '黒い不審なカバンあり',
+      }),
+    });
+    assert.equal(createRes.status, 201);
+    const { alert } = await createRes.json();
+
+    // ID取得
+    const getRes = await fetch(`${baseUrl}/api/emergency-alerts/${alert.id}`);
+    assert.equal(getRes.status, 200);
+    const fetched = await getRes.json();
+    assert.equal(fetched.id, alert.id);
+    assert.equal(fetched.status, 'active');
+
+    // 404取得
+    const notFoundRes = await fetch(`${baseUrl}/api/emergency-alerts/emg-non-existent`);
+    assert.equal(notFoundRes.status, 404);
+
+    // 対応完了
+    const resolveRes = await fetch(`${baseUrl}/api/emergency-alerts/${alert.id}/resolve`, {
+      method: 'POST',
+    });
+    assert.equal(resolveRes.status, 200);
+    const resolveData = await resolveRes.json();
+    assert.equal(resolveData.success, true);
+    assert.equal(resolveData.alert.status, 'resolved');
+    assert.ok(typeof resolveData.alert.resolvedAt === 'number');
+
+    // 存在しないIDへの対応完了は404
+    const notFoundResolve = await fetch(`${baseUrl}/api/emergency-alerts/emg-999/resolve`, {
+      method: 'POST',
+    });
+    assert.equal(notFoundResolve.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes emergency-modal and 4-step wizard markup and JS logic', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="emergency-modal"'), 'M terminal should have emergency-modal');
+    assert.ok(text.includes('id="emg-step-1"'), 'M terminal should have step 1');
+    assert.ok(text.includes('id="emg-step-2"'), 'M terminal should have step 2');
+    assert.ok(text.includes('id="emg-step-3"'), 'M terminal should have step 3');
+    assert.ok(text.includes('id="emg-step-4"'), 'M terminal should have step 4');
+    assert.ok(text.includes('id="btn-submit-emergency"'), 'M terminal should have submit emergency button');
+    assert.ok(text.includes('initEmergencyModal'), 'M terminal should define initEmergencyModal');
+    assert.ok(text.includes('/api/emergency-alerts'), 'M terminal should call /api/emergency-alerts');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes emergency-detail-modal, siren alarm, map markers, and resolve handling', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="emergency-detail-modal"'), 'H terminal should have emergency-detail-modal');
+    assert.ok(text.includes('id="btn-modal-emg-resolve"'), 'H terminal should have btn-modal-emg-resolve');
+    assert.ok(text.includes('AREA_COORDINATES'), 'H terminal should define AREA_COORDINATES');
+    assert.ok(text.includes('startEmergencyAlarm'), 'H terminal should define startEmergencyAlarm');
+    assert.ok(text.includes('updateEmergencyMarkers'), 'H terminal should define updateEmergencyMarkers');
+    assert.ok(text.includes('resolveEmergencyAlertById'), 'H terminal should define resolveEmergencyAlertById');
+    assert.ok(text.includes('/api/emergency-alerts'), 'H terminal should poll /api/emergency-alerts');
+    assert.ok(text.includes('notification-badge-emergency'), 'H terminal should style notification-badge-emergency');
+  } finally {
+    await close();
+  }
+});
+
