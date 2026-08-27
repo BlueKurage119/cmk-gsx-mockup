@@ -1297,6 +1297,14 @@
     }
 
     /* ピタネット用スタイル */
+    #toolbar {
+      justify-content: flex-start;
+    }
+
+    #toolbar .action-buttons {
+      margin-left: auto;
+    }
+
     .toolbar-divider {
       width: 1px;
       height: 24px;
@@ -1446,8 +1454,8 @@
             <div class="toolbar-divider" aria-hidden="true"></div>
             <div class="toolbar-group note-buttons">
               <span class="toolbar-group-label">ピタネット</span>
-              <button type="button" class="toolbar-btn" id="btn-note-create-mode">新規作成</button>
-              <button type="button" class="toolbar-btn" id="btn-note-list">ピタ一覧</button>
+              <button type="button" class="toolbar-btn action-btn-cancel" id="btn-note-create-mode">新規作成</button>
+              <button type="button" class="toolbar-btn action-btn-cancel" id="btn-note-list">ピタ一覧</button>
               <button type="button" class="toolbar-btn action-btn-submit" id="btn-note-submit" disabled>ピタ送信</button>
             </div>
             <div class="toolbar-group action-buttons">
@@ -1801,11 +1809,11 @@
           <div style="display: flex; gap: 12px;">
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
               <input type="radio" name="note-create-layer" value="summary" checked>
-              <span style="color: #fdd663; font-weight: 700;">概要層</span>（現場にも表示）
+              <span style="color: #fdd663; font-weight: 700;">現場公開</span>
             </label>
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
               <input type="radio" name="note-create-layer" value="detail">
-              <span style="color: #bdc1c6; font-weight: 700;">詳細層</span>（指揮所限定）
+              <span style="color: #bdc1c6; font-weight: 700;">地区止め</span>
             </label>
           </div>
         </div>
@@ -1843,11 +1851,11 @@
           <div style="display: flex; gap: 12px;">
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
               <input type="radio" name="note-edit-layer" value="summary">
-              <span style="color: #fdd663; font-weight: 700;">概要層</span>（現場にも表示）
+              <span style="color: #fdd663; font-weight: 700;">現場公開</span>
             </label>
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
               <input type="radio" name="note-edit-layer" value="detail">
-              <span style="color: #bdc1c6; font-weight: 700;">詳細層</span>（指揮所限定）
+              <span style="color: #bdc1c6; font-weight: 700;">地区止め</span>
             </label>
           </div>
         </div>
@@ -1881,7 +1889,7 @@
       </div>
       <footer class="modal-footer">
         <button type="button" class="btn btn-outlined" id="btn-note-discard">変更を破棄</button>
-        <button type="button" class="btn btn-approve" id="btn-note-list-submit" style="background-color: #1a73e8; color: #ffffff; font-weight: 700; border: none;" disabled>ピタ送信</button>
+        <button type="button" class="btn btn-filled" id="btn-note-list-submit" style="font-weight: 700;" disabled>ピタ送信</button>
         <button type="button" class="btn btn-outlined" id="btn-note-list-close">閉じる</button>
       </footer>
     </div>
@@ -3293,7 +3301,7 @@
 
       const maxLen = Math.max(...lines.map((l) => l.length));
       const cardWidth = Math.max(160, Math.min(360, maxLen * 22 + 40));
-      const cardHeight = lines.length === 1 ? 52 : 76;
+      const cardHeight = lines.length === 1 ? 40 : 64;
       const cardX = -cardWidth / 2;
       const cardY = -cardHeight - 10;
 
@@ -3327,20 +3335,7 @@
       if (isPending) rect.setAttribute('stroke-dasharray', '6 4');
       g.appendChild(rect);
 
-      // 3. ヘッダー小さなバッジ（層ラベル [概要] / [詳細]）
-      const badgeText = document.createElementNS(SVG_NS, 'text');
-      badgeText.setAttribute('x', String(cardX + 10));
-      badgeText.setAttribute('y', String(cardY + 16));
-      badgeText.setAttribute('font-size', '12');
-      badgeText.setAttribute('font-weight', '800');
-      badgeText.setAttribute('fill', isSummary && !isDeleted ? '#7c5800' : '#dadce0');
-      let badgeLabel = isSummary ? '【概要層】' : '【詳細層】';
-      if (isPending) badgeLabel += ' (未送信)';
-      if (isDeleted) badgeLabel += ' (削除予定)';
-      badgeText.textContent = badgeLabel;
-      g.appendChild(badgeText);
-
-      // 4. 注記本文テキスト（20px 太字）
+      // 3. 注記本文テキスト（20px 太字）。ピタネット本体には層・状態の注釈は入れない（一覧・ツールチップ・枠線色のみで区別する）
       const textElem = document.createElementNS(SVG_NS, 'text');
       textElem.setAttribute('x', String(cardX + 10));
       textElem.setAttribute('font-size', '20');
@@ -3349,10 +3344,10 @@
       if (isDeleted) textElem.setAttribute('text-decoration', 'line-through');
 
       if (lines.length === 1) {
-        textElem.setAttribute('y', String(cardY + 40));
+        textElem.setAttribute('y', String(cardY + 26));
         textElem.textContent = lines[0];
       } else {
-        textElem.setAttribute('y', String(cardY + 38));
+        textElem.setAttribute('y', String(cardY + 26));
         const tspan1 = document.createElementNS(SVG_NS, 'tspan');
         tspan1.setAttribute('x', String(cardX + 10));
         tspan1.textContent = lines[0];
@@ -3367,7 +3362,7 @@
 
       // 5. ツールチップ
       const title = document.createElementNS(SVG_NS, 'title');
-      title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${text} (${author || '東地区外務H1'})${isDeleted ? ' 【削除予定】' : (isPending ? ' 【新規未送信】' : '')}`;
+      title.textContent = `[${isSummary ? '現場公開' : '地区止め'}] ${text} (${author || '東地区外務H1'})${isDeleted ? ' 【削除予定】' : (isPending ? ' 【新規未送信】' : '')}`;
       g.appendChild(title);
 
       if (onClick) {
@@ -3576,11 +3571,11 @@
       }
 
       let html = `
-        <table class="alert-table" style="width: 100%; border-collapse: collapse;">
+        <table class="facility-table alert-table">
           <thead>
             <tr>
               <th style="width: 90px;">位置 (x, y)</th>
-              <th style="width: 90px;">層</th>
+              <th style="width: 110px;">層</th>
               <th>注記本文</th>
               <th style="width: 110px;">作成者</th>
               <th style="width: 130px;">状態</th>
@@ -3593,8 +3588,8 @@
       items.forEach((item) => {
         const isSummary = item.layer === 'summary';
         const layerBadge = isSummary
-          ? '<span style="color: #fdd663; font-weight: 700; background: rgba(251, 188, 4, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #fbbc04;">概要層</span>'
-          : '<span style="color: #bdc1c6; font-weight: 700; background: rgba(154, 160, 166, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #9aa0a6;">詳細層</span>';
+          ? '<span style="display: inline-block; white-space: nowrap; color: #fdd663; font-weight: 700; background: rgba(251, 188, 4, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #fbbc04;">現場公開</span>'
+          : '<span style="display: inline-block; white-space: nowrap; color: #bdc1c6; font-weight: 700; background: rgba(154, 160, 166, 0.15); padding: 2px 6px; border-radius: 4px; border: 1px solid #9aa0a6;">地区止め</span>';
 
         const rowClass = item.isDeleted ? 'note-table-row-deleted' : '';
 

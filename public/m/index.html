@@ -1075,7 +1075,7 @@
 
       const maxLen = Math.max(...lines.map((l) => l.length));
       const cardWidth = Math.max(160, Math.min(360, maxLen * 22 + 40));
-      const cardHeight = lines.length === 1 ? 52 : 76;
+      const cardHeight = lines.length === 1 ? 40 : 64;
       const cardX = -cardWidth / 2;
       const cardY = -cardHeight - 10;
 
@@ -1105,17 +1105,7 @@
       rect.setAttribute('stroke-width', strokeWidth);
       g.appendChild(rect);
 
-      // 3. ヘッダー小さなバッジ
-      const badgeText = document.createElementNS(SVG_NS, 'text');
-      badgeText.setAttribute('x', String(cardX + 10));
-      badgeText.setAttribute('y', String(cardY + 16));
-      badgeText.setAttribute('font-size', '12');
-      badgeText.setAttribute('font-weight', '800');
-      badgeText.setAttribute('fill', '#7c5800');
-      badgeText.textContent = '【現場注記】';
-      g.appendChild(badgeText);
-
-      // 4. 注記本文テキスト（20px 太字）
+      // 3. 注記本文テキスト（20px 太字）。ピタネット本体には層・状態の注釈は入れない
       const textElem = document.createElementNS(SVG_NS, 'text');
       textElem.setAttribute('x', String(cardX + 10));
       textElem.setAttribute('font-size', '20');
@@ -1123,10 +1113,10 @@
       textElem.setAttribute('fill', textColor);
 
       if (lines.length === 1) {
-        textElem.setAttribute('y', String(cardY + 40));
+        textElem.setAttribute('y', String(cardY + 26));
         textElem.textContent = lines[0];
       } else {
-        textElem.setAttribute('y', String(cardY + 38));
+        textElem.setAttribute('y', String(cardY + 26));
         const tspan1 = document.createElementNS(SVG_NS, 'tspan');
         tspan1.setAttribute('x', String(cardX + 10));
         tspan1.textContent = lines[0];
