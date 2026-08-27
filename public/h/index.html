@@ -286,6 +286,61 @@
       cursor: not-allowed;
     }
 
+    /* 警報一覧用 一括操作ボタン（承認・差戻） */
+    .status-btn[data-action="approve"] {
+      border: 1.5px solid var(--color-open);
+      color: #81c995;
+      background-color: transparent;
+    }
+
+    .status-btn[data-action="approve"]:hover:not(:disabled) {
+      background-color: rgba(52, 168, 83, 0.15);
+      color: #ffffff;
+    }
+
+    .status-btn.selected[data-action="approve"] {
+      background-color: var(--color-open);
+      border-color: var(--color-open);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(52, 168, 83, 0.5);
+    }
+
+    .status-btn[data-action="approve"]:disabled {
+      border-color: rgba(52, 168, 83, 0.35);
+      color: rgba(129, 201, 149, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-btn[data-action="reject"] {
+      border: 1.5px solid var(--color-closed);
+      color: #f28b82;
+      background-color: transparent;
+    }
+
+    .status-btn[data-action="reject"]:hover:not(:disabled) {
+      background-color: rgba(234, 67, 53, 0.15);
+      color: #ffffff;
+    }
+
+    .status-btn.selected[data-action="reject"] {
+      background-color: var(--color-closed);
+      border-color: var(--color-closed);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(234, 67, 53, 0.5);
+    }
+
+    .status-btn[data-action="reject"]:disabled {
+      border-color: rgba(234, 67, 53, 0.35);
+      color: rgba(242, 139, 130, 0.4);
+      background-color: transparent;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     /* 送信・選択解除アクションボタン */
     @keyframes submit-pulse {
       0%, 100% {
@@ -1299,11 +1354,12 @@
           <div class="toolbar" id="alert-toolbar" role="toolbar" aria-label="警報一覧一括操作ツールバー">
             <div class="toolbar-group status-buttons">
               <span class="toolbar-selection-info" id="alert-selected-count">選択: 0件</span>
-              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-approve" disabled style="color: #81c995; border-color: rgba(52, 168, 83, 0.5);">一括承認</button>
-              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-reject" disabled style="color: #f28b82; border-color: rgba(234, 67, 53, 0.5);">一括差戻</button>
+              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-approve" data-action="approve" disabled>一括承認</button>
+              <button type="button" class="toolbar-btn status-btn" id="btn-alert-batch-reject" data-action="reject" disabled>一括差戻</button>
             </div>
             <div class="toolbar-group action-buttons">
               <button type="button" class="toolbar-btn action-btn-cancel" id="btn-alert-batch-cancel" disabled>選択解除</button>
+              <button type="button" class="toolbar-btn action-btn-submit" id="btn-alert-batch-submit" disabled>一括送信</button>
             </div>
           </div>
 
@@ -1516,6 +1572,7 @@
     // 警報一覧・全申請状態管理
     let allRequests = [];
     const selectedAlertIds = new Set();
+    let alertBatchAction = null; // 'approve' | 'reject' | null
     let isAlertBatchSubmitting = false;
     let alertNotificationTimer = null;
     let activeModalRequestId = null;
@@ -2126,6 +2183,17 @@
       }).join('');
     }
 
+    // 警報一覧 一括操作状態選択（承認／差戻）
+    function selectAlertBatchAction(action) {
+      if (selectedAlertIds.size === 0 || isAlertBatchSubmitting) return;
+      if (alertBatchAction === action) {
+        alertBatchAction = null;
+      } else {
+        alertBatchAction = action;
+      }
+      updateAlertBatchUIState();
+    }
+
     // 警報一覧 一括操作UI状態更新
     function updateAlertBatchUIState() {
       const selectedCount = selectedAlertIds.size;
@@ -2137,17 +2205,56 @@
       const approveBtn = document.getElementById('btn-alert-batch-approve');
       const rejectBtn = document.getElementById('btn-alert-batch-reject');
       const cancelBtn = document.getElementById('btn-alert-batch-cancel');
+      const submitBtn = document.getElementById('btn-alert-batch-submit');
 
       const hasSelection = selectedCount > 0;
-      if (approveBtn) approveBtn.disabled = !hasSelection || isAlertBatchSubmitting;
-      if (rejectBtn) rejectBtn.disabled = !hasSelection || isAlertBatchSubmitting;
-      if (cancelBtn) cancelBtn.disabled = !hasSelection || isAlertBatchSubmitting;
+      if (approveBtn) {
+        approveBtn.disabled = !hasSelection || isAlertBatchSubmitting;
+        if (alertBatchAction === 'approve') {
+          approveBtn.classList.add('selected');
+        } else {
+          approveBtn.classList.remove('selected');
+        }
+      }
+
+      if (rejectBtn) {
+        rejectBtn.disabled = !hasSelection || isAlertBatchSubmitting;
+        if (alertBatchAction === 'reject') {
+          rejectBtn.classList.add('selected');
+        } else {
+          rejectBtn.classList.remove('selected');
+        }
+      }
+
+      if (cancelBtn) {
+        cancelBtn.disabled = (!hasSelection && !alertBatchAction) || isAlertBatchSubmitting;
+      }
+
+      if (submitBtn) {
+        const canSubmit = hasSelection && alertBatchAction !== null && !isAlertBatchSubmitting;
+        submitBtn.disabled = !canSubmit;
+        if (canSubmit) {
+          submitBtn.classList.add('ready-to-submit');
+        } else {
+          submitBtn.classList.remove('ready-to-submit');
+        }
+      }
 
       if (!hasSelection) {
         setAlertNotification('警報または申請を選択して承認・差戻操作を行えます', 'default');
-      } else {
+      } else if (!alertBatchAction) {
         setAlertNotification(
-          `<span class="notification-highlight">${selectedCount}件の申請を選択中:</span> 「一括承認」または「一括差戻」をクリックしてください`,
+          `<span class="notification-highlight">${selectedCount}件選択中:</span> 操作（一括承認／一括差戻）を選択してください`,
+          'active'
+        );
+      } else if (alertBatchAction === 'approve') {
+        setAlertNotification(
+          `<span class="notification-highlight">${selectedCount}件を「一括承認」:</span> 一括送信をクリックして反映させてください`,
+          'active'
+        );
+      } else if (alertBatchAction === 'reject') {
+        setAlertNotification(
+          `<span class="notification-highlight">${selectedCount}件を「一括差戻」:</span> 一括送信をクリックして反映させてください`,
           'active'
         );
       }
@@ -2174,6 +2281,10 @@
         filteredPending.forEach((item) => selectedAlertIds.delete(item.id));
       }
 
+      if (selectedAlertIds.size === 0) {
+        alertBatchAction = null;
+      }
+
       renderAlertTable();
       updateAlertBatchUIState();
     }
@@ -2185,6 +2296,11 @@
       } else {
         selectedAlertIds.delete(id);
       }
+
+      if (selectedAlertIds.size === 0) {
+        alertBatchAction = null;
+      }
+
       renderAlertTable();
       updateAlertBatchUIState();
     }
@@ -2192,8 +2308,19 @@
     // 警報一覧 選択解除
     function clearAlertBatchSelection() {
       selectedAlertIds.clear();
+      alertBatchAction = null;
       renderAlertTable();
       updateAlertBatchUIState();
+    }
+
+    // 警報一覧 一括操作送信
+    async function submitAlertBatchAction() {
+      if (isAlertBatchSubmitting || selectedAlertIds.size === 0 || !alertBatchAction) return;
+      if (alertBatchAction === 'approve') {
+        await submitAlertBatchApprove();
+      } else if (alertBatchAction === 'reject') {
+        await submitAlertBatchReject();
+      }
     }
 
     // 警報一覧 一括承認
@@ -2218,6 +2345,7 @@
         const result = await res.json();
         const approvedCount = result.approvedCount || 0;
         selectedAlertIds.clear();
+        alertBatchAction = null;
         isAlertBatchSubmitting = false;
 
         await pollFacilitiesAndRequests();
@@ -2255,6 +2383,7 @@
         const result = await res.json();
         const rejectedCount = result.rejectedCount || 0;
         selectedAlertIds.clear();
+        alertBatchAction = null;
         isAlertBatchSubmitting = false;
 
         await pollFacilitiesAndRequests();
@@ -3173,17 +3302,19 @@
         });
       }
 
-      // 警報一覧 一括操作ボタン
-      document.getElementById('btn-alert-batch-approve')?.addEventListener('click', () => {
-        submitAlertBatchApprove();
-      });
-
-      document.getElementById('btn-alert-batch-reject')?.addEventListener('click', () => {
-        submitAlertBatchReject();
+      // 警報一覧 一括操作ツールバーイベント
+      document.querySelectorAll('#alert-toolbar .status-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectAlertBatchAction(btn.dataset.action);
+        });
       });
 
       document.getElementById('btn-alert-batch-cancel')?.addEventListener('click', () => {
         clearAlertBatchSelection();
+      });
+
+      document.getElementById('btn-alert-batch-submit')?.addEventListener('click', () => {
+        submitAlertBatchAction();
       });
     });
   </script>

@@ -874,11 +874,14 @@ test('GET /h includes Alerts view markup (view-alerts, alert-table, category/sta
     assert.ok(text.includes('id="btn-alert-batch-approve"'));
     assert.ok(text.includes('id="btn-alert-batch-reject"'));
     assert.ok(text.includes('id="btn-alert-batch-cancel"'));
+    assert.ok(text.includes('id="btn-alert-batch-submit"'));
     assert.ok(text.includes('id="alert-notification-area"'));
 
     // JavaScript handlers
     assert.ok(text.includes('renderAlertTable'));
     assert.ok(text.includes('updateAlertBatchUIState'));
+    assert.ok(text.includes('selectAlertBatchAction'));
+    assert.ok(text.includes('submitAlertBatchAction'));
     assert.ok(text.includes('submitAlertBatchApprove'));
     assert.ok(text.includes('submitAlertBatchReject'));
     assert.ok(text.includes('mapToAlertItem'));
