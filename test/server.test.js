@@ -1521,3 +1521,42 @@ test('GET /m/style.css includes .m-note-marker without scale jitter (Issue #69)'
 
 
 
+
+test('GET /h includes map-legend markup and renderMapLegend logic (Issue #76)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="map-legend"'), 'H terminal should have a map-legend element');
+    assert.ok(text.includes('function renderMapLegend'), 'H terminal should define renderMapLegend');
+    assert.ok(text.includes('map-legend-dot'), 'H terminal should render map-legend-dot swatches');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes map-legend markup, renderMapLegend logic, and pinch-zoom handling (Issue #76)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="map-legend"'), 'M terminal should have a map-legend element');
+    assert.ok(text.includes('function renderMapLegend'), 'M terminal should define renderMapLegend');
+    assert.ok(text.includes('activePointers'), 'M terminal should track multiple pointers for pinch-zoom');
+    assert.ok(text.includes('getPointerDistance'), 'M terminal should compute pointer distance for pinch-zoom');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes .map-legend styles (Issue #76)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.map-legend'), 'M style.css should define .map-legend');
+    assert.ok(text.includes('.map-legend-dot'), 'M style.css should define .map-legend-dot');
+  } finally {
+    await close();
+  }
+});
