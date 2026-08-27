@@ -6,7 +6,6 @@ const INITIAL_FACILITIES = [
   { id: 'higashi5-gate', name: '東5ゲート', type: 'gate', state: 'closed', x: 1061, y: 1354 },
   { id: 'higashi6-gate', name: '東6ゲート', type: 'gate', state: 'closed', x: 1649, y: 1354 },
   { id: 'higashi7-5-gate', name: '東7.5ゲート', type: 'gate', state: 'closed', x: 524, y: 1354 },
-  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'closed', x: 20, y: 1300 },
   { id: 'higashi1-a-shutter', name: '東1-A', type: 'shutter', state: 'closed', x: 1989, y: 178 },
   { id: 'higashi1-b-shutter', name: '東1-B', type: 'shutter', state: 'closed', x: 1917, y: 178 },
   { id: 'higashi1-c-shutter', name: '東1-C', type: 'shutter', state: 'closed', x: 2158, y: 314 },
