@@ -985,7 +985,7 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
     assert.ok(text.includes('id="device-badge"'));
     assert.ok(text.includes('TERMINAL_CONFIGS'));
     assert.ok(text.includes('resolveTerminalConfig'));
-    assert.ok(text.includes('mke1aga01'));
+    assert.ok(text.includes('mkea1ga01'));
     assert.ok(text.includes('mkeaggk01'));
     assert.ok(!text.includes('current-datetime'));
     assert.ok(!text.includes('H端末（指揮所用）'));
@@ -1574,7 +1574,7 @@ test('GET /m includes Issue #78 terminal config logic, dynamic device-badge ID, 
     assert.ok(text.includes('TERMINAL_CONFIGS'), 'Should define TERMINAL_CONFIGS');
     assert.ok(text.includes("DEFAULT_TERMINAL_ID = 'mkeaggk01'"), 'Should define DEFAULT_TERMINAL_ID');
     assert.ok(text.includes('resolveTerminalConfig'), 'Should define resolveTerminalConfig');
-    assert.ok(text.includes('mke1aga01'), 'Should contain mke1aga01 configuration');
+    assert.ok(text.includes('mkea1ga01'), 'Should contain mkea1ga01 configuration');
     assert.ok(text.includes('mkeaggk01'), 'Should contain mkeaggk01 configuration');
     assert.ok(!text.includes('filter-chip-bar'), 'Should not contain filter-chip-bar');
     assert.ok(text.includes('applicant: terminalConfig.displayName'), 'submitRequest should use terminalConfig');
