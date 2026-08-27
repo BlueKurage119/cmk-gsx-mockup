@@ -1690,15 +1690,13 @@ html, body {
 }
 
 /* ==========================================================================
-   Issue #72: 緊急発報状況カード（M端末）
+   Issue #72: 緊急発報状況カード（M端末: 概況ペイン・地図下部）
    ========================================================================== */
 .emergency-card-container {
-  padding: 10px 16px 4px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background-color: var(--bg-primary);
-  z-index: 10;
+  margin-bottom: 12px;
 }
 
 .emergency-active-card {
@@ -1709,19 +1707,7 @@ html, body {
   border-radius: 8px;
   border: 2px solid #d93025;
   background: rgba(217, 48, 37, 0.12);
-  box-shadow: 0 4px 16px rgba(217, 48, 37, 0.25);
-  animation: card-appear 0.25s ease-out;
-}
-
-@keyframes card-appear {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .emergency-active-card.incident {
@@ -1732,7 +1718,7 @@ html, body {
 .emergency-active-card.injury {
   border-color: #fbbc04;
   background: rgba(251, 188, 4, 0.12);
-  box-shadow: 0 4px 16px rgba(251, 188, 4, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .emg-card-top-row {
@@ -1821,39 +1807,5 @@ html, body {
   font-size: 11px;
   color: var(--text-muted);
   gap: 4px;
-}
-
-/* ボトムナビ件数バッジ */
-.nav-emergency {
-  position: relative;
-}
-
-.nav-badge-count {
-  position: absolute;
-  top: 4px;
-  right: calc(50% - 20px);
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 9px;
-  background-color: #d93025;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--bg-surface);
-  box-shadow: 0 2px 6px rgba(217, 48, 37, 0.5);
-  animation: pulse-badge 1.5s infinite;
-}
-
-@keyframes pulse-badge {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
 }
 

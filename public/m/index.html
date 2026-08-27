@@ -28,9 +28,6 @@
     <!-- 通信エラー表示 -->
     <div id="error-container"></div>
 
-    <!-- 緊急発報状況カード表示コンテナ（未対応発報がある場合のみ自動表示） -->
-    <div id="emergency-card-container" class="emergency-card-container" style="display: none;" role="region" aria-label="緊急発報状況"></div>
-
     <!-- トースト通知 -->
     <div class="toast-notification" id="toast-notification" role="status" aria-live="polite"></div>
 
@@ -52,6 +49,9 @@
           </div>
         </div>
       </section>
+
+      <!-- 緊急発報状況カード表示コンテナ（概況表示ペイン・地図下部、未対応発報がある場合のみ自動表示） -->
+      <div id="emergency-card-container" class="emergency-card-container" style="display: none;" role="region" aria-label="緊急発報状況"></div>
 
       <!-- 下段: 要約ペイン（運用サマリー） -->
       <section class="summary-pane-card" id="summary-pane-card" aria-label="現場運用サマリー">
@@ -243,7 +243,6 @@
         <svg class="nav-icon" viewBox="0 0 24 24">
           <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
         </svg>
-        <span class="nav-badge-count" id="nav-emergency-badge" style="display: none;">0</span>
         <span class="nav-label">非常通報</span>
       </button>
 
@@ -350,7 +349,6 @@
             </svg>
             <span>緊急発報</span>
           </div>
-          <button type="button" class="btn-modal-close" id="btn-close-emg-modal" aria-label="閉じる">✕</button>
         </header>
 
         <!-- ステップインジケーター -->
@@ -1113,25 +1111,22 @@
     }
 
     let activeEmergencyAlerts = [];
+    let lastRenderedEmgKey = '';
 
-    // 緊急発報状況カード描画（未対応発報がある場合のみ自動表示）
+    // 緊急発報状況カード描画（概況ペイン・地図下部、未対応発報がある場合のみ自動表示）
     function renderEmergencyCards(alerts = []) {
       const container = document.getElementById('emergency-card-container');
-      const navBadge = document.getElementById('nav-emergency-badge');
       if (!container) return;
 
       const activeAlerts = alerts.filter((a) => a.status === 'active');
       activeEmergencyAlerts = activeAlerts;
 
-      // ボトムナビのバッジ更新
-      if (navBadge) {
-        if (activeAlerts.length > 0) {
-          navBadge.textContent = String(activeAlerts.length);
-          navBadge.style.display = 'flex';
-        } else {
-          navBadge.style.display = 'none';
-        }
+      // 差分キーの生成（ID・ステータス・更新時刻の組み合わせ）
+      const currentEmgKey = activeAlerts.map((a) => `${a.id}:${a.status}:${a.reason}:${a.note || ''}:${a.createdAt}`).join('|');
+      if (currentEmgKey === lastRenderedEmgKey) {
+        return; // 変更がない場合は無駄なDOM再描画をスキップ
       }
+      lastRenderedEmgKey = currentEmgKey;
 
       if (activeAlerts.length === 0) {
         container.innerHTML = '';
@@ -1613,8 +1608,7 @@
       // ナビの非常通報ボタン
       document.getElementById('nav-emergency')?.addEventListener('click', openEmergencyModal);
 
-      // モーダル閉じるボタン
-      document.getElementById('btn-close-emg-modal')?.addEventListener('click', closeEmergencyModal);
+      // モーダルキャンセルボタン
       document.getElementById('btn-emg-cancel')?.addEventListener('click', closeEmergencyModal);
 
       // 戻るボタン

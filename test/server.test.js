@@ -1419,13 +1419,21 @@ test('GET /h includes emergency-detail-modal, pager, siren alarm, snooze logic, 
   }
 });
 
-test('GET /m includes emergency-card-container, nav-emergency-badge, and renderEmergencyCards logic (Issue #72)', async () => {
+test('GET /m includes emergency-card-container in overview pane, renderEmergencyCards logic, and removes modal close button and nav badge (Issue #72)', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`);
     const text = await res.text();
     assert.ok(text.includes('id="emergency-card-container"'), 'M terminal should have emergency-card-container');
-    assert.ok(text.includes('id="nav-emergency-badge"'), 'M terminal should have nav-emergency-badge');
+    assert.ok(text.includes('id="pane-overview"'), 'M terminal should have pane-overview');
+    // emergency-card-container は pane-overview 内にある
+    const overviewIdx = text.indexOf('id="pane-overview"');
+    const cardIdx = text.indexOf('id="emergency-card-container"');
+    const summaryIdx = text.indexOf('id="summary-pane-card"');
+    assert.ok(overviewIdx < cardIdx && cardIdx < summaryIdx, 'emergency-card-container should be placed under map inside pane-overview');
+
+    assert.ok(!text.includes('id="nav-emergency-badge"'), 'nav-emergency-badge should be removed');
+    assert.ok(!text.includes('id="btn-close-emg-modal"'), 'btn-close-emg-modal should be removed');
     assert.ok(text.includes('renderEmergencyCards'), 'M terminal should define renderEmergencyCards');
     assert.ok(text.includes('emergency-active-card'), 'M terminal should render emergency-active-card');
     assert.ok(text.includes('/api/emergency-alerts'), 'M terminal should fetch /api/emergency-alerts in polling and init');
@@ -1434,7 +1442,7 @@ test('GET /m includes emergency-card-container, nav-emergency-badge, and renderE
   }
 });
 
-test('GET /m/style.css includes styles for emergency-card-container, emergency-active-card, and nav-badge-count', async () => {
+test('GET /m/style.css includes styles for emergency-card-container and emergency-active-card without animation or badge', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m/style.css`);
@@ -1442,11 +1450,13 @@ test('GET /m/style.css includes styles for emergency-card-container, emergency-a
     assert.ok(text.includes('.emergency-card-container'), 'style.css should have .emergency-card-container');
     assert.ok(text.includes('.emergency-active-card'), 'style.css should have .emergency-active-card');
     assert.ok(text.includes('.emg-card-badge'), 'style.css should have .emg-card-badge');
-    assert.ok(text.includes('.nav-badge-count'), 'style.css should have .nav-badge-count');
+    assert.ok(!text.includes('.nav-badge-count'), 'style.css should not have .nav-badge-count');
+    assert.ok(!text.includes('card-appear'), 'style.css should not have card-appear animation');
   } finally {
     await close();
   }
 });
+
 
 
 
