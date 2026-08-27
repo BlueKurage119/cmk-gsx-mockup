@@ -1084,8 +1084,10 @@ test('GET /h includes connection error badge with last sync timestamp and operat
     const res = await fetch(`${baseUrl}/h`);
     const text = await res.text();
     assert.ok(text.includes('id="connection-error-badge"'), 'H terminal should have connection-error-badge element');
+    assert.ok(text.includes('class="header-center"'), 'H terminal should place connection-error-badge in header-center');
     assert.ok(text.includes('id="last-sync-time"'), 'H terminal should have last-sync-time element');
-    assert.ok(text.includes('受信異常 最終更新:'), 'H terminal should include 受信異常 最終更新: text');
+    assert.ok(text.includes('受信異常'), 'H terminal should include 受信異常 text');
+    assert.ok(text.includes('最終更新:'), 'H terminal should include 最終更新: text');
     assert.ok(text.includes('isConnectionError'), 'H terminal should track isConnectionError state');
     assert.ok(text.includes('lastSuccessfulSyncTime'), 'H terminal should track lastSuccessfulSyncTime');
     assert.ok(text.includes('setConnectionError'), 'H terminal should define setConnectionError function');

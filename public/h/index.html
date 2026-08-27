@@ -60,6 +60,7 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.24);
       z-index: 10;
       flex-shrink: 0;
+      position: relative;
     }
 
     .header-left {
@@ -72,6 +73,18 @@
       font-size: 18px;
       font-weight: 500;
       letter-spacing: 0.25px;
+    }
+
+    .header-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 15;
     }
 
     .header-right {
@@ -98,35 +111,36 @@
     .header-error-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       background-color: #d93025;
       color: #ffffff;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 3px 10px;
+      padding: 4px 14px;
       border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .error-icon {
+      width: 20px;
+      height: 20px;
+      fill: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .error-text-main {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+    }
+
+    .error-text-sub {
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.95;
       letter-spacing: 0.3px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-      animation: badge-pulse 2s infinite ease-in-out;
-    }
-
-    .error-dot {
-      width: 7px;
-      height: 7px;
-      background-color: #ffffff;
-      border-radius: 50%;
-      display: inline-block;
-      animation: dot-blink 1s infinite alternate;
-    }
-
-    @keyframes dot-blink {
-      0% { opacity: 0.3; }
-      100% { opacity: 1; }
-    }
-
-    @keyframes badge-pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.04); }
+      border-left: 1px solid rgba(255, 255, 255, 0.4);
+      padding-left: 8px;
+      margin-left: 2px;
     }
 
     /* 本文レイアウト（左Navigation Rail + 右Main Content） */
@@ -1158,12 +1172,18 @@
       <div class="header-left">
         <h1 class="header-title" id="header-title">概況（東地区）</h1>
       </div>
+      <div class="header-center">
+        <div id="connection-error-badge" class="header-error-badge" style="display: none;" role="status" aria-live="assertive">
+          <svg class="error-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <span class="error-text-main">受信異常</span>
+          <span class="error-text-sub">最終更新: <span id="last-sync-time">--:--:--</span></span>
+        </div>
+      </div>
       <div class="header-right">
         <span id="current-datetime" class="datetime-display">----/--/-- --:--:--</span>
         <span class="terminal-name">端末名: 東地区外務H1</span>
-        <span id="connection-error-badge" class="header-error-badge" style="display: none;" role="status" aria-live="assertive">
-          <span class="error-dot" aria-hidden="true"></span>受信異常 最終更新: <span id="last-sync-time">--:--:--</span>
-        </span>
       </div>
     </header>
 
