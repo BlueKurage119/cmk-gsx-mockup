@@ -1029,34 +1029,8 @@
       const noteLayer = document.createElementNS(SVG_NS, 'g');
       noteLayer.setAttribute('id', 'note-layer');
       notes.forEach((note) => {
-        const g = document.createElementNS(SVG_NS, 'g');
-        g.setAttribute('class', 'm-note-marker');
-        g.setAttribute('data-note-id', note.id);
-        g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
-
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
-        path.setAttribute('fill', '#FBBC04');
-        path.setAttribute('stroke', '#1B1B1B');
-        path.setAttribute('stroke-width', '3');
-        g.appendChild(path);
-
-        const innerText = document.createElementNS(SVG_NS, 'text');
-        innerText.setAttribute('x', '0');
-        innerText.setAttribute('y', '-2');
-        innerText.setAttribute('text-anchor', 'middle');
-        innerText.setAttribute('font-size', '14');
-        innerText.setAttribute('font-weight', 'bold');
-        innerText.setAttribute('fill', '#000000');
-        innerText.textContent = '概';
-        g.appendChild(innerText);
-
-        g.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showNotePopover(note);
-        });
-
-        noteLayer.appendChild(g);
+        const elem = createSummaryNoteSvgElement(note);
+        noteLayer.appendChild(elem);
       });
 
       svg.appendChild(hallLabelsGroup);
@@ -1068,6 +1042,115 @@
     }
 
     let summaryNotes = [];
+
+    // M端末用 ピタネット付箋カード SVG 要素生成
+    function createSummaryNoteSvgElement(note) {
+      const fillColor = '#FBBC04';
+      const textColor = '#111111';
+      const strokeColor = '#D99B00';
+      const strokeWidth = '2.5';
+
+      // 行分割処理 (改行対応、最大2行、1行あたり13文字)
+      const rawLines = (note.text || '').split('\n');
+      const lines = [];
+      for (const r of rawLines) {
+        let cur = r;
+        while (cur.length > 0 && lines.length < 2) {
+          if (cur.length <= 13) {
+            lines.push(cur);
+            cur = '';
+          } else {
+            lines.push(cur.slice(0, 13));
+            cur = cur.slice(13);
+          }
+        }
+        if (lines.length >= 2) break;
+      }
+      if (lines.length === 0) lines.push('（注記）');
+      if (rawLines.length > 2 || (rawLines.length === 2 && rawLines[1].length > 13) || (note.text && note.text.length > 26)) {
+        if (lines.length >= 2) {
+          lines[1] = lines[1].slice(0, 11) + '…';
+        }
+      }
+
+      const maxLen = Math.max(...lines.map((l) => l.length));
+      const cardWidth = Math.max(160, Math.min(360, maxLen * 22 + 40));
+      const cardHeight = lines.length === 1 ? 52 : 76;
+      const cardX = -cardWidth / 2;
+      const cardY = -cardHeight - 10;
+
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('class', 'm-note-marker');
+      g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
+      g.setAttribute('data-note-id', note.id);
+
+      // 1. テール（下向き三角）
+      const tail = document.createElementNS(SVG_NS, 'path');
+      tail.setAttribute('d', 'M -10,-10 L 0,0 L 10,-10 Z');
+      tail.setAttribute('fill', fillColor);
+      tail.setAttribute('stroke', strokeColor);
+      tail.setAttribute('stroke-width', strokeWidth);
+      g.appendChild(tail);
+
+      // 2. カード本体（角丸矩形）
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', String(cardX));
+      rect.setAttribute('y', String(cardY));
+      rect.setAttribute('width', String(cardWidth));
+      rect.setAttribute('height', String(cardHeight));
+      rect.setAttribute('rx', '6');
+      rect.setAttribute('ry', '6');
+      rect.setAttribute('fill', fillColor);
+      rect.setAttribute('stroke', strokeColor);
+      rect.setAttribute('stroke-width', strokeWidth);
+      g.appendChild(rect);
+
+      // 3. ヘッダー小さなバッジ
+      const badgeText = document.createElementNS(SVG_NS, 'text');
+      badgeText.setAttribute('x', String(cardX + 10));
+      badgeText.setAttribute('y', String(cardY + 16));
+      badgeText.setAttribute('font-size', '12');
+      badgeText.setAttribute('font-weight', '800');
+      badgeText.setAttribute('fill', '#7c5800');
+      badgeText.textContent = '【現場注記】';
+      g.appendChild(badgeText);
+
+      // 4. 注記本文テキスト（20px 太字）
+      const textElem = document.createElementNS(SVG_NS, 'text');
+      textElem.setAttribute('x', String(cardX + 10));
+      textElem.setAttribute('font-size', '20');
+      textElem.setAttribute('font-weight', '700');
+      textElem.setAttribute('fill', textColor);
+
+      if (lines.length === 1) {
+        textElem.setAttribute('y', String(cardY + 40));
+        textElem.textContent = lines[0];
+      } else {
+        textElem.setAttribute('y', String(cardY + 38));
+        const tspan1 = document.createElementNS(SVG_NS, 'tspan');
+        tspan1.setAttribute('x', String(cardX + 10));
+        tspan1.textContent = lines[0];
+        const tspan2 = document.createElementNS(SVG_NS, 'tspan');
+        tspan2.setAttribute('x', String(cardX + 10));
+        tspan2.setAttribute('dy', '24');
+        tspan2.textContent = lines[1];
+        textElem.appendChild(tspan1);
+        textElem.appendChild(tspan2);
+      }
+      g.appendChild(textElem);
+
+      // 5. ツールチップ
+      const title = document.createElementNS(SVG_NS, 'title');
+      title.textContent = `[現場注記] ${note.text} (${note.author || '東地区外務H1'})`;
+      g.appendChild(title);
+
+      g.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNotePopover(note);
+      });
+
+      return g;
+    }
 
     function showNotePopover(note) {
       const modal = document.getElementById('m-note-modal');
@@ -1104,34 +1187,8 @@
         noteLayer.innerHTML = '';
 
         notes.forEach((note) => {
-          const g = document.createElementNS(SVG_NS, 'g');
-          g.setAttribute('class', 'm-note-marker');
-          g.setAttribute('data-note-id', note.id);
-          g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
-
-          const path = document.createElementNS(SVG_NS, 'path');
-          path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
-          path.setAttribute('fill', '#FBBC04');
-          path.setAttribute('stroke', '#1B1B1B');
-          path.setAttribute('stroke-width', '3');
-          g.appendChild(path);
-
-          const innerText = document.createElementNS(SVG_NS, 'text');
-          innerText.setAttribute('x', '0');
-          innerText.setAttribute('y', '-2');
-          innerText.setAttribute('text-anchor', 'middle');
-          innerText.setAttribute('font-size', '14');
-          innerText.setAttribute('font-weight', 'bold');
-          innerText.setAttribute('fill', '#000000');
-          innerText.textContent = '概';
-          g.appendChild(innerText);
-
-          g.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showNotePopover(note);
-          });
-
-          noteLayer.appendChild(g);
+          const elem = createSummaryNoteSvgElement(note);
+          noteLayer.appendChild(elem);
         });
       });
     }

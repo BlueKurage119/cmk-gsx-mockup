@@ -1814,13 +1814,13 @@ html, body {
    ========================================================================== */
 .m-note-marker {
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  pointer-events: all;
 }
 
 .m-note-marker:hover,
 .m-note-marker:active {
-  filter: drop-shadow(0 0 8px rgba(251, 188, 4, 0.9));
-  transform: scale(1.1);
+  filter: drop-shadow(0 0 10px rgba(251, 188, 4, 0.95));
 }
+
 
 

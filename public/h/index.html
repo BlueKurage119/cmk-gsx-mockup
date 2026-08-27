@@ -1327,20 +1327,21 @@
 
     .note-marker {
       cursor: pointer;
-      transition: transform 0.15s ease, filter 0.15s ease;
+      pointer-events: all;
     }
 
     .note-marker:hover {
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
     }
 
-    .note-marker-pending path {
+    .note-marker-pending .note-card-rect,
+    .note-marker-pending .note-card-tail {
       stroke-dasharray: 6 4;
       stroke-width: 3.5;
     }
 
     .note-marker-deleted {
-      opacity: 0.35;
+      opacity: 0.45;
       filter: grayscale(1);
     }
 
@@ -3259,6 +3260,126 @@
       updateNoteSubmitButtonState();
     }
 
+    // ピタネット SVG 要素生成ヘルパー
+    function createNoteSvgElement({ id, x, y, layer, text, author, isPending = false, isDeleted = false, hasUnsubmittedChange = false, onClick }) {
+      const isSummary = layer === 'summary';
+      const fillColor = isDeleted ? '#3c4043' : (isSummary ? '#FBBC04' : '#5F6368');
+      const textColor = isSummary && !isDeleted ? '#111111' : '#FFFFFF';
+      const strokeColor = isDeleted ? '#EA4335' : (isPending ? '#1A73E8' : (isSummary ? '#D99B00' : '#3C4043'));
+      const strokeWidth = isPending ? '3.5' : '2.5';
+
+      // 行分割処理 (改行対応、最大2行、1行あたり14文字)
+      const rawLines = (text || '').split('\n');
+      const lines = [];
+      for (const r of rawLines) {
+        let cur = r;
+        while (cur.length > 0 && lines.length < 2) {
+          if (cur.length <= 13) {
+            lines.push(cur);
+            cur = '';
+          } else {
+            lines.push(cur.slice(0, 13));
+            cur = cur.slice(13);
+          }
+        }
+        if (lines.length >= 2) break;
+      }
+      if (lines.length === 0) lines.push('（注記）');
+      if (rawLines.length > 2 || (rawLines.length === 2 && rawLines[1].length > 13) || (text && text.length > 26)) {
+        if (lines.length >= 2) {
+          lines[1] = lines[1].slice(0, 11) + '…';
+        }
+      }
+
+      const maxLen = Math.max(...lines.map((l) => l.length));
+      const cardWidth = Math.max(160, Math.min(360, maxLen * 22 + 40));
+      const cardHeight = lines.length === 1 ? 52 : 76;
+      const cardX = -cardWidth / 2;
+      const cardY = -cardHeight - 10;
+
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('class', 'note-marker' + (isDeleted ? ' note-marker-deleted' : '') + (isPending || hasUnsubmittedChange ? ' note-marker-pending' : ''));
+      g.setAttribute('transform', `translate(${x}, ${y})`);
+      if (id) g.setAttribute('data-note-id', id);
+
+      // 1. テール（下向き三角）
+      const tail = document.createElementNS(SVG_NS, 'path');
+      tail.setAttribute('class', 'note-card-tail');
+      tail.setAttribute('d', 'M -10,-10 L 0,0 L 10,-10 Z');
+      tail.setAttribute('fill', fillColor);
+      tail.setAttribute('stroke', strokeColor);
+      tail.setAttribute('stroke-width', strokeWidth);
+      if (isPending) tail.setAttribute('stroke-dasharray', '6 4');
+      g.appendChild(tail);
+
+      // 2. カード本体
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('class', 'note-card-rect');
+      rect.setAttribute('x', String(cardX));
+      rect.setAttribute('y', String(cardY));
+      rect.setAttribute('width', String(cardWidth));
+      rect.setAttribute('height', String(cardHeight));
+      rect.setAttribute('rx', '6');
+      rect.setAttribute('ry', '6');
+      rect.setAttribute('fill', fillColor);
+      rect.setAttribute('stroke', strokeColor);
+      rect.setAttribute('stroke-width', strokeWidth);
+      if (isPending) rect.setAttribute('stroke-dasharray', '6 4');
+      g.appendChild(rect);
+
+      // 3. ヘッダー小さなバッジ（層ラベル [概要] / [詳細]）
+      const badgeText = document.createElementNS(SVG_NS, 'text');
+      badgeText.setAttribute('x', String(cardX + 10));
+      badgeText.setAttribute('y', String(cardY + 16));
+      badgeText.setAttribute('font-size', '12');
+      badgeText.setAttribute('font-weight', '800');
+      badgeText.setAttribute('fill', isSummary && !isDeleted ? '#7c5800' : '#dadce0');
+      let badgeLabel = isSummary ? '【概要層】' : '【詳細層】';
+      if (isPending) badgeLabel += ' (未送信)';
+      if (isDeleted) badgeLabel += ' (削除予定)';
+      badgeText.textContent = badgeLabel;
+      g.appendChild(badgeText);
+
+      // 4. 注記本文テキスト（20px 太字）
+      const textElem = document.createElementNS(SVG_NS, 'text');
+      textElem.setAttribute('x', String(cardX + 10));
+      textElem.setAttribute('font-size', '20');
+      textElem.setAttribute('font-weight', '700');
+      textElem.setAttribute('fill', textColor);
+      if (isDeleted) textElem.setAttribute('text-decoration', 'line-through');
+
+      if (lines.length === 1) {
+        textElem.setAttribute('y', String(cardY + 40));
+        textElem.textContent = lines[0];
+      } else {
+        textElem.setAttribute('y', String(cardY + 38));
+        const tspan1 = document.createElementNS(SVG_NS, 'tspan');
+        tspan1.setAttribute('x', String(cardX + 10));
+        tspan1.textContent = lines[0];
+        const tspan2 = document.createElementNS(SVG_NS, 'tspan');
+        tspan2.setAttribute('x', String(cardX + 10));
+        tspan2.setAttribute('dy', '24');
+        tspan2.textContent = lines[1];
+        textElem.appendChild(tspan1);
+        textElem.appendChild(tspan2);
+      }
+      g.appendChild(textElem);
+
+      // 5. ツールチップ
+      const title = document.createElementNS(SVG_NS, 'title');
+      title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${text} (${author || '東地区外務H1'})${isDeleted ? ' 【削除予定】' : (isPending ? ' 【新規未送信】' : '')}`;
+      g.appendChild(title);
+
+      if (onClick) {
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onClick(e);
+        });
+      }
+
+      return g;
+    }
+
     // 付箋レイヤー描画（SVG上）
     function renderNoteLayer() {
       const mapContainer = document.getElementById('map-container');
@@ -3280,91 +3401,54 @@
         const patch = pendingUpdates.get(note.id) || {};
         const effectiveLayer = patch.layer !== undefined ? patch.layer : note.layer;
         const effectiveText = patch.text !== undefined ? patch.text : note.text;
-        const isSummary = effectiveLayer === 'summary';
-        const fillColor = isSummary ? '#FBBC04' : '#9AA0A6';
+        const hasUnsubmittedChange = patch.text !== undefined || patch.layer !== undefined;
 
-        const g = document.createElementNS(SVG_NS, 'g');
-        g.setAttribute('class', 'note-marker' + (isDeleted ? ' note-marker-deleted' : '') + (patch.text || patch.layer ? ' note-marker-pending' : ''));
-        g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
-        g.setAttribute('data-note-id', note.id);
-
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
-        path.setAttribute('fill', fillColor);
-        path.setAttribute('stroke', isDeleted ? '#ea4335' : '#1B1B1B');
-        path.setAttribute('stroke-width', '3');
-        g.appendChild(path);
-
-        const innerText = document.createElementNS(SVG_NS, 'text');
-        innerText.setAttribute('x', '0');
-        innerText.setAttribute('y', '-2');
-        innerText.setAttribute('text-anchor', 'middle');
-        innerText.setAttribute('font-size', '14');
-        innerText.setAttribute('font-weight', 'bold');
-        innerText.setAttribute('fill', '#000000');
-        innerText.textContent = isSummary ? '概' : '詳';
-        g.appendChild(innerText);
-
-        const title = document.createElementNS(SVG_NS, 'title');
-        title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${effectiveText} (${note.author || '東地区外務H1'})${isDeleted ? ' 【削除予定】' : (patch.text || patch.layer ? ' 【未送信変更あり】' : '')}`;
-        g.appendChild(title);
-
-        g.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (isNoteCreateMode) {
-            const coords = getMapCoordinatesFromEvent(svg, e);
-            if (coords) openNoteCreateModal(coords.x, coords.y);
-            return;
-          }
-          openNoteEditModal(note.id);
+        const elem = createNoteSvgElement({
+          id: note.id,
+          x: note.x,
+          y: note.y,
+          layer: effectiveLayer,
+          text: effectiveText,
+          author: note.author,
+          isPending: false,
+          isDeleted,
+          hasUnsubmittedChange,
+          onClick: (e) => {
+            if (isNoteCreateMode) {
+              const coords = getMapCoordinatesFromEvent(svg, e);
+              if (coords) openNoteCreateModal(coords.x, coords.y);
+              return;
+            }
+            openNoteEditModal(note.id);
+          },
         });
 
-        layer.appendChild(g);
+        layer.appendChild(elem);
       });
 
       // 2. ローカル未送信作成分 (pendingCreates)
       pendingCreates.forEach((note) => {
-        const isSummary = note.layer === 'summary';
-        const fillColor = isSummary ? '#FBBC04' : '#9AA0A6';
-
-        const g = document.createElementNS(SVG_NS, 'g');
-        g.setAttribute('class', 'note-marker note-marker-pending');
-        g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
-        g.setAttribute('data-temp-id', note.tempId);
-
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', 'M -20,-20 H 20 V 10 H -4 L -10 20 L -10 10 H -20 Z');
-        path.setAttribute('fill', fillColor);
-        path.setAttribute('fill-opacity', '0.85');
-        path.setAttribute('stroke', '#1a73e8');
-        path.setAttribute('stroke-width', '3.5');
-        g.appendChild(path);
-
-        const innerText = document.createElementNS(SVG_NS, 'text');
-        innerText.setAttribute('x', '0');
-        innerText.setAttribute('y', '-2');
-        innerText.setAttribute('text-anchor', 'middle');
-        innerText.setAttribute('font-size', '14');
-        innerText.setAttribute('font-weight', 'bold');
-        innerText.setAttribute('fill', '#000000');
-        innerText.textContent = isSummary ? '概' : '詳';
-        g.appendChild(innerText);
-
-        const title = document.createElementNS(SVG_NS, 'title');
-        title.textContent = `[${isSummary ? '概要層' : '詳細層'}] ${note.text} (未送信)`;
-        g.appendChild(title);
-
-        g.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (isNoteCreateMode) {
-            const coords = getMapCoordinatesFromEvent(svg, e);
-            if (coords) openNoteCreateModal(coords.x, coords.y);
-            return;
-          }
-          openNoteEditModal(note.tempId);
+        const elem = createNoteSvgElement({
+          id: note.tempId,
+          x: note.x,
+          y: note.y,
+          layer: note.layer,
+          text: note.text,
+          author: note.author,
+          isPending: true,
+          isDeleted: false,
+          hasUnsubmittedChange: false,
+          onClick: (e) => {
+            if (isNoteCreateMode) {
+              const coords = getMapCoordinatesFromEvent(svg, e);
+              if (coords) openNoteCreateModal(coords.x, coords.y);
+              return;
+            }
+            openNoteEditModal(note.tempId);
+          },
         });
 
-        layer.appendChild(g);
+        layer.appendChild(elem);
       });
     }
 

@@ -1477,10 +1477,12 @@ test('GET /h includes Pitanet toolbar group, modals, and client logic (Issue #69
     assert.ok(text.includes('id="btn-note-discard"'), 'H terminal should have btn-note-discard');
 
     // JSロジック
+    assert.ok(text.includes('createNoteSvgElement'), 'H terminal should define createNoteSvgElement');
     assert.ok(text.includes('getMapCoordinatesFromEvent'), 'H terminal should define getMapCoordinatesFromEvent');
     assert.ok(text.includes('renderNoteLayer'), 'H terminal should define renderNoteLayer');
     assert.ok(text.includes('commitPendingNoteChanges'), 'H terminal should define commitPendingNoteChanges');
     assert.ok(text.includes('discardPendingNoteChanges'), 'H terminal should define discardPendingNoteChanges');
+    assert.ok(text.includes('note-card-rect'), 'H terminal should render note-card-rect');
     assert.ok(text.includes('/api/notes'), 'H terminal should poll /api/notes');
   } finally {
     await close();
@@ -1494,6 +1496,7 @@ test('GET /m includes summary note layer rendering, popover modal, and polling (
     const text = await res.text();
     assert.ok(text.includes('id="m-note-modal"'), 'M terminal should have m-note-modal');
     assert.ok(text.includes('id="btn-close-m-note"'), 'M terminal should have btn-close-m-note');
+    assert.ok(text.includes('createSummaryNoteSvgElement'), 'M terminal should define createSummaryNoteSvgElement');
     assert.ok(text.includes('syncNoteLayers'), 'M terminal should define syncNoteLayers');
     assert.ok(text.includes('showNotePopover'), 'M terminal should define showNotePopover');
     assert.ok(text.includes('/api/notes?layer=summary'), 'M terminal should poll /api/notes?layer=summary');
@@ -1502,12 +1505,13 @@ test('GET /m includes summary note layer rendering, popover modal, and polling (
   }
 });
 
-test('GET /m/style.css includes .m-note-marker (Issue #69)', async () => {
+test('GET /m/style.css includes .m-note-marker without scale jitter (Issue #69)', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m/style.css`);
     const text = await res.text();
     assert.ok(text.includes('.m-note-marker'), 'M style.css should define .m-note-marker');
+    assert.ok(!text.includes('scale(1.1)'), 'M style.css should not use transform: scale to avoid cursor jitter/escape bug');
   } finally {
     await close();
   }
