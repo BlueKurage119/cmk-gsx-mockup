@@ -1419,4 +1419,34 @@ test('GET /h includes emergency-detail-modal, pager, siren alarm, snooze logic, 
   }
 });
 
+test('GET /m includes emergency-card-container, nav-emergency-badge, and renderEmergencyCards logic (Issue #72)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="emergency-card-container"'), 'M terminal should have emergency-card-container');
+    assert.ok(text.includes('id="nav-emergency-badge"'), 'M terminal should have nav-emergency-badge');
+    assert.ok(text.includes('renderEmergencyCards'), 'M terminal should define renderEmergencyCards');
+    assert.ok(text.includes('emergency-active-card'), 'M terminal should render emergency-active-card');
+    assert.ok(text.includes('/api/emergency-alerts'), 'M terminal should fetch /api/emergency-alerts in polling and init');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes styles for emergency-card-container, emergency-active-card, and nav-badge-count', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.emergency-card-container'), 'style.css should have .emergency-card-container');
+    assert.ok(text.includes('.emergency-active-card'), 'style.css should have .emergency-active-card');
+    assert.ok(text.includes('.emg-card-badge'), 'style.css should have .emg-card-badge');
+    assert.ok(text.includes('.nav-badge-count'), 'style.css should have .nav-badge-count');
+  } finally {
+    await close();
+  }
+});
+
+
 

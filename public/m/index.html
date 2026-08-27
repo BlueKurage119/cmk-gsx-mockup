@@ -28,6 +28,9 @@
     <!-- 通信エラー表示 -->
     <div id="error-container"></div>
 
+    <!-- 緊急発報状況カード表示コンテナ（未対応発報がある場合のみ自動表示） -->
+    <div id="emergency-card-container" class="emergency-card-container" style="display: none;" role="region" aria-label="緊急発報状況"></div>
+
     <!-- トースト通知 -->
     <div class="toast-notification" id="toast-notification" role="status" aria-live="polite"></div>
 
@@ -240,6 +243,7 @@
         <svg class="nav-icon" viewBox="0 0 24 24">
           <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
         </svg>
+        <span class="nav-badge-count" id="nav-emergency-badge" style="display: none;">0</span>
         <span class="nav-label">非常通報</span>
       </button>
 
@@ -1108,14 +1112,81 @@
       });
     }
 
+    let activeEmergencyAlerts = [];
+
+    // 緊急発報状況カード描画（未対応発報がある場合のみ自動表示）
+    function renderEmergencyCards(alerts = []) {
+      const container = document.getElementById('emergency-card-container');
+      const navBadge = document.getElementById('nav-emergency-badge');
+      if (!container) return;
+
+      const activeAlerts = alerts.filter((a) => a.status === 'active');
+      activeEmergencyAlerts = activeAlerts;
+
+      // ボトムナビのバッジ更新
+      if (navBadge) {
+        if (activeAlerts.length > 0) {
+          navBadge.textContent = String(activeAlerts.length);
+          navBadge.style.display = 'flex';
+        } else {
+          navBadge.style.display = 'none';
+        }
+      }
+
+      if (activeAlerts.length === 0) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'flex';
+      container.innerHTML = activeAlerts.map((alert) => {
+        const isIncident = alert.category === 'incident';
+        const cardClass = isIncident ? 'incident' : 'injury';
+        const badgeText = isIncident ? '非常通報' : '傷病者救護';
+        const iconSvg = isIncident
+          ? '<svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>'
+          : '<svg viewBox="0 0 24 24"><path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/></svg>';
+
+        const timeStr = alert.createdAt
+          ? new Date(alert.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+          : '';
+
+        const noteHtml = alert.note
+          ? `<div class="emg-card-note">${escapeHtml(alert.note)}</div>`
+          : '';
+
+        return `
+          <div class="emergency-active-card ${cardClass}" data-alert-id="${escapeHtml(alert.id)}">
+            <div class="emg-card-top-row">
+              <div class="emg-card-header-left">
+                <span class="emg-card-badge ${cardClass}">
+                  ${iconSvg}
+                  <span>${escapeHtml(badgeText)}</span>
+                </span>
+                <span class="emg-card-area">${escapeHtml(alert.area || '')}</span>
+              </div>
+              <span class="emg-card-time">${escapeHtml(timeStr)}</span>
+            </div>
+            <div class="emg-card-reason">${escapeHtml(alert.reason || (isIncident ? '非常: 緊急事態' : '傷病者: 救護要請'))}</div>
+            ${noteHtml}
+            <div class="emg-card-meta">
+              <span>発報: ${escapeHtml(alert.reporter || '東地区外警1')}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     const POLL_INTERVAL_MS = 3000;
 
-    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ）
+    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ）
     async function pollFacilities() {
       try {
-        const [facilitiesRes, requestsRes] = await Promise.all([
+        const [facilitiesRes, requestsRes, emergencyRes] = await Promise.all([
           fetch('/api/facilities'),
           fetch('/api/requests?status=pending'),
+          fetch('/api/emergency-alerts'),
         ]);
 
         if (!facilitiesRes.ok) throw new Error(`設備データの同期に失敗しました (${facilitiesRes.status})`);
@@ -1124,6 +1195,11 @@
 
         if (requestsRes.ok) {
           pendingRequests = await requestsRes.json();
+        }
+
+        if (emergencyRes.ok) {
+          const emgs = await emergencyRes.json();
+          renderEmergencyCards(emgs);
         }
 
         const mapContainer = document.getElementById('map-container');
@@ -1586,11 +1662,13 @@
         const svgUrl = '/shared/map-east.svg';
         const facilitiesUrl = '/api/facilities';
         const requestsUrl = '/api/requests?status=pending';
+        const emergencyUrl = '/api/emergency-alerts';
 
-        const [svgRes, facilitiesRes, requestsRes] = await Promise.all([
+        const [svgRes, facilitiesRes, requestsRes, emergencyRes] = await Promise.all([
           fetch(svgUrl),
           fetch(facilitiesUrl),
           fetch(requestsUrl),
+          fetch(emergencyUrl),
         ]);
 
         if (!svgRes.ok) throw new Error(`マップの取得に失敗しました: ${svgUrl} (${svgRes.status})`);
@@ -1600,6 +1678,10 @@
         currentFacilities = await facilitiesRes.json();
         if (requestsRes.ok) {
           pendingRequests = await requestsRes.json();
+        }
+        if (emergencyRes.ok) {
+          const emgs = await emergencyRes.json();
+          renderEmergencyCards(emgs);
         }
 
         // 1. ミニマップに描画

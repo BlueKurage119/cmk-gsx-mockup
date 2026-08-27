@@ -1688,3 +1688,172 @@ html, body {
   cursor: not-allowed;
   animation: none;
 }
+
+/* ==========================================================================
+   Issue #72: 緊急発報状況カード（M端末）
+   ========================================================================== */
+.emergency-card-container {
+  padding: 10px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: var(--bg-primary);
+  z-index: 10;
+}
+
+.emergency-active-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 2px solid #d93025;
+  background: rgba(217, 48, 37, 0.12);
+  box-shadow: 0 4px 16px rgba(217, 48, 37, 0.25);
+  animation: card-appear 0.25s ease-out;
+}
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emergency-active-card.incident {
+  border-color: #d93025;
+  background: rgba(217, 48, 37, 0.12);
+}
+
+.emergency-active-card.injury {
+  border-color: #fbbc04;
+  background: rgba(251, 188, 4, 0.12);
+  box-shadow: 0 4px 16px rgba(251, 188, 4, 0.25);
+}
+
+.emg-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.emg-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emg-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.emg-card-badge.incident {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+.emg-card-badge.injury {
+  background-color: #fbbc04;
+  color: #202124;
+}
+
+.emg-card-badge svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.emg-card-area {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.emg-card-time {
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--text-muted);
+}
+
+.emg-card-reason {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.emergency-active-card.incident .emg-card-reason {
+  color: #f28b82;
+}
+
+.emergency-active-card.injury .emg-card-reason {
+  color: #fdd663;
+}
+
+.emg-card-note {
+  font-size: 12px;
+  color: #dadce0;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.emg-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 11px;
+  color: var(--text-muted);
+  gap: 4px;
+}
+
+/* ボトムナビ件数バッジ */
+.nav-emergency {
+  position: relative;
+}
+
+.nav-badge-count {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 20px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: #d93025;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 2px 6px rgba(217, 48, 37, 0.5);
+  animation: pulse-badge 1.5s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
