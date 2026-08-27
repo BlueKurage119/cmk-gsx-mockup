@@ -5,6 +5,7 @@ const { registerFacilityRoutes } = require('./src/routes/facility-api');
 const { registerRequestRoutes } = require('./src/routes/request-api');
 const { registerFaultRoutes } = require('./src/routes/fault-api');
 const { registerEmergencyRoutes } = require('./src/routes/emergency-api');
+const { registerNoteRoutes } = require('./src/routes/note-api');
 const { registerSharedRoutes } = require('./src/routes/shared-assets');
 
 function createApp() {
@@ -22,6 +23,7 @@ function createApp() {
   registerRequestRoutes(app);
   registerFaultRoutes(app);
   registerEmergencyRoutes(app);
+  registerNoteRoutes(app);
   registerSharedRoutes(app);
 
   return app;

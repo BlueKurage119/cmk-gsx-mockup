@@ -488,6 +488,30 @@
         </footer>
       </div>
     </div>
+
+    <!-- ピタネット注記確認ポップオーバー（M端末） -->
+    <div class="modal-overlay" id="m-note-modal" role="dialog" aria-modal="true" aria-label="注記確認">
+      <div class="modal-card" style="max-width: 380px;">
+        <header class="modal-header" style="background-color: rgba(251, 188, 4, 0.15); border-bottom-color: rgba(251, 188, 4, 0.3);">
+          <div class="modal-title">
+            <svg style="width: 18px; height: 18px; fill: #fbbc04;" viewBox="0 0 24 24">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span style="color: #fdd663; font-weight: 700;">現場注記（ピタネット）</span>
+          </div>
+          <button type="button" class="btn-modal-close" id="btn-close-m-note" aria-label="閉じる">✕</button>
+        </header>
+        <div class="modal-body" style="padding: 16px;">
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+            発信者: <span id="m-note-author" style="color: #ffffff; font-weight: 600;">-</span>
+          </div>
+          <div id="m-note-text" style="font-size: 14px; font-weight: 500; color: #ffffff; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); line-height: 1.5; white-space: pre-wrap;">-</div>
+        </div>
+        <footer class="modal-footer" style="padding: 12px 16px;">
+          <button type="button" class="btn btn-outlined" id="btn-m-note-close" style="width: 100%;">閉じる</button>
+        </footer>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -894,7 +918,7 @@
     }
 
     // SVG マップ生成（ミニマップおよび拡大モーダル共用）
-    function createMapSvgElement(svgText, facilities) {
+    function createMapSvgElement(svgText, facilities, notes = []) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(svgText, 'image/svg+xml');
       const svg = doc.documentElement;
@@ -1001,11 +1025,162 @@
         placeLabelsGroup.appendChild(text);
       });
 
+      // ピタネット（概要層）付箋レイヤー描画
+      const noteLayer = document.createElementNS(SVG_NS, 'g');
+      noteLayer.setAttribute('id', 'note-layer');
+      notes.forEach((note) => {
+        const elem = createSummaryNoteSvgElement(note);
+        noteLayer.appendChild(elem);
+      });
+
       svg.appendChild(hallLabelsGroup);
       svg.appendChild(placeLabelsGroup);
       svg.appendChild(facilitiesGroup);
+      svg.appendChild(noteLayer);
 
       return svg;
+    }
+
+    let summaryNotes = [];
+
+    // M端末用 ピタネット付箋カード SVG 要素生成
+    function createSummaryNoteSvgElement(note) {
+      const fillColor = '#FBBC04';
+      const textColor = '#111111';
+      const strokeColor = '#D99B00';
+      const strokeWidth = '2.5';
+
+      // 行分割処理 (改行対応、最大2行、1行あたり13文字)
+      const rawLines = (note.text || '').split('\n');
+      const lines = [];
+      for (const r of rawLines) {
+        let cur = r;
+        while (cur.length > 0 && lines.length < 2) {
+          if (cur.length <= 13) {
+            lines.push(cur);
+            cur = '';
+          } else {
+            lines.push(cur.slice(0, 13));
+            cur = cur.slice(13);
+          }
+        }
+        if (lines.length >= 2) break;
+      }
+      if (lines.length === 0) lines.push('（注記）');
+      if (rawLines.length > 2 || (rawLines.length === 2 && rawLines[1].length > 13) || (note.text && note.text.length > 26)) {
+        if (lines.length >= 2) {
+          lines[1] = lines[1].slice(0, 11) + '…';
+        }
+      }
+
+      const maxLen = Math.max(...lines.map((l) => l.length));
+      const cardWidth = Math.max(160, Math.min(360, maxLen * 22 + 40));
+      const cardHeight = lines.length === 1 ? 40 : 64;
+      const cardX = -cardWidth / 2;
+      const cardY = -cardHeight - 10;
+
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('class', 'm-note-marker');
+      g.setAttribute('transform', `translate(${note.x}, ${note.y})`);
+      g.setAttribute('data-note-id', note.id);
+
+      // 1. テール（下向き三角）
+      const tail = document.createElementNS(SVG_NS, 'path');
+      tail.setAttribute('d', 'M -10,-10 L 0,0 L 10,-10 Z');
+      tail.setAttribute('fill', fillColor);
+      tail.setAttribute('stroke', strokeColor);
+      tail.setAttribute('stroke-width', strokeWidth);
+      g.appendChild(tail);
+
+      // 2. カード本体（角丸矩形）
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', String(cardX));
+      rect.setAttribute('y', String(cardY));
+      rect.setAttribute('width', String(cardWidth));
+      rect.setAttribute('height', String(cardHeight));
+      rect.setAttribute('rx', '6');
+      rect.setAttribute('ry', '6');
+      rect.setAttribute('fill', fillColor);
+      rect.setAttribute('stroke', strokeColor);
+      rect.setAttribute('stroke-width', strokeWidth);
+      g.appendChild(rect);
+
+      // 3. 注記本文テキスト（20px 太字）。ピタネット本体には層・状態の注釈は入れない
+      const textElem = document.createElementNS(SVG_NS, 'text');
+      textElem.setAttribute('x', String(cardX + 10));
+      textElem.setAttribute('font-size', '20');
+      textElem.setAttribute('font-weight', '700');
+      textElem.setAttribute('fill', textColor);
+
+      if (lines.length === 1) {
+        textElem.setAttribute('y', String(cardY + 26));
+        textElem.textContent = lines[0];
+      } else {
+        textElem.setAttribute('y', String(cardY + 26));
+        const tspan1 = document.createElementNS(SVG_NS, 'tspan');
+        tspan1.setAttribute('x', String(cardX + 10));
+        tspan1.textContent = lines[0];
+        const tspan2 = document.createElementNS(SVG_NS, 'tspan');
+        tspan2.setAttribute('x', String(cardX + 10));
+        tspan2.setAttribute('dy', '24');
+        tspan2.textContent = lines[1];
+        textElem.appendChild(tspan1);
+        textElem.appendChild(tspan2);
+      }
+      g.appendChild(textElem);
+
+      // 5. ツールチップ
+      const title = document.createElementNS(SVG_NS, 'title');
+      title.textContent = `[現場注記] ${note.text} (${note.author || '東地区外務H1'})`;
+      g.appendChild(title);
+
+      g.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNotePopover(note);
+      });
+
+      return g;
+    }
+
+    function showNotePopover(note) {
+      const modal = document.getElementById('m-note-modal');
+      const authorElem = document.getElementById('m-note-author');
+      const textElem = document.getElementById('m-note-text');
+      if (authorElem) authorElem.textContent = note.author || '東地区外務H1';
+      if (textElem) textElem.textContent = note.text;
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeNotePopover() {
+      const modal = document.getElementById('m-note-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function syncNoteLayers(notes = []) {
+      summaryNotes = notes;
+      const containers = [
+        document.getElementById('map-container'),
+        document.getElementById('modal-zoom-container'),
+      ];
+
+      containers.forEach((container) => {
+        if (!container) return;
+        const svg = container.querySelector('svg');
+        if (!svg) return;
+
+        let noteLayer = svg.querySelector('#note-layer');
+        if (!noteLayer) {
+          noteLayer = document.createElementNS(SVG_NS, 'g');
+          noteLayer.setAttribute('id', 'note-layer');
+          svg.appendChild(noteLayer);
+        }
+        noteLayer.innerHTML = '';
+
+        notes.forEach((note) => {
+          const elem = createSummaryNoteSvgElement(note);
+          noteLayer.appendChild(elem);
+        });
+      });
     }
 
     // 現場運用サマリー（要約ペイン）の更新
@@ -1175,13 +1350,14 @@
 
     const POLL_INTERVAL_MS = 3000;
 
-    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ）
+    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ + 概要層付箋データ）
     async function pollFacilities() {
       try {
-        const [facilitiesRes, requestsRes, emergencyRes] = await Promise.all([
+        const [facilitiesRes, requestsRes, emergencyRes, notesRes] = await Promise.all([
           fetch('/api/facilities'),
           fetch('/api/requests?status=pending'),
           fetch('/api/emergency-alerts'),
+          fetch('/api/notes?layer=summary'),
         ]);
 
         if (!facilitiesRes.ok) throw new Error(`設備データの同期に失敗しました (${facilitiesRes.status})`);
@@ -1195,6 +1371,11 @@
         if (emergencyRes.ok) {
           const emgs = await emergencyRes.json();
           renderEmergencyCards(emgs);
+        }
+
+        if (notesRes.ok) {
+          const notes = await notesRes.json();
+          syncNoteLayers(notes);
         }
 
         const mapContainer = document.getElementById('map-container');
@@ -1657,12 +1838,14 @@
         const facilitiesUrl = '/api/facilities';
         const requestsUrl = '/api/requests?status=pending';
         const emergencyUrl = '/api/emergency-alerts';
+        const notesUrl = '/api/notes?layer=summary';
 
-        const [svgRes, facilitiesRes, requestsRes, emergencyRes] = await Promise.all([
+        const [svgRes, facilitiesRes, requestsRes, emergencyRes, notesRes] = await Promise.all([
           fetch(svgUrl),
           fetch(facilitiesUrl),
           fetch(requestsUrl),
           fetch(emergencyUrl),
+          fetch(notesUrl),
         ]);
 
         if (!svgRes.ok) throw new Error(`マップの取得に失敗しました: ${svgUrl} (${svgRes.status})`);
@@ -1677,21 +1860,31 @@
           const emgs = await emergencyRes.json();
           renderEmergencyCards(emgs);
         }
+        if (notesRes.ok) {
+          summaryNotes = await notesRes.json();
+        }
 
         // 1. ミニマップに描画
         const mapContainer = document.getElementById('map-container');
         mapContainer.innerHTML = '';
-        const miniSvg = createMapSvgElement(svgText, currentFacilities);
+        const miniSvg = createMapSvgElement(svgText, currentFacilities, summaryNotes);
         mapContainer.appendChild(miniSvg);
 
         // 2. モーダルに描画
         const modalContainer = document.getElementById('modal-zoom-container');
         modalContainer.innerHTML = '';
-        const modalSvg = createMapSvgElement(svgText, currentFacilities);
+        const modalSvg = createMapSvgElement(svgText, currentFacilities, summaryNotes);
         modalContainer.appendChild(modalSvg);
 
         // 3. 要約ペインの更新
         updateSummaryPane(currentFacilities);
+
+        // 4. ピタネットポップオーバーイベント
+        document.getElementById('btn-close-m-note')?.addEventListener('click', closeNotePopover);
+        document.getElementById('btn-m-note-close')?.addEventListener('click', closeNotePopover);
+        document.getElementById('m-note-modal')?.addEventListener('click', (e) => {
+          if (e.target.id === 'm-note-modal') closeNotePopover();
+        });
 
         // 4. ナビゲーション切り替えイベント
         document.getElementById('nav-map')?.addEventListener('click', () => switchView('overview'));

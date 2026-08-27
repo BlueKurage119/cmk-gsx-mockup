@@ -1809,3 +1809,18 @@ html, body {
   gap: 4px;
 }
 
+/* ==========================================================================
+   Issue #69: ピタネット現場注記（M端末）
+   ========================================================================== */
+.m-note-marker {
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.m-note-marker:hover,
+.m-note-marker:active {
+  filter: drop-shadow(0 0 10px rgba(251, 188, 4, 0.95));
+}
+
+
+
