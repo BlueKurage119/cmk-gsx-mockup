@@ -364,8 +364,9 @@
       z-index: 20;
     }
 
-    /* 設備入力：フィルターバー */
-    .facility-filter-bar {
+    /* 設備入力・警報一覧：フィルターバー */
+    .facility-filter-bar,
+    .filter-bar {
       height: 48px;
       background-color: var(--surface-dark);
       border-bottom: 1px solid var(--border-color);
@@ -1232,7 +1233,7 @@
         <!-- 警報一覧 ビューパネル -->
         <div id="view-alerts" class="view-panel" role="region" aria-label="警報一覧（東地区）">
           <!-- フィルターツールバー -->
-          <div class="filter-bar">
+          <div class="facility-filter-bar filter-bar">
             <div class="filter-group">
               <label for="filter-alert-category" class="filter-label">種別:</label>
               <select id="filter-alert-category" class="filter-select">
