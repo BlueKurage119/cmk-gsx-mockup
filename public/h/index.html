@@ -1167,16 +1167,17 @@
     .badge-photo-tag {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       font-size: 11px;
       font-weight: 600;
-      background-color: rgba(138, 180, 248, 0.2);
+      background-color: rgba(138, 180, 248, 0.16);
       color: #8ab4f8;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       border: 1px solid rgba(138, 180, 248, 0.3);
       vertical-align: middle;
-      margin-right: 4px;
+      margin-right: 6px;
+      line-height: 1.2;
     }
 
     .notification-badge-type {
@@ -2325,7 +2326,7 @@
           targetName: item.locationText || item.facilityName || '故障申告場所',
           facilityId: '',
           area: '東地区',
-          summaryHtml: `${item.photoUrl ? '<span class="badge-photo-tag">📷写真あり</span> ' : ''}<span style="color: #ffffff;">${escapeHtml(item.description || '設備異常')}</span>`,
+          summaryHtml: `${item.photoUrl ? '<span class="badge-photo-tag"><svg style="width: 12px; height: 12px; fill: currentColor; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>写真あり</span> ' : ''}<span style="color: #ffffff;">${escapeHtml(item.description || '設備異常')}</span>`,
           sourceName: item.reporter || '東地区外警1',
           status: item.status || 'new',
           statusLabel: isNew ? '未確認' : '確認済',
