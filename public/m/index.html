@@ -14,6 +14,11 @@
         <span class="header-title" id="header-title">概況表示</span>
         <span class="header-subtitle">東地区</span>
       </div>
+      <div class="header-center-group">
+        <span id="connection-error-badge" class="header-error-badge" style="display: none;" role="status" aria-live="assertive">
+          <span class="error-dot" aria-hidden="true"></span>受信異常
+        </span>
+      </div>
       <div class="device-badge">東地区外警1</div>
     </header>
 
@@ -363,10 +368,24 @@
     }
 
     function showError(message) {
+      const badge = document.getElementById('connection-error-badge');
+      if (badge) {
+        badge.style.display = 'inline-flex';
+      }
       const container = document.getElementById('error-container');
       if (container) {
-        container.textContent = message;
-        container.style.display = 'block';
+        container.textContent = message || '受信異常';
+      }
+    }
+
+    function hideError() {
+      const badge = document.getElementById('connection-error-badge');
+      if (badge) {
+        badge.style.display = 'none';
+      }
+      const container = document.getElementById('error-container');
+      if (container) {
+        container.style.display = 'none';
       }
     }
 
@@ -870,12 +889,9 @@
         }
 
         // 成功時はエラー表示をクリア
-        const errorContainer = document.getElementById('error-container');
-        if (errorContainer && errorContainer.style.display === 'block') {
-          errorContainer.style.display = 'none';
-        }
+        hideError();
       } catch (err) {
-        showError(err.message || '通信エラー: 設備情報の更新に失敗しました');
+        showError('受信異常');
       }
     }
 

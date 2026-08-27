@@ -95,6 +95,40 @@
       border-radius: 4px;
     }
 
+    .header-error-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #d93025;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      animation: badge-pulse 2s infinite ease-in-out;
+    }
+
+    .error-dot {
+      width: 7px;
+      height: 7px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      display: inline-block;
+      animation: dot-blink 1s infinite alternate;
+    }
+
+    @keyframes dot-blink {
+      0% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
     /* 本文レイアウト（左Navigation Rail + 右Main Content） */
     .app-body {
       display: flex;
@@ -406,17 +440,9 @@
       display: flex;
     }
 
-    /* エラーバナー */
+    /* エラーバナー（レイアウトシフト防止のため常時非表示） */
     #error-container {
-      display: none;
-      padding: 10px 16px;
-      background-color: #5c1d1d;
-      border-bottom: 1px solid #f98080;
-      color: #fde8e8;
-      font-size: 13px;
-      white-space: pre-wrap;
-      flex-shrink: 0;
-      z-index: 20;
+      display: none !important;
     }
 
     /* 設備入力・警報一覧：フィルターバー */
@@ -1135,6 +1161,9 @@
       <div class="header-right">
         <span id="current-datetime" class="datetime-display">----/--/-- --:--:--</span>
         <span class="terminal-name">端末名: 東地区外務H1</span>
+        <span id="connection-error-badge" class="header-error-badge" style="display: none;" role="status" aria-live="assertive">
+          <span class="error-dot" aria-hidden="true"></span>受信異常 最終更新: <span id="last-sync-time">--:--:--</span>
+        </span>
       </div>
     </header>
 
@@ -1577,6 +1606,44 @@
     let alertNotificationTimer = null;
     let activeModalRequestId = null;
 
+    // 受信異常（通信状態）の管理
+    let isConnectionError = false;
+    let lastSuccessfulSyncTime = Date.now();
+
+    function formatTime(timestamp) {
+      if (!timestamp) return '--:--:--';
+      const d = new Date(timestamp);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function setConnectionError(hasError) {
+      isConnectionError = hasError;
+      const errorBadge = document.getElementById('connection-error-badge');
+      const lastSyncElem = document.getElementById('last-sync-time');
+
+      if (errorBadge) {
+        if (hasError) {
+          if (lastSyncElem) {
+            lastSyncElem.textContent = formatTime(lastSuccessfulSyncTime);
+          }
+          errorBadge.style.display = 'inline-flex';
+        } else {
+          errorBadge.style.display = 'none';
+        }
+      }
+
+      updateUIState();
+      updateBatchUIState();
+      updateAlertBatchUIState();
+      updateNotificationArea();
+
+      const modal = document.getElementById('request-detail-modal');
+      if (modal && modal.classList.contains('active')) {
+        renderRequestDetailModal();
+      }
+    }
+
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -1629,10 +1696,10 @@
     }
 
     function showError(message) {
+      setConnectionError(true);
       const errorContainer = document.getElementById('error-container');
       if (errorContainer) {
-        errorContainer.textContent = message;
-        errorContainer.style.display = 'block';
+        errorContainer.textContent = message || '受信異常';
       }
     }
 
@@ -1726,8 +1793,8 @@
         setNotification(msg, 'warning');
 
         if (btnDetail) btnDetail.disabled = false;
-        if (btnYes) btnYes.disabled = false;
-        if (btnNo) btnNo.disabled = false;
+        if (btnYes) btnYes.disabled = isConnectionError;
+        if (btnNo) btnNo.disabled = isConnectionError;
       } else if (!currentSelection.facility) {
         if (btnDetail) btnDetail.disabled = true;
         if (btnYes) btnYes.disabled = true;
@@ -1783,8 +1850,8 @@
         }
       }
 
-      if (btnApprove) btnApprove.disabled = !isPending;
-      if (btnReject) btnReject.disabled = !isPending;
+      if (btnApprove) btnApprove.disabled = !isPending || isConnectionError;
+      if (btnReject) btnReject.disabled = !isPending || isConnectionError;
 
       const area = getFacilityArea({ id: req.facilityId, type: req.facilityType });
       const typeName = getFacilityTypeName(req.facilityType);
@@ -2174,8 +2241,8 @@
             <td>
               <div class="row-actions">
                 <button type="button" class="btn-row-action btn-row-detail" data-action="detail" data-id="${escapeHtml(item.id)}">詳細</button>
-                <button type="button" class="btn-row-action btn-row-approve" data-action="approve" data-id="${escapeHtml(item.id)}" ${!isPending ? 'disabled' : ''}>承認</button>
-                <button type="button" class="btn-row-action btn-row-reject" data-action="reject" data-id="${escapeHtml(item.id)}" ${!isPending ? 'disabled' : ''}>差戻</button>
+                <button type="button" class="btn-row-action btn-row-approve" data-action="approve" data-id="${escapeHtml(item.id)}" ${(!isPending || isConnectionError) ? 'disabled' : ''}>承認</button>
+                <button type="button" class="btn-row-action btn-row-reject" data-action="reject" data-id="${escapeHtml(item.id)}" ${(!isPending || isConnectionError) ? 'disabled' : ''}>差戻</button>
               </div>
             </td>
           </tr>
@@ -2236,6 +2303,15 @@
         if (canSubmit) {
           submitBtn.classList.add('ready-to-submit');
         } else {
+          submitBtn.classList.remove('ready-to-submit');
+        }
+      }
+
+      if (isConnectionError) {
+        if (approveBtn) approveBtn.disabled = true;
+        if (rejectBtn) rejectBtn.disabled = true;
+        if (submitBtn) {
+          submitBtn.disabled = true;
           submitBtn.classList.remove('ready-to-submit');
         }
       }
@@ -2506,6 +2582,14 @@
         setNotification(`<span class="notification-highlight">${escapeHtml(currentSelection.facility.name)}／${escapeHtml(stateText)}:</span> 送信をクリックして変更を反映させてください`, 'active');
       }
 
+      if (isConnectionError) {
+        statusBtns.forEach((btn) => {
+          btn.disabled = true;
+        });
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('ready-to-submit');
+      }
+
       renderSelectionRing(currentSelection.facility);
     }
 
@@ -2771,6 +2855,16 @@
         }
       }
 
+      if (isConnectionError) {
+        [openBtn, closedBtn, restrictedBtn].forEach((btn) => {
+          if (btn) btn.disabled = true;
+        });
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.classList.remove('ready-to-submit');
+        }
+      }
+
       if (!hasSelection) {
         setBatchNotification('一括変更する設備を選択（チェック）してください', 'default');
       } else if (!batchTargetState) {
@@ -2892,65 +2986,57 @@
           fetch('/api/requests'),
         ]);
 
-        let facilitiesData = null;
-        if (facRes.ok) {
-          facilitiesData = await facRes.json();
-          facilitiesData.forEach((f) => facilitiesMap.set(f.id, f));
+        if (!facRes.ok || !reqRes.ok) {
+          throw new Error(`HTTP Error (facilities: ${facRes.status}, requests: ${reqRes.status})`);
         }
 
-        if (reqRes.ok) {
-          const reqs = await reqRes.json();
-          // 作成日時降順
-          reqs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-          allRequests = reqs;
+        const facilitiesData = await facRes.json();
+        facilitiesData.forEach((f) => facilitiesMap.set(f.id, f));
 
-          // pendingRequests は時系列順（先着順でスタック処理）
-          const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
-          pendingRequests = newPending;
+        const reqs = await reqRes.json();
+        // 作成日時降順
+        reqs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        allRequests = reqs;
 
-          // 新しい未確認申請があるかチェック
-          const hasNewUnack = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
-          if (newPending.length > 0 && hasNewUnack) {
-            isBuzzerActive = true;
-            startBuzzerSound();
-          } else if (newPending.length === 0) {
-            isBuzzerActive = false;
-            stopBuzzerSound();
-            buzzerAcknowledgedReqIds.clear();
-          }
+        // pendingRequests は時系列順（先着順でスタック処理）
+        const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
+        pendingRequests = newPending;
 
-          const header = document.querySelector('.app-header');
-          if (header) {
-            if (isBuzzerActive) {
-              header.classList.add('alarm-active');
-            } else {
-              header.classList.remove('alarm-active');
-            }
-          }
+        // 新しい未確認申請があるかチェック
+        const hasNewUnack = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
+        if (newPending.length > 0 && hasNewUnack) {
+          isBuzzerActive = true;
+          startBuzzerSound();
+        } else if (newPending.length === 0) {
+          isBuzzerActive = false;
+          stopBuzzerSound();
+          buzzerAcknowledgedReqIds.clear();
+        }
 
-          updateNotificationArea();
-
-          // モーダル表示中の場合は内容をリアルタイム更新
-          const modal = document.getElementById('request-detail-modal');
-          if (modal && modal.classList.contains('active')) {
-            renderRequestDetailModal();
-          }
-
-          // 警報一覧画面表示中の場合はテーブルと一括UIを更新
-          if (currentView === 'alerts') {
-            renderAlertTable();
-            updateAlertBatchUIState();
+        const header = document.querySelector('.app-header');
+        if (header) {
+          if (isBuzzerActive) {
+            header.classList.add('alarm-active');
+          } else {
+            header.classList.remove('alarm-active');
           }
         }
 
-        if (facilitiesData) {
-          updateFacilityColors(facilitiesData);
-          if (currentView === 'facilities') {
-            renderFacilityTable();
-          }
+        updateFacilityColors(facilitiesData);
+
+        if (currentView === 'facilities') {
+          renderFacilityTable();
+        } else if (currentView === 'alerts') {
+          renderAlertTable();
+          updateAlertBatchUIState();
         }
+
+        // 同期成功
+        lastSuccessfulSyncTime = Date.now();
+        setConnectionError(false);
       } catch (err) {
         console.warn('Polling sync error:', err);
+        setConnectionError(true);
       }
     }
 
@@ -3127,6 +3213,10 @@
           renderAlertTable();
           updateAlertBatchUIState();
         }
+
+        // 初期同期成功
+        lastSuccessfulSyncTime = Date.now();
+        setConnectionError(false);
 
         // 定期ポーリング開始（3秒間隔）
         setInterval(pollFacilitiesAndRequests, POLL_INTERVAL_MS);

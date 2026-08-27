@@ -1057,3 +1057,40 @@ test('static 404: /h/missing.css and /m/missing.css return 404', async () => {
     await close();
   }
 });
+
+test('GET /m includes centered connection error badge in header with zero layout shift', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="connection-error-badge"'), 'M terminal should have connection-error-badge element');
+    assert.ok(text.includes('class="header-center-group"'), 'M terminal should have header-center-group for centered badge');
+    assert.ok(text.includes('受信異常'), 'M terminal should include 受信異常 text');
+    assert.ok(text.includes('hideError'), 'M terminal should define hideError');
+    assert.ok(text.includes('showError'), 'M terminal should define showError');
+
+    const resCss = await fetch(`${baseUrl}/m/style.css`);
+    const css = await resCss.text();
+    assert.ok(css.includes('.header-center-group'), 'M style.css should style header-center-group');
+    assert.ok(css.includes('.header-error-badge'), 'M style.css should style header-error-badge');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes connection error badge with last sync timestamp and operation lock logic', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="connection-error-badge"'), 'H terminal should have connection-error-badge element');
+    assert.ok(text.includes('id="last-sync-time"'), 'H terminal should have last-sync-time element');
+    assert.ok(text.includes('受信異常 最終更新:'), 'H terminal should include 受信異常 最終更新: text');
+    assert.ok(text.includes('isConnectionError'), 'H terminal should track isConnectionError state');
+    assert.ok(text.includes('lastSuccessfulSyncTime'), 'H terminal should track lastSuccessfulSyncTime');
+    assert.ok(text.includes('setConnectionError'), 'H terminal should define setConnectionError function');
+    assert.ok(text.includes('.header-error-badge'), 'H terminal should style header-error-badge');
+  } finally {
+    await close();
+  }
+});
