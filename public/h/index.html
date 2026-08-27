@@ -1652,6 +1652,13 @@
       </header>
       <div class="modal-body" id="emergency-detail-body">
         <div class="detail-req-view">
+          <!-- 同一エリア複数発報用ページャー -->
+          <div id="modal-emg-pager" style="display: none; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.06); padding: 6px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <button type="button" id="btn-emg-prev" class="btn btn-outlined btn-sm" style="font-size: 11px; padding: 3px 8px; min-height: 24px;">前へ</button>
+            <span id="modal-emg-page-info" style="font-size: 12px; font-weight: bold; color: var(--color-primary-light);">同一エリア発報: 1 / 2件</span>
+            <button type="button" id="btn-emg-next" class="btn btn-outlined btn-sm" style="font-size: 11px; padding: 3px 8px; min-height: 24px;">次へ</button>
+          </div>
+
           <div class="detail-req-header">
             <div class="detail-req-title-group">
               <span class="detail-req-name" id="modal-emg-area">-</span>
@@ -1756,7 +1763,7 @@
       '東8ホール': { x: 651, y: 560 },
       '東123屋外': { x: 1550, y: 160 },
       '東456屋外': { x: 1355, y: 1260 },
-      '東78屋外': { x: 280, y: 480 },
+      '東78屋外': { x: 400, y: 707 },
       'ガレリア': { x: 1453, y: 706 },
     };
 
@@ -2166,8 +2173,17 @@
         const firstEmg = activeEmergencyAlerts[0];
         const isIncident = firstEmg.category === 'incident';
         const emgLabel = isIncident ? '非常通報' : '傷病者通報';
-        const emgDetail = firstEmg.reason || firstEmg.note || '緊急事態発生';
-        const msg = `<span class="notification-badge-emergency">${escapeHtml(emgLabel)}</span> <span class="notification-highlight">${escapeHtml(firstEmg.area)}:</span> 「${escapeHtml(emgDetail)}」${countSuffix}`;
+
+        // 同一エリアのアクティブ発報数
+        const sameAreaActive = activeEmergencyAlerts.filter((a) => a.area === firstEmg.area);
+        let msg = '';
+        if (sameAreaActive.length > 1) {
+          const reasons = sameAreaActive.map((a) => a.reason || (a.category === 'incident' ? '非常事態' : '傷病者')).join(' / ');
+          msg = `<span class="notification-badge-emergency">緊急発報</span> <span class="notification-highlight">${escapeHtml(firstEmg.area)} (${sameAreaActive.length}件):</span> 「${escapeHtml(reasons)}」${countSuffix}`;
+        } else {
+          const emgDetail = firstEmg.reason || firstEmg.note || '緊急事態発生';
+          msg = `<span class="notification-badge-emergency">${escapeHtml(emgLabel)}</span> <span class="notification-highlight">${escapeHtml(firstEmg.area)}:</span> 「${escapeHtml(emgDetail)}」${countSuffix}`;
+        }
         setNotification(msg, 'error');
 
         if (btnDetail) {
@@ -2588,6 +2604,22 @@
       if (modal) modal.classList.remove('active');
     }
 
+    function navigateEmergencyModal(delta) {
+      if (!activeModalEmergencyId) return;
+      const currentAlert = allEmergencyAlerts.find((a) => a.id === activeModalEmergencyId) || activeEmergencyAlerts[0];
+      if (!currentAlert) return;
+
+      const sameAreaAlerts = activeEmergencyAlerts.filter((a) => a.area === currentAlert.area);
+      if (sameAreaAlerts.length <= 1) return;
+
+      const currentIndex = sameAreaAlerts.findIndex((a) => a.id === currentAlert.id);
+      const nextIndex = currentIndex + delta;
+      if (nextIndex >= 0 && nextIndex < sameAreaAlerts.length) {
+        activeModalEmergencyId = sameAreaAlerts[nextIndex].id;
+        renderEmergencyDetailModal();
+      }
+    }
+
     function renderEmergencyDetailModal() {
       const modal = document.getElementById('emergency-detail-modal');
       if (!modal) return;
@@ -2601,6 +2633,11 @@
       const timeElem = document.getElementById('modal-emg-time');
       const resolveBtn = document.getElementById('btn-modal-emg-resolve');
 
+      const pagerBox = document.getElementById('modal-emg-pager');
+      const pageInfo = document.getElementById('modal-emg-page-info');
+      const btnPrev = document.getElementById('btn-emg-prev');
+      const btnNext = document.getElementById('btn-emg-next');
+
       let alert = null;
       if (activeModalEmergencyId) {
         alert = allEmergencyAlerts.find((a) => a.id === activeModalEmergencyId);
@@ -2610,11 +2647,25 @@
 
       if (!alert) {
         if (resolveBtn) resolveBtn.disabled = true;
+        if (pagerBox) pagerBox.style.display = 'none';
         return;
       }
 
       const isIncident = alert.category === 'incident';
       const isActive = alert.status === 'active';
+
+      // 同一エリア複数件ページャーの表示制御
+      const sameAreaAlerts = activeEmergencyAlerts.filter((a) => a.area === alert.area);
+      if (sameAreaAlerts.length > 1 && isActive) {
+        const curIdx = sameAreaAlerts.findIndex((a) => a.id === alert.id);
+        const safeIdx = curIdx >= 0 ? curIdx : 0;
+        if (pagerBox) pagerBox.style.display = 'flex';
+        if (pageInfo) pageInfo.textContent = `同一エリア発報: ${safeIdx + 1} / ${sameAreaAlerts.length}件`;
+        if (btnPrev) btnPrev.disabled = safeIdx === 0;
+        if (btnNext) btnNext.disabled = safeIdx === sameAreaAlerts.length - 1;
+      } else {
+        if (pagerBox) pagerBox.style.display = 'none';
+      }
 
       if (areaElem) areaElem.textContent = alert.area || '-';
       if (catBadge) {
@@ -2630,7 +2681,7 @@
       }
 
       if (reasonElem) {
-        reasonElem.textContent = alert.reason || (isIncident ? '非常事態' : '救護要請');
+        reasonElem.textContent = alert.reason || (isIncident ? '非常: 緊急事態' : '傷病者: 救護要請');
       }
 
       if (noteElem) {
@@ -2674,7 +2725,7 @@
       }
     }
 
-    // 概況マップ上の緊急発報マーカー更新
+    // 概況マップ上の緊急発報マーカー更新（同一エリア複数件オフセット分散 + 24px注釈テキスト）
     function updateEmergencyMarkers() {
       const svg = document.querySelector('#map-container svg');
       if (!svg) return;
@@ -2688,80 +2739,127 @@
 
       layer.innerHTML = '';
 
+      // エリアごとにアクティブ発報をグルーピング
+      const alertsByArea = new Map();
       activeEmergencyAlerts.forEach((alert) => {
-        const coords = AREA_COORDINATES[alert.area];
-        if (!coords) return;
-
-        const isIncident = alert.category === 'incident';
-        const color = isIncident ? '#EA4335' : '#FBBC04';
-
-        const g = document.createElementNS(SVG_NS, 'g');
-        g.setAttribute('class', 'emergency-marker');
-        g.setAttribute('transform', `translate(${coords.x}, ${coords.y})`);
-        g.dataset.alertId = alert.id;
-
-        // 拡散リング
-        const ring = document.createElementNS(SVG_NS, 'circle');
-        ring.setAttribute('class', 'emergency-marker-ring');
-        ring.setAttribute('cx', '0');
-        ring.setAttribute('cy', '0');
-        ring.setAttribute('r', '28');
-        ring.setAttribute('fill', 'none');
-        ring.setAttribute('stroke', color);
-        g.appendChild(ring);
-
-        // 背景円
-        const bgCircle = document.createElementNS(SVG_NS, 'circle');
-        bgCircle.setAttribute('cx', '0');
-        bgCircle.setAttribute('cy', '0');
-        bgCircle.setAttribute('r', '28');
-        bgCircle.setAttribute('fill', color);
-        bgCircle.setAttribute('stroke', '#1B1B1B');
-        bgCircle.setAttribute('stroke-width', '4');
-        g.appendChild(bgCircle);
-
-        // アイコン (非常通報: 警告マーク / 傷病者: 十字)
-        const iconPath = document.createElementNS(SVG_NS, 'path');
-        if (isIncident) {
-          iconPath.setAttribute('d', 'M0 -15 L14 11 L-14 11 Z M-1.5 1 L1.5 1 L1 -7 L-1 -7 Z M-1.5 7 L1.5 7 L1.5 4 L-1.5 4 Z');
-          iconPath.setAttribute('fill', '#FFFFFF');
-        } else {
-          iconPath.setAttribute('d', 'M-4 -12 H4 V-4 H12 V4 H4 V12 H-4 V4 H-12 V-4 H-4 Z');
-          iconPath.setAttribute('fill', '#000000');
+        if (!alertsByArea.has(alert.area)) {
+          alertsByArea.set(alert.area, []);
         }
-        g.appendChild(iconPath);
+        alertsByArea.get(alert.area).push(alert);
+      });
 
-        // テキストラベル（拡大 font-size: 16px、理由表示）
-        const labelText = alert.reason || (isIncident ? '非常: 緊急事態' : '傷病者: 救護要請');
-        const rectWidth = Math.max(140, labelText.length * 15 + 24);
+      alertsByArea.forEach((areaAlerts, area) => {
+        const baseCoords = AREA_COORDINATES[area];
+        if (!baseCoords) return;
 
-        const textBg = document.createElementNS(SVG_NS, 'rect');
-        textBg.setAttribute('x', String(-rectWidth / 2));
-        textBg.setAttribute('y', '-62');
-        textBg.setAttribute('width', String(rectWidth));
-        textBg.setAttribute('height', '28');
-        textBg.setAttribute('rx', '6');
-        textBg.setAttribute('fill', 'rgba(0, 0, 0, 0.88)');
-        textBg.setAttribute('stroke', color);
-        textBg.setAttribute('stroke-width', '2');
-        g.appendChild(textBg);
+        const totalInArea = areaAlerts.length;
+        const radius = 80;
 
-        const text = document.createElementNS(SVG_NS, 'text');
-        text.setAttribute('x', '0');
-        text.setAttribute('y', '-42');
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('font-size', '16');
-        text.setAttribute('font-weight', '800');
-        text.setAttribute('fill', '#FFFFFF');
-        text.textContent = labelText;
-        g.appendChild(text);
+        areaAlerts.forEach((alert, index) => {
+          let offsetX = 0;
+          let offsetY = 0;
+          if (totalInArea > 1) {
+            const angle = (2 * Math.PI * index) / totalInArea - Math.PI / 2;
+            offsetX = Math.round(radius * Math.cos(angle));
+            offsetY = Math.round(radius * Math.sin(angle));
+          }
 
-        g.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openEmergencyDetailModal(alert.id);
+          const posX = baseCoords.x + offsetX;
+          const posY = baseCoords.y + offsetY;
+
+          const isIncident = alert.category === 'incident';
+          const color = isIncident ? '#EA4335' : '#FBBC04';
+
+          const g = document.createElementNS(SVG_NS, 'g');
+          g.setAttribute('class', 'emergency-marker');
+          g.setAttribute('transform', `translate(${posX}, ${posY})`);
+          g.dataset.alertId = alert.id;
+
+          // 拡散リング
+          const ring = document.createElementNS(SVG_NS, 'circle');
+          ring.setAttribute('class', 'emergency-marker-ring');
+          ring.setAttribute('cx', '0');
+          ring.setAttribute('cy', '0');
+          ring.setAttribute('r', '28');
+          ring.setAttribute('fill', 'none');
+          ring.setAttribute('stroke', color);
+          g.appendChild(ring);
+
+          // 背景円
+          const bgCircle = document.createElementNS(SVG_NS, 'circle');
+          bgCircle.setAttribute('cx', '0');
+          bgCircle.setAttribute('cy', '0');
+          bgCircle.setAttribute('r', '28');
+          bgCircle.setAttribute('fill', color);
+          bgCircle.setAttribute('stroke', '#1B1B1B');
+          bgCircle.setAttribute('stroke-width', '4');
+          g.appendChild(bgCircle);
+
+          // アイコン (非常通報: 警告マーク / 傷病者: 十字)
+          const iconPath = document.createElementNS(SVG_NS, 'path');
+          if (isIncident) {
+            iconPath.setAttribute('d', 'M0 -15 L14 11 L-14 11 Z M-1.5 1 L1.5 1 L1 -7 L-1 -7 Z M-1.5 7 L1.5 7 L1.5 4 L-1.5 4 Z');
+            iconPath.setAttribute('fill', '#FFFFFF');
+          } else {
+            iconPath.setAttribute('d', 'M-4 -12 H4 V-4 H12 V4 H4 V12 H-4 V4 H-12 V-4 H-4 Z');
+            iconPath.setAttribute('fill', '#000000');
+          }
+          g.appendChild(iconPath);
+
+          // 同一エリアに複数ある場合の件数バッジ (右上に小さく 1/2 等)
+          if (totalInArea > 1) {
+            const badgeCircle = document.createElementNS(SVG_NS, 'circle');
+            badgeCircle.setAttribute('cx', '22');
+            badgeCircle.setAttribute('cy', '-22');
+            badgeCircle.setAttribute('r', '13');
+            badgeCircle.setAttribute('fill', '#d93025');
+            badgeCircle.setAttribute('stroke', '#ffffff');
+            badgeCircle.setAttribute('stroke-width', '2');
+            g.appendChild(badgeCircle);
+
+            const badgeText = document.createElementNS(SVG_NS, 'text');
+            badgeText.setAttribute('x', '22');
+            badgeText.setAttribute('y', '-17');
+            badgeText.setAttribute('text-anchor', 'middle');
+            badgeText.setAttribute('font-size', '12');
+            badgeText.setAttribute('font-weight', '800');
+            badgeText.setAttribute('fill', '#ffffff');
+            badgeText.textContent = `${index + 1}/${totalInArea}`;
+            g.appendChild(badgeText);
+          }
+
+          // テキストラベル（拡大 font-size: 24px、太字800、理由表示）
+          const labelText = alert.reason || (isIncident ? '非常: 緊急事態' : '傷病者: 救護要請');
+          const rectWidth = Math.max(200, labelText.length * 24 + 36);
+
+          const textBg = document.createElementNS(SVG_NS, 'rect');
+          textBg.setAttribute('x', String(-rectWidth / 2));
+          textBg.setAttribute('y', '-78');
+          textBg.setAttribute('width', String(rectWidth));
+          textBg.setAttribute('height', '40');
+          textBg.setAttribute('rx', '8');
+          textBg.setAttribute('fill', 'rgba(0, 0, 0, 0.90)');
+          textBg.setAttribute('stroke', color);
+          textBg.setAttribute('stroke-width', '2.5');
+          g.appendChild(textBg);
+
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', '0');
+          text.setAttribute('y', '-50');
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('font-size', '24');
+          text.setAttribute('font-weight', '800');
+          text.setAttribute('fill', '#FFFFFF');
+          text.textContent = labelText;
+          g.appendChild(text);
+
+          g.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEmergencyDetailModal(alert.id);
+          });
+
+          layer.appendChild(g);
         });
-
-        layer.appendChild(g);
       });
     }
 
@@ -4180,7 +4278,15 @@
         }
       });
 
-      // 緊急発報モーダル内ボタンイベント（対応完了・閉じる）
+      // 緊急発報モーダル内ボタンイベント（ページャー・対応完了・閉じる）
+      document.getElementById('btn-emg-prev')?.addEventListener('click', () => {
+        navigateEmergencyModal(-1);
+      });
+
+      document.getElementById('btn-emg-next')?.addEventListener('click', () => {
+        navigateEmergencyModal(1);
+      });
+
       document.getElementById('btn-modal-emg-resolve')?.addEventListener('click', () => {
         const targetId = activeModalEmergencyId || (activeEmergencyAlerts[0] ? activeEmergencyAlerts[0].id : null);
         if (targetId) {
