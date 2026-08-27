@@ -3884,6 +3884,10 @@
         allEmergencyAlerts = emgs;
         activeEmergencyAlerts = emgs.filter((e) => e.status === 'active');
 
+        // pendingRequests は時系列順（先着順でスタック処理）
+        const newPending = reqs.filter((r) => r.status === 'pending').slice().reverse();
+        pendingRequests = newPending;
+
         // 新たな緊急発報が加わった場合はスヌーズを解除して即座にサイレン鳴動
         const hasBrandNewEmergency = activeEmergencyAlerts.some((e) => !prevActiveIds.has(e.id));
         if (hasBrandNewEmergency && isEmergencySnoozed) {
