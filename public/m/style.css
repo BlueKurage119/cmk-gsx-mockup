@@ -1076,3 +1076,191 @@ html, body {
   background-color: rgba(234, 67, 53, 0.92);
 }
 
+/* ====================================================
+   故障申告フォーム
+   ==================================================== */
+.fault-report-dashboard {
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fault-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.fault-form-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fault-form-intro {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fault-form .form-group {
+  margin-bottom: 20px;
+}
+
+.fault-form .form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.badge-required {
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #d93025;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.badge-optional {
+  font-size: 10px;
+  font-weight: 600;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.fault-form .form-input,
+.fault-form .form-textarea {
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.fault-form .form-input:focus,
+.fault-form .form-textarea:focus {
+  outline: none;
+  border-color: var(--active-blue);
+  box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.25);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.fault-form .form-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.photo-upload-wrapper {
+  margin-top: 6px;
+}
+
+.btn-photo-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-photo-upload:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--active-blue);
+}
+
+.photo-preview-container {
+  margin-top: 10px;
+}
+
+.photo-preview-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: #000;
+  max-width: 100%;
+}
+
+.photo-preview-img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  display: block;
+}
+
+.btn-remove-photo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #f28b82;
+  border: 1px solid #d93025;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-remove-photo:hover {
+  background: #d93025;
+  color: #fff;
+}
+
+.form-actions {
+  margin-top: 24px;
+}
+
+.btn-submit-fault {
+  width: 100%;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.2s;
+}
+
+.btn-submit-fault:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.btn-submit-fault:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+

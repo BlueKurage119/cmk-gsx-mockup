@@ -3,10 +3,12 @@ const assert = require('node:assert/strict');
 const { startServer } = require('../server');
 const { resetFacilities } = require('../src/state/facilities');
 const { resetRequests } = require('../src/state/requests');
+const { resetFaultReports } = require('../src/state/faultReports');
 
 beforeEach(() => {
   resetFacilities();
   resetRequests();
+  resetFaultReports();
 });
 
 async function listenServer(options = { port: 0, host: '127.0.0.1' }) {
@@ -1092,6 +1094,153 @@ test('GET /h includes connection error badge with last sync timestamp and operat
     assert.ok(text.includes('lastSuccessfulSyncTime'), 'H terminal should track lastSuccessfulSyncTime');
     assert.ok(text.includes('setConnectionError'), 'H terminal should define setConnectionError function');
     assert.ok(text.includes('.header-error-badge'), 'H terminal should style header-error-badge');
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/fault-reports creates fault report (with & without photo) and GET /api/fault-reports retrieves them', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // 1. 写真なしの送信 (FormData)
+    const formDataNoPhoto = new FormData();
+    formDataNoPhoto.append('locationText', '東1ホール トイレ入口');
+    formDataNoPhoto.append('description', 'ドアノブ破損');
+    formDataNoPhoto.append('reporter', '東地区外警1');
+
+    const res1 = await fetch(`${baseUrl}/api/fault-reports`, {
+      method: 'POST',
+      body: formDataNoPhoto,
+    });
+    assert.equal(res1.status, 201);
+    const data1 = await res1.json();
+    assert.equal(data1.success, true);
+    assert.equal(data1.report.id, 'fault-1');
+    assert.equal(data1.report.locationText, '東1ホール トイレ入口');
+    assert.equal(data1.report.description, 'ドアノブ破損');
+    assert.equal(data1.report.photoUrl, null);
+    assert.equal(data1.report.status, 'new');
+
+    // 2. 写真ありの送信 (FormData + Blob)
+    const fakeImageBlob = new Blob(['fake image content'], { type: 'image/jpeg' });
+    const formDataWithPhoto = new FormData();
+    formDataWithPhoto.append('locationText', '東2ホール シャッター横');
+    formDataWithPhoto.append('description', 'センサーカバー脱落');
+    formDataWithPhoto.append('photo', fakeImageBlob, 'test-photo.jpg');
+
+    const res2 = await fetch(`${baseUrl}/api/fault-reports`, {
+      method: 'POST',
+      body: formDataWithPhoto,
+    });
+    assert.equal(res2.status, 201);
+    const data2 = await res2.json();
+    assert.equal(data2.success, true);
+    assert.equal(data2.report.id, 'fault-2');
+    assert.ok(data2.report.photoUrl.startsWith('/uploads/'));
+
+    // 3. アップロードされた静的ファイルが取得できること
+    const photoRes = await fetch(`${baseUrl}${data2.report.photoUrl}`);
+    assert.equal(photoRes.status, 200);
+
+    // 4. GET /api/fault-reports で一覧取得
+    const listRes = await fetch(`${baseUrl}/api/fault-reports`);
+    assert.equal(listRes.status, 200);
+    const list = await listRes.json();
+    assert.equal(list.length, 2);
+    assert.equal(list[0].id, 'fault-2'); // desc
+    assert.equal(list[1].id, 'fault-1');
+
+    // 5. GET /api/fault-reports/:id
+    const singleRes = await fetch(`${baseUrl}/api/fault-reports/fault-1`);
+    assert.equal(singleRes.status, 200);
+    const single = await singleRes.json();
+    assert.equal(single.locationText, '東1ホール トイレ入口');
+
+    // 404 for unknown
+    const notFoundRes = await fetch(`${baseUrl}/api/fault-reports/fault-999`);
+    assert.equal(notFoundRes.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/fault-reports validates required fields', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    // locationText 欠損
+    const fd1 = new FormData();
+    fd1.append('description', 'some description');
+    const res1 = await fetch(`${baseUrl}/api/fault-reports`, { method: 'POST', body: fd1 });
+    assert.equal(res1.status, 400);
+
+    // description 欠損
+    const fd2 = new FormData();
+    fd2.append('locationText', 'some location');
+    const res2 = await fetch(`${baseUrl}/api/fault-reports`, { method: 'POST', body: fd2 });
+    assert.equal(res2.status, 400);
+  } finally {
+    await close();
+  }
+});
+
+test('POST /api/fault-reports/:id/acknowledge updates status to acknowledged', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const fd = new FormData();
+    fd.append('locationText', '東3ホール');
+    fd.append('description', '水漏れ');
+    const createRes = await fetch(`${baseUrl}/api/fault-reports`, { method: 'POST', body: fd });
+    const createData = await createRes.json();
+
+    const ackRes = await fetch(`${baseUrl}/api/fault-reports/${createData.report.id}/acknowledge`, {
+      method: 'POST',
+    });
+    assert.equal(ackRes.status, 200);
+    const ackData = await ackRes.json();
+    assert.equal(ackData.success, true);
+    assert.equal(ackData.report.status, 'acknowledged');
+    assert.ok(typeof ackData.report.acknowledgedAt === 'number');
+
+    // 存在しないIDへの確認済は404
+    const notFoundAck = await fetch(`${baseUrl}/api/fault-reports/fault-999/acknowledge`, {
+      method: 'POST',
+    });
+    assert.equal(notFoundAck.status, 404);
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes fault-report view pane, photo input, and submit form', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="pane-fault-report"'), 'M terminal should have pane-fault-report');
+    assert.ok(text.includes('id="fault-location"'), 'M terminal should have fault-location input');
+    assert.ok(text.includes('id="fault-description"'), 'M terminal should have fault-description textarea');
+    assert.ok(text.includes('id="fault-photo-input"'), 'M terminal should have fault-photo-input');
+    assert.ok(text.includes('id="btn-submit-fault"'), 'M terminal should have btn-submit-fault button');
+    assert.ok(text.includes('id="nav-trouble"'), 'M terminal should have nav-trouble');
+    assert.ok(text.includes('data-view="fault-report"'), 'nav-trouble should have data-view=fault-report');
+    assert.ok(text.includes('initFaultReportForm'), 'M terminal should define initFaultReportForm');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes fault-detail-modal, photo tag, and fault action handling', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="fault-detail-modal"'), 'H terminal should have fault-detail-modal');
+    assert.ok(text.includes('id="modal-fault-location"'), 'H terminal should have modal-fault-location');
+    assert.ok(text.includes('id="btn-modal-fault-ack"'), 'H terminal should have btn-modal-fault-ack');
+    assert.ok(text.includes('badge-photo-tag'), 'H terminal should style badge-photo-tag');
+    assert.ok(text.includes('notification-badge-type'), 'H terminal should style notification-badge-type');
+    assert.ok(text.includes('/api/fault-reports'), 'H terminal should poll /api/fault-reports');
+    assert.ok(text.includes('acknowledgeFaultReportById'), 'H terminal should define acknowledgeFaultReportById');
   } finally {
     await close();
   }

@@ -136,6 +136,87 @@
       </div>
     </main>
 
+    <!-- 4. 故障申告ペイン -->
+    <main class="fault-report-dashboard view-pane" id="pane-fault-report" aria-label="故障申告画面">
+      <div class="fault-form-container">
+        <div class="fault-form-card">
+          <div class="fault-form-intro">
+            設備・建具等の破損や不具合を発見した場合は、場所と症状を記入し写真を添付して報告してください。
+          </div>
+
+          <form id="fault-report-form" class="fault-form" novalidate>
+            <div class="form-group">
+              <label for="fault-location" class="form-label">
+                発生場所 <span class="badge-required">必須</span>
+              </label>
+              <input
+                type="text"
+                id="fault-location"
+                name="locationText"
+                class="form-input"
+                placeholder="例: 東1ホール トイレ入口、ガレリア北側など"
+                maxlength="100"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="fault-description" class="form-label">
+                症状・内容 <span class="badge-required">必須</span>
+              </label>
+              <textarea
+                id="fault-description"
+                name="description"
+                class="form-textarea"
+                rows="4"
+                placeholder="例: ドアノブが破損しており開閉できません。照明が点滅しています。"
+                maxlength="500"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                写真添付 <span class="badge-optional">任意</span>
+              </label>
+              <div class="photo-upload-wrapper">
+                <label for="fault-photo-input" class="btn-photo-upload" id="photo-upload-label">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                  </svg>
+                  <span>写真を選択 / カメラ起動</span>
+                </label>
+                <input
+                  type="file"
+                  id="fault-photo-input"
+                  name="photo"
+                  accept="image/*"
+                  capture="environment"
+                  style="display: none;"
+                >
+
+                <!-- プレビュー表示領域 -->
+                <div id="photo-preview-container" class="photo-preview-container" style="display: none;">
+                  <div class="photo-preview-card">
+                    <img id="photo-preview-img" class="photo-preview-img" src="" alt="添付写真プレビュー">
+                    <button type="button" id="btn-remove-photo" class="btn-remove-photo" aria-label="写真を削除">
+                      ✕ 削除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-submit-fault" class="btn-submit-fault">
+                <span id="fault-submit-text">故障報告を送信</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
     <!-- ボトムナビゲーションバー（4項目） -->
     <nav class="bottom-nav" aria-label="メインナビゲーション">
       <!-- 1. 概況表示 -->
@@ -163,7 +244,7 @@
       </button>
 
       <!-- 4. 故障申告 -->
-      <button class="nav-item" id="nav-trouble" type="button" aria-label="故障申告">
+      <button class="nav-item" id="nav-trouble" type="button" data-view="fault-report" aria-label="故障申告">
         <svg class="nav-icon" viewBox="0 0 24 24">
           <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
         </svg>
@@ -426,22 +507,36 @@
       const titleElem = document.getElementById('header-title');
       const paneOverview = document.getElementById('pane-overview');
       const paneFacility = document.getElementById('pane-facility-input');
+      const paneFault = document.getElementById('pane-fault-report');
       const navMap = document.getElementById('nav-map');
       const navFacility = document.getElementById('nav-facility');
+      const navTrouble = document.getElementById('nav-trouble');
 
       if (viewName === 'overview') {
         if (titleElem) titleElem.textContent = '概況表示';
         if (paneOverview) paneOverview.classList.add('active');
         if (paneFacility) paneFacility.classList.remove('active');
+        if (paneFault) paneFault.classList.remove('active');
         if (navMap) navMap.classList.add('active');
         if (navFacility) navFacility.classList.remove('active');
+        if (navTrouble) navTrouble.classList.remove('active');
       } else if (viewName === 'facility-input') {
         if (titleElem) titleElem.textContent = '設備入力（申請）';
         if (paneOverview) paneOverview.classList.remove('active');
         if (paneFacility) paneFacility.classList.add('active');
+        if (paneFault) paneFault.classList.remove('active');
         if (navMap) navMap.classList.remove('active');
         if (navFacility) navFacility.classList.add('active');
+        if (navTrouble) navTrouble.classList.remove('active');
         renderFacilityList();
+      } else if (viewName === 'fault-report') {
+        if (titleElem) titleElem.textContent = '故障申告';
+        if (paneOverview) paneOverview.classList.remove('active');
+        if (paneFacility) paneFacility.classList.remove('active');
+        if (paneFault) paneFault.classList.add('active');
+        if (navMap) navMap.classList.remove('active');
+        if (navFacility) navFacility.classList.remove('active');
+        if (navTrouble) navTrouble.classList.add('active');
       }
     }
 
@@ -934,6 +1029,105 @@
       }
     }
 
+    // 故障申告フォームの初期化と送信処理
+    let selectedFaultPhotoFile = null;
+
+    function initFaultReportForm() {
+      const photoInput = document.getElementById('fault-photo-input');
+      const previewContainer = document.getElementById('photo-preview-container');
+      const previewImg = document.getElementById('photo-preview-img');
+      const removePhotoBtn = document.getElementById('btn-remove-photo');
+      const uploadLabel = document.getElementById('photo-upload-label');
+      const form = document.getElementById('fault-report-form');
+      const submitBtn = document.getElementById('btn-submit-fault');
+      const submitText = document.getElementById('fault-submit-text');
+
+      if (photoInput) {
+        photoInput.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (file) {
+            selectedFaultPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+              if (previewImg) previewImg.src = re.target.result;
+              if (previewContainer) previewContainer.style.display = 'block';
+              if (uploadLabel) uploadLabel.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+
+      if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', () => {
+          selectedFaultPhotoFile = null;
+          if (photoInput) photoInput.value = '';
+          if (previewImg) previewImg.src = '';
+          if (previewContainer) previewContainer.style.display = 'none';
+          if (uploadLabel) uploadLabel.style.display = 'inline-flex';
+        });
+      }
+
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const locationInput = document.getElementById('fault-location');
+          const descInput = document.getElementById('fault-description');
+          const locationText = locationInput ? locationInput.value.trim() : '';
+          const description = descInput ? descInput.value.trim() : '';
+
+          if (!locationText) {
+            showToast('発生場所を入力してください', 'error');
+            if (locationInput) locationInput.focus();
+            return;
+          }
+          if (!description) {
+            showToast('症状・内容を入力してください', 'error');
+            if (descInput) descInput.focus();
+            return;
+          }
+
+          if (submitBtn) submitBtn.disabled = true;
+          if (submitText) submitText.textContent = '送信中...';
+
+          try {
+            const formData = new FormData();
+            formData.append('locationText', locationText);
+            formData.append('description', description);
+            formData.append('reporter', '東地区外警1');
+            if (selectedFaultPhotoFile) {
+              formData.append('photo', selectedFaultPhotoFile);
+            }
+
+            const res = await fetch('/api/fault-reports', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!res.ok) {
+              const errJson = await res.json().catch(() => ({}));
+              throw new Error(errJson.error || `送信失敗 (${res.status})`);
+            }
+
+            // 成功
+            showToast('故障報告を送信しました', 'success');
+            form.reset();
+            selectedFaultPhotoFile = null;
+            if (photoInput) photoInput.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewContainer) previewContainer.style.display = 'none';
+            if (uploadLabel) uploadLabel.style.display = 'inline-flex';
+          } catch (err) {
+            console.error('Fault report submit error:', err);
+            showToast(`故障報告の送信に失敗しました: ${err.message}`, 'error');
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) submitText.textContent = '故障報告を送信';
+          }
+        });
+      }
+    }
+
     // 初期化
     async function init() {
       try {
@@ -974,6 +1168,10 @@
         // 4. ナビゲーション切り替えイベント
         document.getElementById('nav-map')?.addEventListener('click', () => switchView('overview'));
         document.getElementById('nav-facility')?.addEventListener('click', () => switchView('facility-input'));
+        document.getElementById('nav-trouble')?.addEventListener('click', () => switchView('fault-report'));
+
+        // 故障申告フォームの初期化
+        initFaultReportForm();
 
         // 5. フィルターチップ切り替え
         document.getElementById('filter-chip-bar')?.addEventListener('click', (e) => {
