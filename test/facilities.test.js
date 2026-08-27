@@ -15,7 +15,6 @@ const EXPECTED_INITIAL_FACILITIES = [
   { id: 'higashi5-gate', name: '東5ゲート', type: 'gate', state: 'closed', x: 1061, y: 1354 },
   { id: 'higashi6-gate', name: '東6ゲート', type: 'gate', state: 'closed', x: 1649, y: 1354 },
   { id: 'higashi7-5-gate', name: '東7.5ゲート', type: 'gate', state: 'closed', x: 524, y: 1354 },
-  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'closed', x: 20, y: 1300 },
   { id: 'higashi1-a-shutter', name: '東1-A', type: 'shutter', state: 'closed', x: 1989, y: 178 },
   { id: 'higashi1-b-shutter', name: '東1-B', type: 'shutter', state: 'closed', x: 1917, y: 178 },
   { id: 'higashi1-c-shutter', name: '東1-C', type: 'shutter', state: 'closed', x: 2158, y: 314 },
@@ -44,14 +43,14 @@ beforeEach(() => {
   resetFacilities();
 });
 
-test('getFacilities() returns all 30 initial facilities with exact values', () => {
+test('getFacilities() returns all 29 initial facilities with exact values', () => {
   const facilities = getFacilities();
   assert.deepStrictEqual(facilities, EXPECTED_INITIAL_FACILITIES);
 });
 
 test('getFacilities() returns objects with exactly expected keys and no extra/missing keys', () => {
   const facilities = getFacilities();
-  assert.equal(facilities.length, 30);
+  assert.equal(facilities.length, 29);
   const expectedKeys = ['id', 'name', 'state', 'type', 'x', 'y'];
 
   for (const item of facilities) {
@@ -62,7 +61,7 @@ test('getFacilities() returns objects with exactly expected keys and no extra/mi
 
 test('getFacilities() returns snapshot copies so external mutations do not affect internal state', () => {
   const firstCall = getFacilities();
-  assert.equal(firstCall.length, 30);
+  assert.equal(firstCall.length, 29);
   assert.equal(firstCall[0].state, 'open');
 
   // Mutate the returned array and its element
@@ -70,7 +69,7 @@ test('getFacilities() returns snapshot copies so external mutations do not affec
   firstCall.pop();
 
   const secondCall = getFacilities();
-  assert.equal(secondCall.length, 30);
+  assert.equal(secondCall.length, 29);
   assert.equal(secondCall[0].state, 'open');
   assert.deepStrictEqual(secondCall, EXPECTED_INITIAL_FACILITIES);
 });
@@ -86,11 +85,11 @@ test('all facilities have coordinates within map viewBox (0 <= x <= 2420.04, 0 <
   }
 });
 
-test('all facility IDs are unique among 30 facilities', () => {
+test('all facility IDs are unique among 29 facilities', () => {
   const facilities = getFacilities();
   const ids = facilities.map((f) => f.id);
-  assert.equal(ids.length, 30);
-  assert.equal(new Set(ids).size, 30);
+  assert.equal(ids.length, 29);
+  assert.equal(new Set(ids).size, 29);
 });
 
 test('all facilities have valid type (gate|shutter|checkpoint) and state (open|closed|restricted)', () => {

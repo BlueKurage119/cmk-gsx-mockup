@@ -37,7 +37,6 @@ const EXPECTED_FACILITY_IDS = [
   'higashi5-gate',
   'higashi6-gate',
   'higashi7-5-gate',
-  'higashi13-gate',
   'higashi1-a-shutter',
   'higashi1-b-shutter',
   'higashi1-c-shutter',
@@ -65,7 +64,7 @@ const EXPECTED_FACILITY_IDS = [
 const REPRESENTATIVE_FACILITIES = [
   { id: 'higashi1-gate', name: '東1ゲート', type: 'gate', state: 'open', x: 2355, y: 531 },
   { id: 'higashi2-gate', name: '東2ゲート', type: 'gate', state: 'closed', x: 2388, y: 184 },
-  { id: 'higashi13-gate', name: '東13ゲート', type: 'checkpoint', state: 'closed', x: 20, y: 1300 },
+  { id: 'higashi7-5-gate', name: '東7.5ゲート', type: 'gate', state: 'closed', x: 524, y: 1354 },
   { id: 'higashi2-34-shutter', name: '東2-入口3・4', type: 'shutter', state: 'closed', x: 1600, y: 628 },
 ];
 
@@ -92,7 +91,7 @@ test('GET /not-found returns 404', async () => {
   }
 });
 
-test('GET /api/facilities returns 200 and JSON array with all 30 facility IDs in order and matching keys', async () => {
+test('GET /api/facilities returns 200 and JSON array with all 29 facility IDs in order and matching keys', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/api/facilities`);
@@ -100,7 +99,7 @@ test('GET /api/facilities returns 200 and JSON array with all 30 facility IDs in
     assert.equal(res.headers.get('content-type'), 'application/json; charset=utf-8');
     const data = await res.json();
     assert.ok(Array.isArray(data));
-    assert.equal(data.length, 30);
+    assert.equal(data.length, 29);
     assert.deepStrictEqual(data.map((f) => f.id), EXPECTED_FACILITY_IDS);
 
     const expectedKeys = ['id', 'name', 'state', 'type', 'x', 'y'];
@@ -747,9 +746,9 @@ test('GET /shared/facility-map-check.html body includes all 8 hall names', async
   }
 });
 
-const EXPECTED_PLACE_NAMES = ['ガレリア', 'リンクスペース', '東ターミナル', '東棟屋外駐車場'];
+const EXPECTED_PLACE_NAMES = ['ガレリア', 'リンクスペース', '東ターミナル', '東棟屋外駐車場', '東13ゲート'];
 
-test('GET /shared/facility-map-check.html body includes all 4 place names', async () => {
+test('GET /shared/facility-map-check.html body includes all 5 place names', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/shared/facility-map-check.html`);
@@ -894,7 +893,7 @@ test('GET /h includes Alerts view markup (view-alerts, alert-table, category/sta
   }
 });
 
-test('GET /h body includes all 8 hall names and 4 place names', async () => {
+test('GET /h body includes all 8 hall names and 5 place names', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`);
@@ -977,12 +976,17 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
     assert.ok(text.includes('非常通報'));
     assert.ok(text.includes('故障申告'));
     assert.ok(text.includes('pane-facility-input'));
-    assert.ok(text.includes('filter-chip-bar'));
+    assert.ok(!text.includes('filter-chip-bar'));
     assert.ok(text.includes('facility-list-container'));
     assert.ok(text.includes('request-modal'));
     assert.ok(text.includes('btn-submit-request'));
     assert.ok(text.includes('cancel-confirm-modal'));
     assert.ok(text.includes('toast-notification'));
+    assert.ok(text.includes('id="device-badge"'));
+    assert.ok(text.includes('TERMINAL_CONFIGS'));
+    assert.ok(text.includes('resolveTerminalConfig'));
+    assert.ok(text.includes('mkea1ga01'));
+    assert.ok(text.includes('mkeaggk01'));
     assert.ok(!text.includes('current-datetime'));
     assert.ok(!text.includes('H端末（指揮所用）'));
   } finally {
@@ -990,7 +994,7 @@ test('GET /m directly returns 200 without redirect and serves M terminal page wi
   }
 });
 
-test('GET /m body includes all 8 hall names, 4 place names, facility & request fetch logic, and 3s polling sync', async () => {
+test('GET /m body includes all 8 hall names, 5 place names, facility & request fetch logic, and 3s polling sync', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/m`);
@@ -1560,3 +1564,36 @@ test('GET /m/style.css includes .map-legend styles (Issue #76)', async () => {
     await close();
   }
 });
+
+test('GET /m includes Issue #78 terminal config logic, dynamic device-badge ID, and removes filter-chip-bar', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="device-badge"'), 'Should have id="device-badge" on device badge');
+    assert.ok(text.includes('TERMINAL_CONFIGS'), 'Should define TERMINAL_CONFIGS');
+    assert.ok(text.includes("DEFAULT_TERMINAL_ID = 'mkeaggk01'"), 'Should define DEFAULT_TERMINAL_ID');
+    assert.ok(text.includes('resolveTerminalConfig'), 'Should define resolveTerminalConfig');
+    assert.ok(text.includes('mkea1ga01'), 'Should contain mkea1ga01 configuration');
+    assert.ok(text.includes('mkeaggk01'), 'Should contain mkeaggk01 configuration');
+    assert.ok(!text.includes('filter-chip-bar'), 'Should not contain filter-chip-bar');
+    assert.ok(text.includes('applicant: terminalConfig.displayName'), 'submitRequest should use terminalConfig');
+    assert.ok(text.includes("formData.append('reporter', terminalConfig.displayName)"), 'Fault report should use terminalConfig');
+    assert.ok(text.includes('reporter: terminalConfig.displayName'), 'Emergency alert should use terminalConfig');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/facilities does not include higashi13-gate (Issue #79)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/facilities`);
+    const facilities = await res.json();
+    assert.ok(!facilities.some((f) => f.id === 'higashi13-gate'), 'higashi13-gate should not exist in facilities');
+    assert.equal(facilities.length, 29);
+  } finally {
+    await close();
+  }
+});
+

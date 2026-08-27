@@ -22,7 +22,7 @@
           <span class="error-text-main">受信異常</span>
         </div>
       </div>
-      <div class="device-badge">東地区外警1</div>
+      <div class="device-badge" id="device-badge">東地区外警1</div>
     </header>
 
     <!-- 通信エラー表示 -->
@@ -121,17 +121,6 @@
 
     <!-- 2. 設備入力（申請）画面 -->
     <main class="facility-input-dashboard view-pane" id="pane-facility-input">
-      <!-- フィルターチップバー -->
-      <div class="filter-chip-bar" id="filter-chip-bar" role="tablist" aria-label="エリア・ホール絞り込み">
-        <button type="button" class="filter-chip active" data-area="all" role="tab" aria-selected="true">すべて</button>
-        <button type="button" class="filter-chip" data-area="東1H" role="tab" aria-selected="false">東1H</button>
-        <button type="button" class="filter-chip" data-area="東2H" role="tab" aria-selected="false">東2H</button>
-        <button type="button" class="filter-chip" data-area="東3H" role="tab" aria-selected="false">東3H</button>
-        <button type="button" class="filter-chip" data-area="東7H" role="tab" aria-selected="false">東7H</button>
-        <button type="button" class="filter-chip" data-area="東8H" role="tab" aria-selected="false">東8H</button>
-        <button type="button" class="filter-chip" data-area="外周・共用部" role="tab" aria-selected="false">外周・共用部</button>
-      </div>
-
       <!-- 設備一覧スクロールエリア -->
       <div class="facility-list-scroll">
         <div class="facility-list-count" id="facility-list-count">読込中...</div>
@@ -527,7 +516,6 @@
       'higashi5-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
       'higashi6-gate': { dx: 0, dy: -46, textAnchor: 'middle' },
       'higashi7-5-gate': { dx: 44, dy: 12, textAnchor: 'start' },
-      'higashi13-gate': { dx: 0, dy: 0, textAnchor: 'start' },
       'higashi1-a-shutter': { dx: 0, dy: 58, textAnchor: 'start' },
       'higashi1-b-shutter': { dx: 0, dy: 58, textAnchor: 'end' },
       'higashi1-c-shutter': { dx: -44, dy: 12, textAnchor: 'end' },
@@ -572,6 +560,7 @@
       { name: 'リンクスペース', x: 540, y: 709 },
       { name: '東ターミナル', x: 2260, y: 430 },
       { name: '東棟屋外駐車場', x: 280, y: 480 },
+      { name: '東13ゲート', x: 20, y: 1300 },
     ];
 
     // ガレリア側シャッター（ラベル非表示）
@@ -634,6 +623,19 @@
       return '外周・共用部';
     }
 
+    // 端末設定定義
+    const TERMINAL_CONFIGS = {
+      mkeaggk01: { displayName: '東地区外警1', allowedArea: '外周・共用部' },
+      mkea1ga01: { displayName: '東1ホール外務1', allowedArea: '東1H' },
+    };
+    const DEFAULT_TERMINAL_ID = 'mkeaggk01';
+
+    function resolveTerminalConfig() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('term');
+      return TERMINAL_CONFIGS[id] || TERMINAL_CONFIGS[DEFAULT_TERMINAL_ID];
+    }
+
     function getFacilityTypeName(type) {
       if (type === 'gate') return 'ゲート';
       if (type === 'shutter') return 'シャッター';
@@ -683,10 +685,10 @@
     }
 
     // アプリケーション状態
+    let terminalConfig = null;
     let currentView = 'overview';
     let currentFacilities = [];
     let pendingRequests = [];
-    let currentFilterArea = 'all';
     let selectedFacilityForReq = null;
     let selectedTargetState = null;
     let reqToCancel = null;
@@ -736,13 +738,10 @@
       const countElem = document.getElementById('facility-list-count');
       if (!container) return;
 
-      let list = currentFacilities;
-      if (currentFilterArea !== 'all') {
-        list = list.filter((f) => getFacilityArea(f) === currentFilterArea);
-      }
+      const list = currentFacilities.filter((f) => getFacilityArea(f) === terminalConfig.allowedArea);
 
       if (countElem) {
-        countElem.textContent = `表示: ${list.length}件 / 全${currentFacilities.length}件`;
+        countElem.textContent = `表示: ${list.length}件（${terminalConfig.allowedArea}） / 全${currentFacilities.length}件`;
       }
 
       if (list.length === 0) {
@@ -864,7 +863,7 @@
             facilityId: facility.id,
             requestedState: targetState,
             note,
-            applicant: '東地区外警1',
+            applicant: terminalConfig.displayName,
           }),
         });
 
@@ -1524,7 +1523,7 @@
             const formData = new FormData();
             formData.append('locationText', locationText);
             formData.append('description', description);
-            formData.append('reporter', '東地区外警1');
+            formData.append('reporter', terminalConfig.displayName);
             if (selectedFaultPhotoFile) {
               formData.append('photo', selectedFaultPhotoFile);
             }
@@ -1789,7 +1788,7 @@
             reason: emergencyFormState.reason,
             area: emergencyFormState.area,
             note: note,
-            reporter: '東地区外警1',
+            reporter: terminalConfig.displayName,
           }),
         });
 
@@ -1861,6 +1860,11 @@
     // 初期化
     async function init() {
       try {
+        terminalConfig = resolveTerminalConfig();
+        const badgeElem = document.getElementById('device-badge');
+        if (badgeElem) {
+          badgeElem.textContent = terminalConfig.displayName;
+        }
         renderMapLegend();
         const svgUrl = '/shared/map-east.svg';
         const facilitiesUrl = '/api/facilities';
@@ -1925,21 +1929,7 @@
         // 緊急発報モーダルの初期化
         initEmergencyModal();
 
-        // 5. フィルターチップ切り替え
-        document.getElementById('filter-chip-bar')?.addEventListener('click', (e) => {
-          const chip = e.target.closest('.filter-chip');
-          if (!chip) return;
-          document.querySelectorAll('.filter-chip').forEach((c) => {
-            c.classList.remove('active');
-            c.setAttribute('aria-selected', 'false');
-          });
-          chip.classList.add('active');
-          chip.setAttribute('aria-selected', 'true');
-          currentFilterArea = chip.dataset.area || 'all';
-          renderFacilityList();
-        });
-
-        // 6. 設備リスト内のクリックイベント（申請ボタン、取消ボタン）
+        // 5. 設備リスト内のクリックイベント（申請ボタン、取消ボタン）
         document.getElementById('facility-list-container')?.addEventListener('click', (e) => {
           const reqBtn = e.target.closest('.btn-request');
           if (reqBtn) {
