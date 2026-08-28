@@ -61,6 +61,8 @@
       z-index: 10;
       flex-shrink: 0;
       position: relative;
+      cursor: pointer;
+      user-select: none;
     }
 
     .header-left {
@@ -1460,7 +1462,7 @@
 <body>
   <div class="app-root">
     <!-- ヘッダー -->
-    <header class="app-header">
+    <header class="app-header" title="クリックまたはF8キーでブザー停止・サイレンスヌーズ">
       <div class="header-left">
         <h1 class="header-title" id="header-title">概況（東地区）</h1>
       </div>
@@ -2093,6 +2095,7 @@
     let pendingRequests = [];
     let isBuzzerActive = false;
     const buzzerAcknowledgedReqIds = new Set();
+    const buzzerAcknowledgedFaultIds = new Set();
     const POLL_INTERVAL_MS = 3000;
     let isProcessingRequest = false;
 
@@ -2113,6 +2116,8 @@
     let emergencyAlarmIntervalId = null;
     let isEmergencySnoozed = false;
     let emergencySnoozeTimeoutId = null;
+    let offlineOscillator = null;
+    let offlineTimeoutId = null;
     const SNOOZE_DURATION_MS = 120000; // 2分間（120秒）
 
     function getAudioContext() {
@@ -2165,11 +2170,52 @@
       }
     }
 
-    // ブザー点滅・消音停止（F8キー押下または詳細/はい/いいえ/承認/差戻ボタン押下）
+    // オフライン（通信異常）時の3秒ピー音再生
+    function stopOfflineBeep() {
+      if (offlineTimeoutId) {
+        clearTimeout(offlineTimeoutId);
+        offlineTimeoutId = null;
+      }
+      if (offlineOscillator) {
+        try {
+          offlineOscillator.stop();
+          offlineOscillator.disconnect();
+        } catch (_) {}
+        offlineOscillator = null;
+      }
+    }
+
+    function playOfflineBeep() {
+      stopOfflineBeep();
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(750, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime + 2.9);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.0);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        offlineOscillator = osc;
+        offlineTimeoutId = setTimeout(() => {
+          stopOfflineBeep();
+        }, 3000);
+      } catch (_) {
+        // Autoplay policy 等でブロックされた場合は無視
+      }
+    }
+
+    // ブザー点滅・消音停止（ヘッダークリック、F8キー押下または詳細/はい/いいえ/承認/差戻/確認済ボタン押下）
     function stopBuzzer() {
       isBuzzerActive = false;
       stopBuzzerSound();
+      stopOfflineBeep();
       pendingRequests.forEach((req) => buzzerAcknowledgedReqIds.add(req.id));
+      pendingFaultReports.forEach((fault) => buzzerAcknowledgedFaultIds.add(fault.id));
       const header = document.querySelector('.app-header');
       if (header && !isEmergencyAlarmActive) header.classList.remove('alarm-active');
     }
@@ -2213,10 +2259,11 @@
         header.classList.remove('emergency-alarm-active');
       }
 
-      // 未確認の承認待ち申請があれば通常ブザー再開
-      if (pendingRequests.length > 0) {
-        const hasNewUnack = pendingRequests.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
-        if (hasNewUnack) {
+      // 未確認の承認待ち申請または故障申告があれば通常ブザー再開
+      if (pendingRequests.length > 0 || pendingFaultReports.length > 0) {
+        const hasNewUnackReq = pendingRequests.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
+        const hasNewUnackFault = pendingFaultReports.some((f) => !buzzerAcknowledgedFaultIds.has(f.id));
+        if (hasNewUnackReq || hasNewUnackFault) {
           isBuzzerActive = true;
           startBuzzerSound();
           if (header) header.classList.add('alarm-active');
@@ -2224,7 +2271,7 @@
       }
     }
 
-    // 緊急サイレン 2分間スヌーズ（F8キー押下またはダイアログ表示時）
+    // 緊急サイレン 2分間スヌーズ（ヘッダークリック、F8キー押下またはダイアログ表示時）
     function snoozeEmergencyAlarm() {
       if (activeEmergencyAlerts.length === 0) return;
       isEmergencyAlarmActive = false;
@@ -2278,7 +2325,17 @@
     }
 
     function setConnectionError(hasError) {
+      const wasConnectionError = isConnectionError;
       isConnectionError = hasError;
+
+      if (hasError && !wasConnectionError) {
+        // 正常から異常への遷移時に約3秒のピー音を鳴動
+        playOfflineBeep();
+      } else if (!hasError && wasConnectionError) {
+        // 異常から正常への復帰時にオフライン音が鳴っていれば停止
+        stopOfflineBeep();
+      }
+
       const errorBadge = document.getElementById('connection-error-badge');
       const lastSyncElem = document.getElementById('last-sync-time');
 
@@ -2871,6 +2928,7 @@
     // 故障申告を確認済にする処理
     async function acknowledgeFaultReportById(id) {
       if (!id) return;
+      stopBuzzer();
       try {
         const res = await fetch(`/api/fault-reports/${encodeURIComponent(id)}/acknowledge`, {
           method: 'POST',
@@ -4776,19 +4834,23 @@
           }
         }
 
-        // 緊急サイレン音・承認ブザー音の制御
+        // 緊急サイレン音・承認／故障ブザー音の制御
         if (activeEmergencyAlerts.length > 0) {
           startEmergencyAlarm();
         } else {
           stopEmergencyAlarm();
-          const hasNewUnack = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
-          if (newPending.length > 0 && hasNewUnack) {
+          const hasNewUnackReq = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
+          const hasNewUnackFault = pendingFaultReports.some((f) => !buzzerAcknowledgedFaultIds.has(f.id));
+          const hasNewUnack = hasNewUnackReq || hasNewUnackFault;
+
+          if ((newPending.length > 0 || pendingFaultReports.length > 0) && hasNewUnack) {
             isBuzzerActive = true;
             startBuzzerSound();
-          } else if (newPending.length === 0) {
+          } else if (newPending.length === 0 && pendingFaultReports.length === 0) {
             isBuzzerActive = false;
             stopBuzzerSound();
             buzzerAcknowledgedReqIds.clear();
+            buzzerAcknowledgedFaultIds.clear();
           }
         }
 
@@ -5093,12 +5155,30 @@
       window.addEventListener('pointerdown', unlockAudio, { once: true });
       window.addEventListener('keydown', unlockAudio, { once: true });
 
-      // キーボードイベント（F8キーで承認ブザー停止 & 緊急サイレン2分間スヌーズ）
+      // ヘッダークリックイベント（ブザー停止 & 緊急サイレン2分間スヌーズ & オフライン音停止）
+      const appHeader = document.querySelector('.app-header');
+      if (appHeader) {
+        appHeader.addEventListener('click', () => {
+          getAudioContext();
+          if (isEmergencyAlarmActive || activeEmergencyAlerts.length > 0) {
+            snoozeEmergencyAlarm();
+          }
+          if (isBuzzerActive || pendingRequests.length > 0 || pendingFaultReports.length > 0) {
+            stopBuzzer();
+          }
+          stopOfflineBeep();
+        });
+      }
+
+      // キーボードイベント（F8キーで承認ブザー停止 & 緊急サイレン2分間スヌーズ & オフライン音停止）
       window.addEventListener('keydown', (e) => {
         if (e.key === 'F8') {
           e.preventDefault();
           stopBuzzer();
-          snoozeEmergencyAlarm();
+          stopOfflineBeep();
+          if (isEmergencyAlarmActive || activeEmergencyAlerts.length > 0) {
+            snoozeEmergencyAlarm();
+          }
         }
       });
 

@@ -1597,3 +1597,30 @@ test('GET /api/facilities does not include higashi13-gate (Issue #79)', async ()
   }
 });
 
+test('GET /h includes offline beep logic (playOfflineBeep) and fault buzzer tracking (buzzerAcknowledgedFaultIds) (Issue #81)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('buzzerAcknowledgedFaultIds'), 'H terminal should track acknowledged fault reports');
+    assert.ok(text.includes('playOfflineBeep'), 'H terminal should include playOfflineBeep function');
+    assert.ok(text.includes('stopOfflineBeep'), 'H terminal should include stopOfflineBeep function');
+    assert.ok(text.includes('hasNewUnackFault'), 'H terminal polling should check unacknowledged fault reports');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes header click handler for buzzer stop and siren snooze with pointer cursor (Issue #82)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('cursor: pointer'), 'app-header should have cursor: pointer style');
+    assert.ok(text.includes('title="クリックまたはF8キーでブザー停止・サイレンスヌーズ"'), 'app-header should have snooze guide title attribute');
+    assert.ok(text.includes("appHeader.addEventListener('click'"), 'app-header should have click event listener for stop buzzer and snooze');
+  } finally {
+    await close();
+  }
+});
+
