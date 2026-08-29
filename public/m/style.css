@@ -1856,4 +1856,391 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ==========================================================================
+   Issue #86: 防災気象情報カード（M端末概況）
+   ========================================================================== */
+.weather-card-container {
+  background-color: var(--surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.weather-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.weather-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.weather-card-title svg {
+  width: 18px;
+  height: 18px;
+  fill: #8ab4f8;
+  flex-shrink: 0;
+}
+
+.btn-radar-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: rgba(138, 180, 248, 0.12);
+  color: #8ab4f8;
+  border: 1px solid rgba(138, 180, 248, 0.4);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease;
+}
+
+.btn-radar-open:active {
+  background-color: rgba(138, 180, 248, 0.24);
+}
+
+.weather-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weather-alert-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+}
+
+.weather-badge.badge-special {
+  background-color: #a142f4;
+  color: #ffffff;
+}
+
+.weather-badge.badge-warning {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+.weather-badge.badge-advisory {
+  background-color: #f29900;
+  color: #202124;
+}
+
+.weather-badge.badge-normal {
+  background-color: rgba(52, 168, 83, 0.2);
+  color: #81c995;
+  border: 1px solid rgba(52, 168, 83, 0.4);
+}
+
+.weather-headline-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* ==========================================================================
+   Issue #87: 雨雲レーダー 全画面モーダル（M端末）
+   ========================================================================== */
+.radar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #121212;
+  z-index: 1500;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.radar-modal-overlay.active {
+  display: flex;
+}
+
+.radar-modal-header {
+  height: 48px;
+  background-color: var(--surface-dark);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.radar-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.radar-modal-title svg {
+  width: 20px;
+  height: 20px;
+  fill: #8ab4f8;
+}
+
+.btn-modal-close-radar {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.btn-modal-close-radar:active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.radar-modal-map-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #0b0f19;
+  touch-action: none;
+  user-select: none;
+}
+
+.radar-modal-tile-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.radar-modal-tile-layer.base-layer {
+  z-index: 1;
+}
+
+.radar-modal-tile-layer.rain-layer {
+  z-index: 2;
+}
+
+.radar-modal-tile-img {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.radar-modal-tile-rain {
+  opacity: 0.85;
+  filter: contrast(1.15) saturate(1.2);
+}
+
+.radar-modal-pin {
+  position: absolute;
+  width: 28px;
+  height: 38px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
+  z-index: 10;
+}
+
+.radar-modal-pin svg {
+  width: 100%;
+  height: 100%;
+  fill: #ea4335;
+}
+
+.radar-modal-zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+}
+
+.btn-modal-radar-zoom {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(32, 33, 36, 0.9);
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.radar-modal-attribution {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #dadce0;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.radar-modal-controls-panel {
+  background-color: var(--surface-dark);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  gap: 8px;
+  flex-shrink: 0;
+  z-index: 25;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.radar-modal-controls-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.radar-modal-time-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.radar-modal-time-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(138, 180, 248, 0.2);
+  color: #8ab4f8;
+  border: 1px solid rgba(138, 180, 248, 0.4);
+}
+
+.radar-modal-time-tag.tag-forecast {
+  background: rgba(251, 188, 4, 0.2);
+  color: #fdd663;
+  border-color: rgba(251, 188, 4, 0.4);
+}
+
+.radar-modal-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-m-radar-ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--btn-outlined-border);
+  background-color: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.btn-m-radar-ctrl.btn-primary {
+  background-color: var(--gcp-blue);
+  border-color: var(--gcp-blue);
+  color: #ffffff;
+  min-width: 64px;
+}
+
+.radar-modal-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radar-modal-slider {
+  flex: 1;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #3c4043;
+  border-radius: 4px;
+  outline: none;
+}
+
+.radar-modal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #8ab4f8;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.radar-modal-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.radar-modal-legend-gradient {
+  flex: 1;
+  max-width: 160px;
+  height: 8px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #b4e0fa, #0096ff, #0041ff, #faf500, #ff9900, #ff2800, #b40068);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0 8px;
+}
+
+
+
 

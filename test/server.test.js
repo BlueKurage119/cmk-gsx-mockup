@@ -1624,3 +1624,135 @@ test('GET /h includes header click handler for buzzer stop and siren snooze with
   }
 });
 
+test('GET /api/weather/alerts returns 200, success true, and Koto-ku weather alerts info (Issue #85)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/weather/alerts`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /application\/json/);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.area, '江東区');
+    assert.equal(data.areaCode, '1310800');
+    assert.ok(Array.isArray(data.alerts));
+    assert.equal(typeof data.hasWarning, 'boolean');
+    assert.equal(typeof data.hasSpecial, 'boolean');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/weather/radar-times returns 200, success true, and radar time series (Issue #85)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/weather/radar-times`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /application\/json/);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(Array.isArray(data.times));
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes weather-card-container, badge elements, and fetchWeatherAlertsData logic (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="weather-card-container"'), 'M terminal should include weather-card-container');
+    assert.ok(text.includes('id="weather-alert-badges"'), 'M terminal should include weather-alert-badges');
+    assert.ok(text.includes('id="btn-m-radar-open"'), 'M terminal should include btn-m-radar-open');
+    assert.ok(text.includes('fetchWeatherAlertsData'), 'M terminal should define fetchWeatherAlertsData');
+    assert.ok(text.includes('renderWeatherCard'), 'M terminal should define renderWeatherCard');
+    assert.ok(text.includes('/api/weather/alerts'), 'M terminal should query /api/weather/alerts');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes styles for weather-card-container and weather badges (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.weather-card-container'), 'style.css should style .weather-card-container');
+    assert.ok(text.includes('.weather-badge'), 'style.css should style .weather-badge');
+    assert.ok(text.includes('.weather-badge.badge-warning'), 'style.css should style .badge-warning');
+    assert.ok(text.includes('.btn-radar-open'), 'style.css should style .btn-radar-open');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes weather notification handling and radar nav dot (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="nav-radar-dot"'), 'H terminal should have nav-radar-dot');
+    assert.ok(text.includes('notification-badge-warning'), 'H terminal should define notification-badge-warning');
+    assert.ok(text.includes('updateRadarNavDot'), 'H terminal should define updateRadarNavDot');
+    assert.ok(text.includes('fetchWeatherAlertsData'), 'H terminal should define fetchWeatherAlertsData');
+    assert.ok(text.includes('/api/weather/alerts'), 'H terminal should fetch /api/weather/alerts');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes precipitation nowcast tab in Navigation Rail, view-radar panel, and radar map controls (Issue #87)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="nav-item-radar"'), 'H terminal should have nav-item-radar button in Navigation Rail');
+    assert.ok(text.includes('降水NCST'), 'H terminal nav rail label should be 降水NCST');
+    assert.ok(text.includes('id="view-radar"'), 'H terminal should have view-radar panel');
+    assert.ok(text.includes('降水ナウキャスト（広域）'), 'H terminal should have 降水ナウキャスト（広域） title/label');
+    assert.ok(text.includes('id="h-radar-map-wrapper"'), 'H terminal should have h-radar-map-wrapper');
+    assert.ok(text.includes('id="h-radar-slider"'), 'H terminal should have h-radar-slider');
+    assert.ok(text.includes('id="btn-h-radar-play"'), 'H terminal should have btn-h-radar-play');
+    assert.ok(text.includes('initHRadar'), 'H terminal should define initHRadar');
+    assert.ok(text.includes('createRadarMapController'), 'H terminal should define createRadarMapController');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m includes full-screen radar modal markup and modal controller (Issue #87)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="m-radar-modal"'), 'M terminal should have m-radar-modal overlay');
+    assert.ok(text.includes('降水ナウキャスト'), 'M terminal should have 降水ナウキャスト label');
+    assert.ok(text.includes('id="m-radar-map-wrapper"'), 'M terminal should have m-radar-map-wrapper');
+    assert.ok(text.includes('id="m-radar-slider"'), 'M terminal should have m-radar-slider');
+    assert.ok(text.includes('id="btn-m-radar-play"'), 'M terminal should have btn-m-radar-play');
+    assert.ok(text.includes('id="btn-close-m-radar"'), 'M terminal should have btn-close-m-radar');
+    assert.ok(text.includes('openMRadarModal'), 'M terminal should define openMRadarModal');
+    assert.ok(text.includes('closeMRadarModal'), 'M terminal should define closeMRadarModal');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes styles for radar modal overlay and controls (Issue #87)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.radar-modal-overlay'), 'style.css should style .radar-modal-overlay');
+    assert.ok(text.includes('.radar-modal-map-viewport'), 'style.css should style .radar-modal-map-viewport');
+    assert.ok(text.includes('.radar-modal-slider'), 'style.css should style .radar-modal-slider');
+    assert.ok(text.includes('.btn-modal-close-radar'), 'style.css should style .btn-modal-close-radar');
+  } finally {
+    await close();
+  }
+});
+
+
+
+
+
