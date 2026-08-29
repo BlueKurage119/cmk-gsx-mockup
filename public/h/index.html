@@ -1526,6 +1526,260 @@
       opacity: 0.5;
       text-decoration: line-through;
     }
+
+    /* ==========================================================================
+       Issue #87: 雨雲レーダー ビュー・コントロール
+       ========================================================================== */
+    .radar-view-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      background-color: #121212;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .radar-map-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: #0b0f19;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .radar-map-wrapper:active {
+      cursor: grabbing;
+    }
+
+    .radar-tile-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .radar-tile-img {
+      position: absolute;
+      width: 256px;
+      height: 256px;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .radar-tile-rain {
+      opacity: 0.82;
+      mix-blend-mode: screen;
+    }
+
+    .radar-marker-pin {
+      position: absolute;
+      width: 32px;
+      height: 42px;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.9));
+      z-index: 10;
+    }
+
+    .radar-marker-pin svg {
+      width: 100%;
+      height: 100%;
+      fill: #ea4335;
+    }
+
+    .radar-zoom-controls {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 20;
+    }
+
+    .btn-radar-zoom {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-color);
+      background-color: rgba(32, 33, 36, 0.88);
+      color: #ffffff;
+      border-radius: 6px;
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-radar-zoom:hover:not(:disabled) {
+      background-color: rgba(60, 64, 67, 0.95);
+    }
+
+    .btn-radar-zoom:active:not(:disabled) {
+      background-color: var(--gcp-blue);
+    }
+
+    .radar-attribution {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #dadce0;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      z-index: 20;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+
+    .radar-controls-panel {
+      height: 96px;
+      background-color: var(--surface-dark);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 20px;
+      gap: 8px;
+      flex-shrink: 0;
+      z-index: 25;
+      box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .radar-controls-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .radar-playback-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-radar-ctrl {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 4px;
+      border: 1px solid var(--btn-outlined-border);
+      background-color: transparent;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-radar-ctrl:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: #8ab4f8;
+    }
+
+    .btn-radar-play {
+      background-color: var(--gcp-blue);
+      border-color: var(--gcp-blue);
+      color: #ffffff;
+      min-width: 80px;
+      font-weight: 700;
+    }
+
+    .btn-radar-play:hover:not(:disabled) {
+      background-color: #1b66ca;
+      border-color: #1b66ca;
+    }
+
+    .radar-time-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .radar-time-tag {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(138, 180, 248, 0.18);
+      color: #8ab4f8;
+      border: 1px solid rgba(138, 180, 248, 0.4);
+    }
+
+    .radar-time-tag.tag-forecast {
+      background: rgba(251, 188, 4, 0.18);
+      color: #fdd663;
+      border-color: rgba(251, 188, 4, 0.4);
+    }
+
+    .radar-legend-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .radar-legend-gradient {
+      width: 140px;
+      height: 10px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #b4e0fa, #0096ff, #0041ff, #faf500, #ff9900, #ff2800, #b40068);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .radar-slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .radar-slider {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #3c4043;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .radar-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #8ab4f8;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+      transition: transform 0.1s ease;
+    }
+
+    .radar-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
   </style>
 </head>
 <body>
@@ -1574,6 +1828,12 @@
             <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
           </svg>
           <span class="nav-label">警報一覧</span>
+        </button>
+        <button type="button" class="nav-rail-item" id="nav-item-radar" data-view="radar" title="雨雲レーダー">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v4.58L14.7 15.3l1.4-1.42-3.1-2.18V7z"/>
+          </svg>
+          <span class="nav-label">雨雲レーダー</span>
         </button>
       </nav>
 
@@ -1803,6 +2063,60 @@
               <button type="button" class="btn btn-outlined" disabled>いいえ</button>
             </div>
           </section>
+        </div>
+
+        <!-- 雨雲レーダー（広域）ビュー -->
+        <div id="view-radar" class="view-panel" role="region" aria-label="雨雲レーダー（広域）">
+          <div class="radar-view-container">
+            <!-- 上部: 地図描画領域 -->
+            <div class="radar-map-wrapper" id="h-radar-map-wrapper" aria-label="広域雨雲レーダーマップ（ドラッグで移動）">
+              <div class="radar-tile-layer base-layer" id="h-radar-base-tiles"></div>
+              <div class="radar-tile-layer rain-layer" id="h-radar-rain-tiles"></div>
+              <div class="radar-marker-pin" id="h-radar-bight-pin" title="東京ビッグサイト（東展示棟）">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </div>
+              <div class="radar-zoom-controls">
+                <button type="button" class="btn-radar-zoom" id="btn-h-radar-zoom-in" aria-label="ズームイン">＋</button>
+                <button type="button" class="btn-radar-zoom" id="btn-h-radar-zoom-out" aria-label="ズームアウト">－</button>
+              </div>
+              <div class="radar-attribution">出典: 国土地理院・気象庁</div>
+            </div>
+
+            <!-- 下部: タイムライン・操作バー -->
+            <div class="radar-controls-panel">
+              <div class="radar-controls-row-top">
+                <div class="radar-playback-group">
+                  <button type="button" class="btn-radar-ctrl btn-radar-play" id="btn-h-radar-play">
+                    <span id="h-radar-play-icon">▶</span>
+                    <span id="h-radar-play-text">再生</span>
+                  </button>
+                  <button type="button" class="btn-radar-ctrl" id="btn-h-radar-prev" title="5分前へ">◀ 5分前</button>
+                  <button type="button" class="btn-radar-ctrl" id="btn-h-radar-next" title="5分後へ">5分後 ▶</button>
+                  <button type="button" class="btn-radar-ctrl" id="btn-h-radar-current">現在</button>
+                  <button type="button" class="btn-radar-ctrl" id="btn-h-radar-refresh" title="最新情報取得">更新</button>
+                </div>
+
+                <div class="radar-time-display" id="h-radar-time-display">
+                  <span class="radar-time-tag" id="h-radar-time-tag">現在</span>
+                  <span id="h-radar-time-text">--:--</span>
+                </div>
+
+                <div class="radar-legend-container">
+                  <span>降水強度: 弱</span>
+                  <div class="radar-legend-gradient"></div>
+                  <span>強</span>
+                </div>
+              </div>
+
+              <div class="radar-slider-container">
+                <span style="font-size: 11px; color: var(--text-muted);">-60分</span>
+                <input type="range" class="radar-slider" id="h-radar-slider" min="0" max="0" value="0" step="1" aria-label="雨雲レーダー タイムラインスライダー">
+                <span style="font-size: 11px; color: var(--text-muted);">+60分</span>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -2529,6 +2843,8 @@
           titleElem.textContent = '設備入力（東地区）';
         } else if (viewName === 'alerts') {
           titleElem.textContent = '警報一覧（東地区）';
+        } else if (viewName === 'radar') {
+          titleElem.textContent = '雨雲レーダー（広域）';
         } else {
           titleElem.textContent = '概況（東地区）';
         }
@@ -2549,6 +2865,10 @@
         if (panel) panel.classList.add('active');
         renderAlertTable();
         updateAlertBatchUIState();
+      } else if (viewName === 'radar') {
+        const panel = document.getElementById('view-radar');
+        if (panel) panel.classList.add('active');
+        initHRadar();
       } else {
         const panel = document.getElementById('view-overview');
         if (panel) panel.classList.add('active');
@@ -2753,6 +3073,341 @@
         }
       } catch (err) {
         console.warn('Weather fetch warning in H:', err);
+      }
+    }
+
+    // ==========================================================================
+    // Issue #87: 雨雲レーダー 広域マップ描画・再生コントローラー (H端末)
+    // ==========================================================================
+    let hRadarController = null;
+
+    function createRadarMapController(options) {
+      const {
+        wrapperElem,
+        baseLayerElem,
+        rainLayerElem,
+        pinElem,
+        sliderElem,
+        timeTextElem,
+        timeTagElem,
+        playBtnElem,
+        playIconElem,
+        playTextElem,
+        prevBtnElem,
+        nextBtnElem,
+        currentBtnElem,
+        refreshBtnElem,
+        zoomInBtnElem,
+        zoomOutBtnElem,
+      } = options;
+
+      let zoom = 11;
+      const centerLat = 35.6298; // 東京ビッグサイト緯度
+      const centerLon = 139.7944; // 東京ビッグサイト経度
+      let panOffsetX = 0;
+      let panOffsetY = 0;
+
+      let isDragging = false;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let lastPanX = 0;
+      let lastPanY = 0;
+
+      let radarTimes = [];
+      let currentStepIndex = 0;
+      let isPlaying = false;
+      let playIntervalId = null;
+
+      function getPixel(lat, lon, z) {
+        const latRad = (lat * Math.PI) / 180;
+        const n = Math.pow(2, z);
+        const x = ((lon + 180) / 360) * n * 256;
+        const y = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n * 256;
+        return { x, y };
+      }
+
+      function renderTiles() {
+        if (!wrapperElem || !baseLayerElem || !rainLayerElem) return;
+        const width = wrapperElem.clientWidth || 800;
+        const height = wrapperElem.clientHeight || 600;
+
+        const centerPx = getPixel(centerLat, centerLon, zoom);
+        const originX = centerPx.x - width / 2 - panOffsetX;
+        const originY = centerPx.y - height / 2 - panOffsetY;
+
+        const minTileX = Math.floor(originX / 256);
+        const maxTileX = Math.floor((originX + width) / 256);
+        const minTileY = Math.floor(originY / 256);
+        const maxTileY = Math.floor((originY + height) / 256);
+
+        const maxCoord = Math.pow(2, zoom) - 1;
+        const currentStep = radarTimes[currentStepIndex];
+
+        baseLayerElem.innerHTML = '';
+        rainLayerElem.innerHTML = '';
+
+        for (let ty = minTileY; ty <= maxTileY; ty++) {
+          if (ty < 0 || ty > maxCoord) continue;
+          for (let tx = minTileX; tx <= maxTileX; tx++) {
+            const wrappedTx = ((tx % (maxCoord + 1)) + (maxCoord + 1)) % (maxCoord + 1);
+            const leftPx = tx * 256 - originX;
+            const topPx = ty * 256 - originY;
+
+            // 1. 国土地理院 航空写真タイル (seamlessphoto)
+            const baseImg = document.createElement('img');
+            baseImg.className = 'radar-tile-img';
+            baseImg.style.left = `${leftPx}px`;
+            baseImg.style.top = `${topPx}px`;
+            baseImg.src = `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zoom}/${wrappedTx}/${ty}.jpg`;
+            baseImg.alt = '';
+            baseImg.loading = 'eager';
+            baseLayerElem.appendChild(baseImg);
+
+            // 2. 気象庁 降水ナウキャスト雨雲タイル
+            if (currentStep && currentStep.basetime && currentStep.validtime) {
+              const rainImg = document.createElement('img');
+              rainImg.className = 'radar-tile-img radar-tile-rain';
+              rainImg.style.left = `${leftPx}px`;
+              rainImg.style.top = `${topPx}px`;
+              rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${zoom}/${wrappedTx}/${ty}.png`;
+              rainImg.alt = '';
+              rainImg.loading = 'eager';
+              rainImg.onerror = () => { rainImg.style.display = 'none'; };
+              rainLayerElem.appendChild(rainImg);
+            }
+          }
+        }
+
+        // ビッグサイト固定ピンマーカー位置更新（ラベルテキストなし、ピンのみ）
+        if (pinElem) {
+          const pinScreenX = centerPx.x - originX;
+          const pinScreenY = centerPx.y - originY;
+          pinElem.style.left = `${pinScreenX}px`;
+          pinElem.style.top = `${pinScreenY}px`;
+          pinElem.style.display = 'block';
+        }
+      }
+
+      function updateTimelineUI() {
+        if (!radarTimes || radarTimes.length === 0) return;
+        const currentStep = radarTimes[currentStepIndex];
+        if (!currentStep) return;
+
+        if (sliderElem) {
+          sliderElem.max = String(radarTimes.length - 1);
+          sliderElem.value = String(currentStepIndex);
+        }
+
+        if (timeTextElem) {
+          timeTextElem.textContent = currentStep.displayLabel;
+        }
+
+        if (timeTagElem) {
+          if (currentStep.isCurrent) {
+            timeTagElem.className = 'radar-time-tag';
+            timeTagElem.textContent = '現在';
+          } else if (currentStep.isForecast) {
+            timeTagElem.className = 'radar-time-tag tag-forecast';
+            timeTagElem.textContent = `${currentStep.offsetMinutes}分後予測`;
+          } else {
+            timeTagElem.className = 'radar-time-tag';
+            timeTagElem.textContent = `${Math.abs(currentStep.offsetMinutes)}分前`;
+          }
+        }
+      }
+
+      function setStep(index) {
+        if (!radarTimes || radarTimes.length === 0) return;
+        currentStepIndex = Math.max(0, Math.min(radarTimes.length - 1, index));
+        updateTimelineUI();
+        renderTiles();
+      }
+
+      function startPlayback() {
+        if (isPlaying) return;
+        isPlaying = true;
+        if (playIconElem) playIconElem.textContent = '❚❚';
+        if (playTextElem) playTextElem.textContent = '停止';
+        if (playBtnElem) playBtnElem.classList.add('playing');
+
+        playIntervalId = setInterval(() => {
+          if (currentStepIndex >= radarTimes.length - 1) {
+            currentStepIndex = 0;
+          } else {
+            currentStepIndex++;
+          }
+          setStep(currentStepIndex);
+        }, 900);
+      }
+
+      function stopPlayback() {
+        if (!isPlaying) return;
+        isPlaying = false;
+        if (playIntervalId) {
+          clearInterval(playIntervalId);
+          playIntervalId = null;
+        }
+        if (playIconElem) playIconElem.textContent = '▶';
+        if (playTextElem) playTextElem.textContent = '再生';
+        if (playBtnElem) playBtnElem.classList.remove('playing');
+      }
+
+      function togglePlayback() {
+        if (isPlaying) {
+          stopPlayback();
+        } else {
+          startPlayback();
+        }
+      }
+
+      async function loadRadarTimes() {
+        try {
+          const res = await fetch('/api/weather/radar-times');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.times && data.times.length > 0) {
+              radarTimes = data.times;
+              const currentIdx = radarTimes.findIndex((t) => t.isCurrent);
+              currentStepIndex = currentIdx >= 0 ? currentIdx : Math.floor(radarTimes.length / 2);
+              updateTimelineUI();
+              renderTiles();
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to load radar times:', err);
+        }
+      }
+
+      // ドラッグ・パン
+      if (wrapperElem) {
+        wrapperElem.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.radar-zoom-controls') || e.target.closest('.btn-radar-zoom')) return;
+          isDragging = true;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          lastPanX = panOffsetX;
+          lastPanY = panOffsetY;
+          try { wrapperElem.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        wrapperElem.addEventListener('pointermove', (e) => {
+          if (!isDragging) return;
+          panOffsetX = lastPanX + (e.clientX - dragStartX);
+          panOffsetY = lastPanY + (e.clientY - dragStartY);
+          renderTiles();
+        });
+
+        const endDrag = (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          try { wrapperElem.releasePointerCapture(e.pointerId); } catch (_) {}
+        };
+        wrapperElem.addEventListener('pointerup', endDrag);
+        wrapperElem.addEventListener('pointercancel', endDrag);
+      }
+
+      // ズーム
+      if (zoomInBtnElem) {
+        zoomInBtnElem.addEventListener('click', () => {
+          if (zoom < 12) {
+            zoom++;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            renderTiles();
+          }
+        });
+      }
+
+      if (zoomOutBtnElem) {
+        zoomOutBtnElem.addEventListener('click', () => {
+          if (zoom > 8) {
+            zoom--;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            renderTiles();
+          }
+        });
+      }
+
+      // タイムライン
+      if (sliderElem) {
+        sliderElem.addEventListener('input', (e) => {
+          stopPlayback();
+          setStep(parseInt(e.target.value, 10) || 0);
+        });
+      }
+
+      if (playBtnElem) {
+        playBtnElem.addEventListener('click', togglePlayback);
+      }
+
+      if (prevBtnElem) {
+        prevBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          setStep(currentStepIndex - 1);
+        });
+      }
+
+      if (nextBtnElem) {
+        nextBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          setStep(currentStepIndex + 1);
+        });
+      }
+
+      if (currentBtnElem) {
+        currentBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          const currentIdx = radarTimes.findIndex((t) => t.isCurrent);
+          if (currentIdx >= 0) setStep(currentIdx);
+        });
+      }
+
+      if (refreshBtnElem) {
+        refreshBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          loadRadarTimes();
+        });
+      }
+
+      window.addEventListener('resize', () => {
+        if (wrapperElem.offsetParent !== null) {
+          renderTiles();
+        }
+      });
+
+      return {
+        init: loadRadarTimes,
+        render: renderTiles,
+        setStep,
+        startPlayback,
+        stopPlayback,
+      };
+    }
+
+    function initHRadar() {
+      if (!hRadarController) {
+        hRadarController = createRadarMapController({
+          wrapperElem: document.getElementById('h-radar-map-wrapper'),
+          baseLayerElem: document.getElementById('h-radar-base-tiles'),
+          rainLayerElem: document.getElementById('h-radar-rain-tiles'),
+          pinElem: document.getElementById('h-radar-bight-pin'),
+          sliderElem: document.getElementById('h-radar-slider'),
+          timeTextElem: document.getElementById('h-radar-time-text'),
+          timeTagElem: document.getElementById('h-radar-time-tag'),
+          playBtnElem: document.getElementById('btn-h-radar-play'),
+          playIconElem: document.getElementById('h-radar-play-icon'),
+          playTextElem: document.getElementById('h-radar-play-text'),
+          prevBtnElem: document.getElementById('btn-h-radar-prev'),
+          nextBtnElem: document.getElementById('btn-h-radar-next'),
+          currentBtnElem: document.getElementById('btn-h-radar-current'),
+          refreshBtnElem: document.getElementById('btn-h-radar-refresh'),
+          zoomInBtnElem: document.getElementById('btn-h-radar-zoom-in'),
+          zoomOutBtnElem: document.getElementById('btn-h-radar-zoom-out'),
+        });
+        hRadarController.init();
+      } else {
+        hRadarController.render();
       }
     }
 
@@ -5348,6 +6003,15 @@
           }
         });
       });
+
+      // ヘッダー気象バッジクリックイベント（雨雲レーダータブへ直接切り替え）
+      const weatherHeaderBadge = document.getElementById('header-weather-badge');
+      if (weatherHeaderBadge) {
+        weatherHeaderBadge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          switchView('radar');
+        });
+      }
 
       // マップ用ツールバーボタンイベント
       document.querySelectorAll('#toolbar .status-btn').forEach((btn) => {

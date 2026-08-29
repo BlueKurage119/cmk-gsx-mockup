@@ -526,6 +526,65 @@
         </footer>
       </div>
     </div>
+
+    <!-- 雨雲レーダー 全画面モーダル（現場用） -->
+    <div class="radar-modal-overlay" id="m-radar-modal" role="dialog" aria-modal="true" aria-label="広域雨雲レーダー">
+      <header class="radar-modal-header">
+        <div class="radar-modal-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v4.58L14.7 15.3l1.4-1.42-3.1-2.18V7z"/>
+          </svg>
+          <span>雨雲レーダー（広域）</span>
+        </div>
+        <button type="button" class="btn-modal-close-radar" id="btn-close-m-radar" aria-label="閉じる">✕</button>
+      </header>
+
+      <div class="radar-modal-map-viewport" id="m-radar-map-wrapper">
+        <div class="radar-modal-tile-layer" id="m-radar-base-tiles"></div>
+        <div class="radar-modal-tile-layer" id="m-radar-rain-tiles"></div>
+        <div class="radar-modal-pin" id="m-radar-bight-pin" title="東京ビッグサイト">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+        <div class="radar-modal-zoom-controls">
+          <button type="button" class="btn-modal-radar-zoom" id="btn-m-radar-zoom-in" aria-label="ズームイン">＋</button>
+          <button type="button" class="btn-modal-radar-zoom" id="btn-m-radar-zoom-out" aria-label="ズームアウト">－</button>
+        </div>
+        <div class="radar-modal-attribution">出典: 国土地理院・気象庁</div>
+      </div>
+
+      <div class="radar-modal-controls-panel">
+        <div class="radar-modal-controls-top">
+          <div class="radar-modal-time-display">
+            <span class="radar-modal-time-tag" id="m-radar-time-tag">現在</span>
+            <span id="m-radar-time-text">--:--</span>
+          </div>
+          <div class="radar-modal-btn-group">
+            <button type="button" class="btn-m-radar-ctrl btn-primary" id="btn-m-radar-play">
+              <span id="m-radar-play-icon">▶</span>
+              <span id="m-radar-play-text">再生</span>
+            </button>
+            <button type="button" class="btn-m-radar-ctrl" id="btn-m-radar-prev">◀ 5分前</button>
+            <button type="button" class="btn-m-radar-ctrl" id="btn-m-radar-next">5分後 ▶</button>
+            <button type="button" class="btn-m-radar-ctrl" id="btn-m-radar-current">現在</button>
+            <button type="button" class="btn-m-radar-ctrl" id="btn-m-radar-refresh">更新</button>
+          </div>
+        </div>
+
+        <div class="radar-modal-slider-row">
+          <span style="font-size: 10px; color: var(--text-muted);">-60分</span>
+          <input type="range" class="radar-modal-slider" id="m-radar-slider" min="0" max="0" value="0" step="1" aria-label="雨雲レーダースライダー">
+          <span style="font-size: 10px; color: var(--text-muted);">+60分</span>
+        </div>
+
+        <div class="radar-modal-legend-row">
+          <span>降水強度: 弱</span>
+          <div class="radar-modal-legend-gradient"></div>
+          <span>強</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1441,6 +1500,334 @@
       }
     }
 
+    // ==========================================================================
+    // Issue #87: 雨雲レーダー 広域マップ描画・再生コントローラー (M端末)
+    // ==========================================================================
+    let mRadarController = null;
+
+    function createMRadarController() {
+      const wrapperElem = document.getElementById('m-radar-map-wrapper');
+      const baseLayerElem = document.getElementById('m-radar-base-tiles');
+      const rainLayerElem = document.getElementById('m-radar-rain-tiles');
+      const pinElem = document.getElementById('m-radar-bight-pin');
+      const sliderElem = document.getElementById('m-radar-slider');
+      const timeTextElem = document.getElementById('m-radar-time-text');
+      const timeTagElem = document.getElementById('m-radar-time-tag');
+      const playBtnElem = document.getElementById('btn-m-radar-play');
+      const playIconElem = document.getElementById('m-radar-play-icon');
+      const playTextElem = document.getElementById('m-radar-play-text');
+      const prevBtnElem = document.getElementById('btn-m-radar-prev');
+      const nextBtnElem = document.getElementById('btn-m-radar-next');
+      const currentBtnElem = document.getElementById('btn-m-radar-current');
+      const refreshBtnElem = document.getElementById('btn-m-radar-refresh');
+      const zoomInBtnElem = document.getElementById('btn-m-radar-zoom-in');
+      const zoomOutBtnElem = document.getElementById('btn-m-radar-zoom-out');
+
+      let zoom = 11;
+      const centerLat = 35.6298; // 東京ビッグサイト緯度
+      const centerLon = 139.7944; // 東京ビッグサイト経度
+      let panOffsetX = 0;
+      let panOffsetY = 0;
+
+      let isDragging = false;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let lastPanX = 0;
+      let lastPanY = 0;
+
+      let radarTimes = [];
+      let currentStepIndex = 0;
+      let isPlaying = false;
+      let playIntervalId = null;
+
+      function getPixel(lat, lon, z) {
+        const latRad = (lat * Math.PI) / 180;
+        const n = Math.pow(2, z);
+        const x = ((lon + 180) / 360) * n * 256;
+        const y = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n * 256;
+        return { x, y };
+      }
+
+      function renderTiles() {
+        if (!wrapperElem || !baseLayerElem || !rainLayerElem) return;
+        const width = wrapperElem.clientWidth || 360;
+        const height = wrapperElem.clientHeight || 480;
+
+        const centerPx = getPixel(centerLat, centerLon, zoom);
+        const originX = centerPx.x - width / 2 - panOffsetX;
+        const originY = centerPx.y - height / 2 - panOffsetY;
+
+        const minTileX = Math.floor(originX / 256);
+        const maxTileX = Math.floor((originX + width) / 256);
+        const minTileY = Math.floor(originY / 256);
+        const maxTileY = Math.floor((originY + height) / 256);
+
+        const maxCoord = Math.pow(2, zoom) - 1;
+        const currentStep = radarTimes[currentStepIndex];
+
+        baseLayerElem.innerHTML = '';
+        rainLayerElem.innerHTML = '';
+
+        for (let ty = minTileY; ty <= maxTileY; ty++) {
+          if (ty < 0 || ty > maxCoord) continue;
+          for (let tx = minTileX; tx <= maxTileX; tx++) {
+            const wrappedTx = ((tx % (maxCoord + 1)) + (maxCoord + 1)) % (maxCoord + 1);
+            const leftPx = tx * 256 - originX;
+            const topPx = ty * 256 - originY;
+
+            // 1. 国土地理院 航空写真タイル (seamlessphoto)
+            const baseImg = document.createElement('img');
+            baseImg.className = 'radar-modal-tile-img';
+            baseImg.style.left = `${leftPx}px`;
+            baseImg.style.top = `${topPx}px`;
+            baseImg.src = `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zoom}/${wrappedTx}/${ty}.jpg`;
+            baseImg.alt = '';
+            baseImg.loading = 'eager';
+            baseLayerElem.appendChild(baseImg);
+
+            // 2. 気象庁 降水ナウキャスト雨雲タイル
+            if (currentStep && currentStep.basetime && currentStep.validtime) {
+              const rainImg = document.createElement('img');
+              rainImg.className = 'radar-modal-tile-img radar-modal-tile-rain';
+              rainImg.style.left = `${leftPx}px`;
+              rainImg.style.top = `${topPx}px`;
+              rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${zoom}/${wrappedTx}/${ty}.png`;
+              rainImg.alt = '';
+              rainImg.loading = 'eager';
+              rainImg.onerror = () => { rainImg.style.display = 'none'; };
+              rainLayerElem.appendChild(rainImg);
+            }
+          }
+        }
+
+        // ビッグサイト固定ピンマーカー位置更新（ラベルテキストなし、ピンのみ）
+        if (pinElem) {
+          const pinScreenX = centerPx.x - originX;
+          const pinScreenY = centerPx.y - originY;
+          pinElem.style.left = `${pinScreenX}px`;
+          pinElem.style.top = `${pinScreenY}px`;
+          pinElem.style.display = 'block';
+        }
+      }
+
+      function updateTimelineUI() {
+        if (!radarTimes || radarTimes.length === 0) return;
+        const currentStep = radarTimes[currentStepIndex];
+        if (!currentStep) return;
+
+        if (sliderElem) {
+          sliderElem.max = String(radarTimes.length - 1);
+          sliderElem.value = String(currentStepIndex);
+        }
+
+        if (timeTextElem) {
+          timeTextElem.textContent = currentStep.displayLabel;
+        }
+
+        if (timeTagElem) {
+          if (currentStep.isCurrent) {
+            timeTagElem.className = 'radar-modal-time-tag';
+            timeTagElem.textContent = '現在';
+          } else if (currentStep.isForecast) {
+            timeTagElem.className = 'radar-modal-time-tag tag-forecast';
+            timeTagElem.textContent = `${currentStep.offsetMinutes}分後予測`;
+          } else {
+            timeTagElem.className = 'radar-modal-time-tag';
+            timeTagElem.textContent = `${Math.abs(currentStep.offsetMinutes)}分前`;
+          }
+        }
+      }
+
+      function setStep(index) {
+        if (!radarTimes || radarTimes.length === 0) return;
+        currentStepIndex = Math.max(0, Math.min(radarTimes.length - 1, index));
+        updateTimelineUI();
+        renderTiles();
+      }
+
+      function startPlayback() {
+        if (isPlaying) return;
+        isPlaying = true;
+        if (playIconElem) playIconElem.textContent = '❚❚';
+        if (playTextElem) playTextElem.textContent = '停止';
+
+        playIntervalId = setInterval(() => {
+          if (currentStepIndex >= radarTimes.length - 1) {
+            currentStepIndex = 0;
+          } else {
+            currentStepIndex++;
+          }
+          setStep(currentStepIndex);
+        }, 900);
+      }
+
+      function stopPlayback() {
+        if (!isPlaying) return;
+        isPlaying = false;
+        if (playIntervalId) {
+          clearInterval(playIntervalId);
+          playIntervalId = null;
+        }
+        if (playIconElem) playIconElem.textContent = '▶';
+        if (playTextElem) playTextElem.textContent = '再生';
+      }
+
+      function togglePlayback() {
+        if (isPlaying) {
+          stopPlayback();
+        } else {
+          startPlayback();
+        }
+      }
+
+      async function loadRadarTimes() {
+        try {
+          const res = await fetch('/api/weather/radar-times');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.times && data.times.length > 0) {
+              radarTimes = data.times;
+              const currentIdx = radarTimes.findIndex((t) => t.isCurrent);
+              currentStepIndex = currentIdx >= 0 ? currentIdx : Math.floor(radarTimes.length / 2);
+              updateTimelineUI();
+              renderTiles();
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to load radar times in M:', err);
+        }
+      }
+
+      // タッチ＆ドラッグ・パン
+      if (wrapperElem) {
+        wrapperElem.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.radar-modal-zoom-controls') || e.target.closest('.btn-modal-radar-zoom')) return;
+          isDragging = true;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          lastPanX = panOffsetX;
+          lastPanY = panOffsetY;
+          try { wrapperElem.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        wrapperElem.addEventListener('pointermove', (e) => {
+          if (!isDragging) return;
+          panOffsetX = lastPanX + (e.clientX - dragStartX);
+          panOffsetY = lastPanY + (e.clientY - dragStartY);
+          renderTiles();
+        });
+
+        const endDrag = (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          try { wrapperElem.releasePointerCapture(e.pointerId); } catch (_) {}
+        };
+        wrapperElem.addEventListener('pointerup', endDrag);
+        wrapperElem.addEventListener('pointercancel', endDrag);
+      }
+
+      // ズーム
+      if (zoomInBtnElem) {
+        zoomInBtnElem.addEventListener('click', () => {
+          if (zoom < 12) {
+            zoom++;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            renderTiles();
+          }
+        });
+      }
+
+      if (zoomOutBtnElem) {
+        zoomOutBtnElem.addEventListener('click', () => {
+          if (zoom > 8) {
+            zoom--;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            renderTiles();
+          }
+        });
+      }
+
+      // タイムライン
+      if (sliderElem) {
+        sliderElem.addEventListener('input', (e) => {
+          stopPlayback();
+          setStep(parseInt(e.target.value, 10) || 0);
+        });
+      }
+
+      if (playBtnElem) {
+        playBtnElem.addEventListener('click', togglePlayback);
+      }
+
+      if (prevBtnElem) {
+        prevBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          setStep(currentStepIndex - 1);
+        });
+      }
+
+      if (nextBtnElem) {
+        nextBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          setStep(currentStepIndex + 1);
+        });
+      }
+
+      if (currentBtnElem) {
+        currentBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          const currentIdx = radarTimes.findIndex((t) => t.isCurrent);
+          if (currentIdx >= 0) setStep(currentIdx);
+        });
+      }
+
+      if (refreshBtnElem) {
+        refreshBtnElem.addEventListener('click', () => {
+          stopPlayback();
+          loadRadarTimes();
+        });
+      }
+
+      window.addEventListener('resize', () => {
+        if (wrapperElem.offsetParent !== null) {
+          renderTiles();
+        }
+      });
+
+      return {
+        init: loadRadarTimes,
+        render: renderTiles,
+        setStep,
+        startPlayback,
+        stopPlayback,
+      };
+    }
+
+    function openMRadarModal() {
+      const modal = document.getElementById('m-radar-modal');
+      if (modal) {
+        modal.classList.add('active');
+        if (!mRadarController) {
+          mRadarController = createMRadarController();
+          mRadarController.init();
+        } else {
+          mRadarController.render();
+        }
+      }
+    }
+
+    function closeMRadarModal() {
+      const modal = document.getElementById('m-radar-modal');
+      if (modal) {
+        modal.classList.remove('active');
+        if (mRadarController) {
+          mRadarController.stopPlayback();
+        }
+      }
+    }
+
     const POLL_INTERVAL_MS = 3000;
 
     // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ + 概要層付箋データ + 気象データ）
@@ -1997,7 +2384,11 @@
           if (e.target.id === 'm-note-modal') closeNotePopover();
         });
 
-        // 4. ナビゲーション切り替えイベント
+        // 4-2. 雨雲レーダーモーダル開閉イベント
+        document.getElementById('btn-m-radar-open')?.addEventListener('click', openMRadarModal);
+        document.getElementById('btn-close-m-radar')?.addEventListener('click', closeMRadarModal);
+
+        // 5. ナビゲーション切り替えイベント
         document.getElementById('nav-map')?.addEventListener('click', () => switchView('overview'));
         document.getElementById('nav-facility')?.addEventListener('click', () => switchView('facility-input'));
         document.getElementById('nav-trouble')?.addEventListener('click', () => switchView('fault-report'));
