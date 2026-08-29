@@ -3122,7 +3122,7 @@
         zoomOutBtnElem,
       } = options;
 
-      let zoom = 11;
+      let zoom = 10;
       const centerLat = 35.6298; // 東京ビッグサイト緯度
       const centerLon = 139.7944; // 東京ビッグサイト経度
       let panOffsetX = 0;
@@ -3156,25 +3156,23 @@
         const originX = centerPx.x - width / 2 - panOffsetX;
         const originY = centerPx.y - height / 2 - panOffsetY;
 
-        const minTileX = Math.floor(originX / 256) - 1;
-        const maxTileX = Math.ceil((originX + width) / 256) + 1;
-        const minTileY = Math.floor(originY / 256) - 1;
-        const maxTileY = Math.ceil((originY + height) / 256) + 1;
-
-        const maxCoord = Math.pow(2, zoom) - 1;
-        const currentStep = radarTimes && radarTimes.length > 0 ? radarTimes[currentStepIndex] : null;
-
         baseLayerElem.innerHTML = '';
         rainLayerElem.innerHTML = '';
 
-        for (let ty = minTileY; ty <= maxTileY; ty++) {
-          if (ty < 0 || ty > maxCoord) continue;
-          for (let tx = minTileX; tx <= maxTileX; tx++) {
-            const wrappedTx = ((tx % (maxCoord + 1)) + (maxCoord + 1)) % (maxCoord + 1);
+        // 1. 国土地理院 航空写真タイル (seamlessphoto)
+        const minBaseX = Math.floor(originX / 256) - 1;
+        const maxBaseX = Math.ceil((originX + width) / 256) + 1;
+        const minBaseY = Math.floor(originY / 256) - 1;
+        const maxBaseY = Math.ceil((originY + height) / 256) + 1;
+        const maxBaseCoord = Math.pow(2, zoom) - 1;
+
+        for (let ty = minBaseY; ty <= maxBaseY; ty++) {
+          if (ty < 0 || ty > maxBaseCoord) continue;
+          for (let tx = minBaseX; tx <= maxBaseX; tx++) {
+            const wrappedTx = ((tx % (maxBaseCoord + 1)) + (maxBaseCoord + 1)) % (maxBaseCoord + 1);
             const leftPx = tx * 256 - originX;
             const topPx = ty * 256 - originY;
 
-            // 1. 国土地理院 航空写真タイル (seamlessphoto)
             const baseImg = document.createElement('img');
             baseImg.className = 'radar-tile-img';
             baseImg.style.left = `${leftPx}px`;
@@ -3184,15 +3182,42 @@
             baseImg.alt = '';
             baseImg.loading = 'eager';
             baseLayerElem.appendChild(baseImg);
+          }
+        }
 
-            // 2. 気象庁 降水ナウキャスト雨雲タイル
-            if (currentStep && currentStep.basetime && currentStep.validtime) {
+        // 2. 気象庁 降水ナウキャスト雨雲タイル（気象庁の最大解像度はZ=10のため、zoom>10時はオーバーズーム拡大表示）
+        const currentStep = radarTimes && radarTimes.length > 0 ? radarTimes[currentStepIndex] : null;
+        if (currentStep && currentStep.basetime && currentStep.validtime) {
+          const rainZoom = Math.min(zoom, 10);
+          const zoomDiff = zoom - rainZoom;
+          const scaleFactor = Math.pow(2, zoomDiff);
+
+          const rainCenterPx = getPixel(centerLat, centerLon, rainZoom);
+          const rainOriginX = rainCenterPx.x - (width / 2 + panOffsetX) / scaleFactor;
+          const rainOriginY = rainCenterPx.y - (height / 2 + panOffsetY) / scaleFactor;
+
+          const minRainX = Math.floor(rainOriginX / 256) - 1;
+          const maxRainX = Math.ceil((rainOriginX + width / scaleFactor) / 256) + 1;
+          const minRainY = Math.floor(rainOriginY / 256) - 1;
+          const maxRainY = Math.ceil((rainOriginY + height / scaleFactor) / 256) + 1;
+          const maxRainCoord = Math.pow(2, rainZoom) - 1;
+
+          for (let rty = minRainY; rty <= maxRainY; rty++) {
+            if (rty < 0 || rty > maxRainCoord) continue;
+            for (let rtx = minRainX; rtx <= maxRainX; rtx++) {
+              const wrappedRtx = ((rtx % (maxRainCoord + 1)) + (maxRainCoord + 1)) % (maxRainCoord + 1);
+              const leftPx = (rtx * 256 - rainOriginX) * scaleFactor;
+              const topPx = (rty * 256 - rainOriginY) * scaleFactor;
+              const tileSize = 256 * scaleFactor;
+
               const rainImg = document.createElement('img');
               rainImg.className = 'radar-tile-img radar-tile-rain';
               rainImg.style.left = `${leftPx}px`;
               rainImg.style.top = `${topPx}px`;
+              rainImg.style.width = `${tileSize}px`;
+              rainImg.style.height = `${tileSize}px`;
               rainImg.referrerPolicy = 'no-referrer';
-              rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${zoom}/${wrappedTx}/${ty}.png`;
+              rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${rainZoom}/${wrappedRtx}/${rty}.png`;
               rainImg.alt = '';
               rainImg.loading = 'eager';
               rainImg.onerror = () => { rainImg.style.display = 'none'; };
