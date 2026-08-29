@@ -1686,7 +1686,7 @@ test('GET /m/style.css includes styles for weather-card-container and weather ba
   }
 });
 
-test('GET /h includes weather notification handling and radar nav dot (Issue #86)', async () => {
+test('GET /h includes weather notification handling, radar nav dot, and detail button navigation to radar view (Issue #86)', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`);
@@ -1694,6 +1694,8 @@ test('GET /h includes weather notification handling and radar nav dot (Issue #86
     assert.ok(text.includes('id="nav-radar-dot"'), 'H terminal should have nav-radar-dot');
     assert.ok(text.includes('notification-badge-warning'), 'H terminal should define notification-badge-warning');
     assert.ok(text.includes('updateRadarNavDot'), 'H terminal should define updateRadarNavDot');
+    assert.ok(text.includes('targetType = \'weather\''), 'H terminal should set targetType weather on weather alert');
+    assert.ok(text.includes('switchView(\'radar\')'), 'H terminal should transition to radar view when clicking detail on weather alert');
     assert.ok(text.includes('fetchWeatherAlertsData'), 'H terminal should define fetchWeatherAlertsData');
     assert.ok(text.includes('/api/weather/alerts'), 'H terminal should fetch /api/weather/alerts');
   } finally {

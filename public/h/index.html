@@ -3026,8 +3026,8 @@
         if (btnNo) btnNo.style.display = 'inline-block';
 
         if (btnDetail) {
-          btnDetail.disabled = true;
-          delete btnDetail.dataset.targetType;
+          btnDetail.disabled = false;
+          btnDetail.dataset.targetType = 'weather';
           delete btnDetail.dataset.targetId;
         }
         if (btnYes) btnYes.disabled = true;
@@ -6113,6 +6113,8 @@
           openEmergencyDetailModal(btnDetail.dataset.targetId || null);
         } else if (btnDetail?.dataset.targetType === 'fault') {
           openFaultDetailModal(btnDetail.dataset.targetId || null);
+        } else if (btnDetail?.dataset.targetType === 'weather') {
+          switchView('radar');
         } else {
           openRequestDetailModal(btnDetail?.dataset.targetId || null);
         }
