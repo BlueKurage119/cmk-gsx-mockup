@@ -1587,6 +1587,14 @@
       pointer-events: none;
     }
 
+    .radar-tile-layer.base-layer {
+      z-index: 1;
+    }
+
+    .radar-tile-layer.rain-layer {
+      z-index: 2;
+    }
+
     .radar-tile-img {
       position: absolute;
       width: 256px;
@@ -1594,11 +1602,12 @@
       will-change: transform;
       user-select: none;
       -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     .radar-tile-rain {
-      opacity: 0.82;
-      mix-blend-mode: screen;
+      opacity: 0.85;
+      filter: contrast(1.15) saturate(1.2);
     }
 
     .radar-marker-pin {
@@ -3140,20 +3149,20 @@
 
       function renderTiles() {
         if (!wrapperElem || !baseLayerElem || !rainLayerElem) return;
-        const width = wrapperElem.clientWidth || 800;
-        const height = wrapperElem.clientHeight || 600;
+        const width = wrapperElem.clientWidth || window.innerWidth || 800;
+        const height = wrapperElem.clientHeight || (window.innerHeight - 180) || 600;
 
         const centerPx = getPixel(centerLat, centerLon, zoom);
         const originX = centerPx.x - width / 2 - panOffsetX;
         const originY = centerPx.y - height / 2 - panOffsetY;
 
-        const minTileX = Math.floor(originX / 256);
-        const maxTileX = Math.floor((originX + width) / 256);
-        const minTileY = Math.floor(originY / 256);
-        const maxTileY = Math.floor((originY + height) / 256);
+        const minTileX = Math.floor(originX / 256) - 1;
+        const maxTileX = Math.ceil((originX + width) / 256) + 1;
+        const minTileY = Math.floor(originY / 256) - 1;
+        const maxTileY = Math.ceil((originY + height) / 256) + 1;
 
         const maxCoord = Math.pow(2, zoom) - 1;
-        const currentStep = radarTimes[currentStepIndex];
+        const currentStep = radarTimes && radarTimes.length > 0 ? radarTimes[currentStepIndex] : null;
 
         baseLayerElem.innerHTML = '';
         rainLayerElem.innerHTML = '';
@@ -3170,6 +3179,7 @@
             baseImg.className = 'radar-tile-img';
             baseImg.style.left = `${leftPx}px`;
             baseImg.style.top = `${topPx}px`;
+            baseImg.referrerPolicy = 'no-referrer';
             baseImg.src = `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zoom}/${wrappedTx}/${ty}.jpg`;
             baseImg.alt = '';
             baseImg.loading = 'eager';
@@ -3181,6 +3191,7 @@
               rainImg.className = 'radar-tile-img radar-tile-rain';
               rainImg.style.left = `${leftPx}px`;
               rainImg.style.top = `${topPx}px`;
+              rainImg.referrerPolicy = 'no-referrer';
               rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${zoom}/${wrappedTx}/${ty}.png`;
               rainImg.alt = '';
               rainImg.loading = 'eager';
@@ -3388,8 +3399,13 @@
         }
       });
 
+      function initController() {
+        renderTiles();
+        loadRadarTimes();
+      }
+
       return {
-        init: loadRadarTimes,
+        init: initController,
         render: renderTiles,
         setStep,
         startPlayback,
@@ -3421,6 +3437,9 @@
       } else {
         hRadarController.render();
       }
+      setTimeout(() => {
+        if (hRadarController) hRadarController.render();
+      }, 50);
     }
 
     // 変更申請 内容確認モーダル制御（指定IDまたはスタック先頭1件表示）

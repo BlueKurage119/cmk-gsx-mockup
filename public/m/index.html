@@ -1550,20 +1550,20 @@
 
       function renderTiles() {
         if (!wrapperElem || !baseLayerElem || !rainLayerElem) return;
-        const width = wrapperElem.clientWidth || 360;
-        const height = wrapperElem.clientHeight || 480;
+        const width = wrapperElem.clientWidth || window.innerWidth || 360;
+        const height = wrapperElem.clientHeight || (window.innerHeight - 120) || 480;
 
         const centerPx = getPixel(centerLat, centerLon, zoom);
         const originX = centerPx.x - width / 2 - panOffsetX;
         const originY = centerPx.y - height / 2 - panOffsetY;
 
-        const minTileX = Math.floor(originX / 256);
-        const maxTileX = Math.floor((originX + width) / 256);
-        const minTileY = Math.floor(originY / 256);
-        const maxTileY = Math.floor((originY + height) / 256);
+        const minTileX = Math.floor(originX / 256) - 1;
+        const maxTileX = Math.ceil((originX + width) / 256) + 1;
+        const minTileY = Math.floor(originY / 256) - 1;
+        const maxTileY = Math.ceil((originY + height) / 256) + 1;
 
         const maxCoord = Math.pow(2, zoom) - 1;
-        const currentStep = radarTimes[currentStepIndex];
+        const currentStep = radarTimes && radarTimes.length > 0 ? radarTimes[currentStepIndex] : null;
 
         baseLayerElem.innerHTML = '';
         rainLayerElem.innerHTML = '';
@@ -1580,6 +1580,7 @@
             baseImg.className = 'radar-modal-tile-img';
             baseImg.style.left = `${leftPx}px`;
             baseImg.style.top = `${topPx}px`;
+            baseImg.referrerPolicy = 'no-referrer';
             baseImg.src = `https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${zoom}/${wrappedTx}/${ty}.jpg`;
             baseImg.alt = '';
             baseImg.loading = 'eager';
@@ -1591,6 +1592,7 @@
               rainImg.className = 'radar-modal-tile-img radar-modal-tile-rain';
               rainImg.style.left = `${leftPx}px`;
               rainImg.style.top = `${topPx}px`;
+              rainImg.referrerPolicy = 'no-referrer';
               rainImg.src = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${currentStep.basetime}/none/${currentStep.validtime}/surf/hrpns/${zoom}/${wrappedTx}/${ty}.png`;
               rainImg.alt = '';
               rainImg.loading = 'eager';
@@ -1796,8 +1798,13 @@
         }
       });
 
+      function initController() {
+        renderTiles();
+        loadRadarTimes();
+      }
+
       return {
-        init: loadRadarTimes,
+        init: initController,
         render: renderTiles,
         setStep,
         startPlayback,
@@ -1815,6 +1822,9 @@
         } else {
           mRadarController.render();
         }
+        setTimeout(() => {
+          if (mRadarController) mRadarController.render();
+        }, 50);
       }
     }
 

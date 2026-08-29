@@ -2046,17 +2046,26 @@ html, body {
   pointer-events: none;
 }
 
+.radar-modal-tile-layer.base-layer {
+  z-index: 1;
+}
+
+.radar-modal-tile-layer.rain-layer {
+  z-index: 2;
+}
+
 .radar-modal-tile-img {
   position: absolute;
   width: 256px;
   height: 256px;
   user-select: none;
   -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 .radar-modal-tile-rain {
-  opacity: 0.82;
-  mix-blend-mode: screen;
+  opacity: 0.85;
+  filter: contrast(1.15) saturate(1.2);
 }
 
 .radar-modal-pin {
