@@ -47,15 +47,19 @@ function parseTimeString(timeStr) {
   const hour = parseInt(timeStr.slice(8, 10), 10);
   const min = parseInt(timeStr.slice(10, 12), 10);
   const sec = parseInt(timeStr.slice(12, 14), 10);
-  // JST時刻としてパース（UTCオフセット +9時間）
-  return new Date(Date.UTC(year, month, day, hour - 9, min, sec));
+  // 気象庁タイムスタンプ文字列はUTC表記
+  return new Date(Date.UTC(year, month, day, hour, min, sec));
 }
 
 function formatJstDisplayTime(timeStr) {
   if (!timeStr || timeStr.length !== 14) return timeStr;
-  const hour = timeStr.slice(8, 10);
-  const min = timeStr.slice(10, 12);
-  return `${hour}:${min}`;
+  const date = parseTimeString(timeStr);
+  if (!date) return timeStr;
+  // 日本標準時 JST = UTC + 9時間
+  const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const jstHour = String(jstDate.getUTCHours()).padStart(2, '0');
+  const jstMin = String(jstDate.getUTCMinutes()).padStart(2, '0');
+  return `${jstHour}:${jstMin}`;
 }
 
 function parseWarningData(jmaData) {
@@ -175,14 +179,6 @@ function parseRadarTimes(n1Data, n2Data) {
     }
 
     const timeHHMM = formatJstDisplayTime(item.validtime);
-    let displayLabel;
-    if (offsetMinutes === 0) {
-      displayLabel = `${timeHHMM}（現在）`;
-    } else if (offsetMinutes > 0) {
-      displayLabel = `${timeHHMM}（${offsetMinutes}分後予測）`;
-    } else {
-      displayLabel = `${timeHHMM}（${Math.abs(offsetMinutes)}分前）`;
-    }
 
     return {
       basetime: item.basetime,
@@ -190,7 +186,7 @@ function parseRadarTimes(n1Data, n2Data) {
       isForecast: item.isForecast,
       isCurrent: offsetMinutes === 0,
       offsetMinutes,
-      displayLabel,
+      displayLabel: timeHHMM,
     };
   });
 

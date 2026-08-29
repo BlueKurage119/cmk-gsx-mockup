@@ -1686,14 +1686,14 @@ test('GET /m/style.css includes styles for weather-card-container and weather ba
   }
 });
 
-test('GET /h includes weather badge in header and weather notification handling (Issue #86)', async () => {
+test('GET /h includes weather notification handling and radar nav dot (Issue #86)', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`);
     const text = await res.text();
-    assert.ok(text.includes('id="header-weather-badge"'), 'H terminal should have header-weather-badge');
+    assert.ok(text.includes('id="nav-radar-dot"'), 'H terminal should have nav-radar-dot');
     assert.ok(text.includes('notification-badge-warning'), 'H terminal should define notification-badge-warning');
-    assert.ok(text.includes('updateWeatherHeaderBadge'), 'H terminal should define updateWeatherHeaderBadge');
+    assert.ok(text.includes('updateRadarNavDot'), 'H terminal should define updateRadarNavDot');
     assert.ok(text.includes('fetchWeatherAlertsData'), 'H terminal should define fetchWeatherAlertsData');
     assert.ok(text.includes('/api/weather/alerts'), 'H terminal should fetch /api/weather/alerts');
   } finally {
@@ -1701,13 +1701,15 @@ test('GET /h includes weather badge in header and weather notification handling 
   }
 });
 
-test('GET /h includes radar tab in Navigation Rail, view-radar panel, and radar map controls (Issue #87)', async () => {
+test('GET /h includes precipitation nowcast tab in Navigation Rail, view-radar panel, and radar map controls (Issue #87)', async () => {
   const { baseUrl, close } = await listenServer();
   try {
     const res = await fetch(`${baseUrl}/h`);
     const text = await res.text();
     assert.ok(text.includes('id="nav-item-radar"'), 'H terminal should have nav-item-radar button in Navigation Rail');
+    assert.ok(text.includes('降水NCST'), 'H terminal nav rail label should be 降水NCST');
     assert.ok(text.includes('id="view-radar"'), 'H terminal should have view-radar panel');
+    assert.ok(text.includes('降水ナウキャスト（広域）'), 'H terminal should have 降水ナウキャスト（広域） title/label');
     assert.ok(text.includes('id="h-radar-map-wrapper"'), 'H terminal should have h-radar-map-wrapper');
     assert.ok(text.includes('id="h-radar-slider"'), 'H terminal should have h-radar-slider');
     assert.ok(text.includes('id="btn-h-radar-play"'), 'H terminal should have btn-h-radar-play');
@@ -1724,6 +1726,7 @@ test('GET /m includes full-screen radar modal markup and modal controller (Issue
     const res = await fetch(`${baseUrl}/m`);
     const text = await res.text();
     assert.ok(text.includes('id="m-radar-modal"'), 'M terminal should have m-radar-modal overlay');
+    assert.ok(text.includes('降水ナウキャスト'), 'M terminal should have 降水ナウキャスト label');
     assert.ok(text.includes('id="m-radar-map-wrapper"'), 'M terminal should have m-radar-map-wrapper');
     assert.ok(text.includes('id="m-radar-slider"'), 'M terminal should have m-radar-slider');
     assert.ok(text.includes('id="btn-m-radar-play"'), 'M terminal should have btn-m-radar-play');
@@ -1748,6 +1751,7 @@ test('GET /m/style.css includes styles for radar modal overlay and controls (Iss
     await close();
   }
 });
+
 
 
 

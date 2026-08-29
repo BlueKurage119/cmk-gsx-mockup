@@ -168,6 +168,7 @@
     }
 
     .nav-rail-item {
+      position: relative;
       width: 60px;
       height: 56px;
       border: none;
@@ -182,6 +183,29 @@
       transition: background-color 0.15s ease, color 0.15s ease;
       text-decoration: none;
       padding: 4px 2px;
+    }
+
+    .nav-radar-dot {
+      position: absolute;
+      top: 6px;
+      right: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f29900;
+      border: 1.5px solid var(--surface-dark);
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
+
+    .nav-radar-dot.dot-warning {
+      background-color: #d93025;
+      box-shadow: 0 0 6px rgba(217, 48, 37, 0.8);
+    }
+
+    .nav-radar-dot.dot-special {
+      background-color: #a142f4;
+      box-shadow: 0 0 6px rgba(161, 66, 244, 0.8);
     }
 
     .nav-rail-item:hover:not(.active) {
@@ -1799,9 +1823,6 @@
         </div>
       </div>
       <div class="header-right">
-        <div id="header-weather-badge" class="weather-header-badge badge-normal" style="display: none;" role="status" aria-label="江東区 防災気象情報">
-          <span class="weather-header-badge-text" id="header-weather-text">江東区: 平常</span>
-        </div>
         <span id="current-datetime" class="datetime-display">----/--/-- --:--:--</span>
         <span class="terminal-name">端末名: 東地区外務H1</span>
       </div>
@@ -1829,11 +1850,12 @@
           </svg>
           <span class="nav-label">警報一覧</span>
         </button>
-        <button type="button" class="nav-rail-item" id="nav-item-radar" data-view="radar" title="雨雲レーダー">
+        <button type="button" class="nav-rail-item" id="nav-item-radar" data-view="radar" title="降水ナウキャスト">
           <svg class="nav-icon" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v4.58L14.7 15.3l1.4-1.42-3.1-2.18V7z"/>
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM9 22h2v-2H9v2zm4 0h2v-2h-2v2zm-8 0h2v-2H5v2z"/>
           </svg>
-          <span class="nav-label">雨雲レーダー</span>
+          <span class="nav-label">降水NCST</span>
+          <span class="nav-radar-dot" id="nav-radar-dot" style="display: none;"></span>
         </button>
       </nav>
 
@@ -2065,11 +2087,11 @@
           </section>
         </div>
 
-        <!-- 雨雲レーダー（広域）ビュー -->
-        <div id="view-radar" class="view-panel" role="region" aria-label="雨雲レーダー（広域）">
+        <!-- 降水ナウキャスト（広域）ビュー -->
+        <div id="view-radar" class="view-panel" role="region" aria-label="降水ナウキャスト（広域）">
           <div class="radar-view-container">
             <!-- 上部: 地図描画領域 -->
-            <div class="radar-map-wrapper" id="h-radar-map-wrapper" aria-label="広域雨雲レーダーマップ（ドラッグで移動）">
+            <div class="radar-map-wrapper" id="h-radar-map-wrapper" aria-label="広域降水ナウキャストマップ（ドラッグで移動）">
               <div class="radar-tile-layer base-layer" id="h-radar-base-tiles"></div>
               <div class="radar-tile-layer rain-layer" id="h-radar-rain-tiles"></div>
               <div class="radar-marker-pin" id="h-radar-bight-pin" title="東京ビッグサイト（東展示棟）">
@@ -2844,7 +2866,7 @@
         } else if (viewName === 'alerts') {
           titleElem.textContent = '警報一覧（東地区）';
         } else if (viewName === 'radar') {
-          titleElem.textContent = '雨雲レーダー（広域）';
+          titleElem.textContent = '降水ナウキャスト（広域）';
         } else {
           titleElem.textContent = '概況（東地区）';
         }
@@ -3031,35 +3053,25 @@
       }
     }
 
-    function updateWeatherHeaderBadge() {
-      const badge = document.getElementById('header-weather-badge');
-      const text = document.getElementById('header-weather-text');
-      if (!badge || !text) return;
+    function updateRadarNavDot() {
+      const dot = document.getElementById('nav-radar-dot');
+      if (!dot) return;
 
-      if (!weatherAlertsData || !weatherAlertsData.alerts) {
-        badge.style.display = 'none';
+      if (!weatherAlertsData || !weatherAlertsData.alerts || weatherAlertsData.alerts.length === 0) {
+        dot.style.display = 'none';
         return;
       }
 
-      badge.style.display = 'inline-flex';
-      const alerts = weatherAlertsData.alerts;
-      if (alerts.length === 0) {
-        badge.className = 'weather-header-badge badge-normal';
-        text.textContent = '江東区: 平常';
-        badge.title = '江東区に発表中の警報・注意報はありません';
+      dot.style.display = 'block';
+      if (weatherAlertsData.hasSpecial) {
+        dot.className = 'nav-radar-dot dot-special';
+        dot.title = '江東区に特別警報発表中';
+      } else if (weatherAlertsData.hasWarning) {
+        dot.className = 'nav-radar-dot dot-warning';
+        dot.title = '江東区に気象警報発表中';
       } else {
-        const names = alerts.map((a) => a.name).join('・');
-        if (weatherAlertsData.hasSpecial) {
-          badge.className = 'weather-header-badge badge-special';
-          text.textContent = `[特別警報] ${names}`;
-        } else if (weatherAlertsData.hasWarning) {
-          badge.className = 'weather-header-badge badge-warning';
-          text.textContent = `[警報] ${names}`;
-        } else {
-          badge.className = 'weather-header-badge badge-advisory';
-          text.textContent = `[注意報] ${names}`;
-        }
-        badge.title = weatherAlertsData.headline || `江東区に${names}が発表されています`;
+        dot.className = 'nav-radar-dot';
+        dot.title = '江東区に気象注意報発表中';
       }
     }
 
@@ -3068,7 +3080,7 @@
         const res = await fetch('/api/weather/alerts');
         if (res.ok) {
           weatherAlertsData = await res.json();
-          updateWeatherHeaderBadge();
+          updateRadarNavDot();
           updateNotificationArea();
         }
       } catch (err) {
@@ -5678,7 +5690,7 @@
           weatherPollCountdown = 0;
           fetchWeatherAlertsData();
         } else {
-          updateWeatherHeaderBadge();
+          updateRadarNavDot();
           updateNotificationArea();
         }
 
@@ -6003,15 +6015,6 @@
           }
         });
       });
-
-      // ヘッダー気象バッジクリックイベント（雨雲レーダータブへ直接切り替え）
-      const weatherHeaderBadge = document.getElementById('header-weather-badge');
-      if (weatherHeaderBadge) {
-        weatherHeaderBadge.addEventListener('click', (e) => {
-          e.stopPropagation();
-          switchView('radar');
-        });
-      }
 
       // マップ用ツールバーボタンイベント
       document.querySelectorAll('#toolbar .status-btn').forEach((btn) => {

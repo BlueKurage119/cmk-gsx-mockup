@@ -127,22 +127,22 @@ describe('Weather State & Parser', () => {
       assert.equal(result.currentValidtime, '20260829043000');
       assert.equal(result.times.length, 5);
 
-      // 昇順にソートされていること
+      // 昇順にソートされ、JST時刻（+9時間）に変換されていること
       assert.equal(result.times[0].validtime, '20260829042000');
       assert.equal(result.times[0].offsetMinutes, -10);
       assert.equal(result.times[0].isCurrent, false);
       assert.equal(result.times[0].isForecast, false);
-      assert.equal(result.times[0].displayLabel, '04:20（10分前）');
+      assert.equal(result.times[0].displayLabel, '13:20');
 
       assert.equal(result.times[2].validtime, '20260829043000');
       assert.equal(result.times[2].offsetMinutes, 0);
       assert.equal(result.times[2].isCurrent, true);
-      assert.equal(result.times[2].displayLabel, '04:30（現在）');
+      assert.equal(result.times[2].displayLabel, '13:30');
 
       assert.equal(result.times[4].validtime, '20260829044000');
       assert.equal(result.times[4].offsetMinutes, 10);
       assert.equal(result.times[4].isForecast, true);
-      assert.equal(result.times[4].displayLabel, '04:40（10分後予測）');
+      assert.equal(result.times[4].displayLabel, '13:40');
     });
 
     it('handles empty inputs gracefully', () => {
