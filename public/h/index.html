@@ -1345,6 +1345,75 @@
       border: 1px solid rgba(255, 255, 255, 0.4);
     }
 
+    .notification-badge-warning {
+      background-color: #d93025;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-right: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .notification-badge-advisory {
+      background-color: #f29900;
+      color: #202124;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-right: 6px;
+    }
+
+    .notification-badge-special {
+      background-color: #a142f4;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-right: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .weather-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .weather-header-badge.badge-special {
+      background-color: #a142f4;
+      color: #ffffff;
+    }
+
+    .weather-header-badge.badge-warning {
+      background-color: #d93025;
+      color: #ffffff;
+    }
+
+    .weather-header-badge.badge-advisory {
+      background-color: #f29900;
+      color: #202124;
+    }
+
+    .weather-header-badge.badge-normal {
+      background-color: rgba(255, 255, 255, 0.12);
+      color: #e8eaed;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
     .badge-category.emergency {
       background-color: rgba(217, 48, 37, 0.2);
       color: #f28b82;
@@ -1476,6 +1545,9 @@
         </div>
       </div>
       <div class="header-right">
+        <div id="header-weather-badge" class="weather-header-badge badge-normal" style="display: none;" role="status" aria-label="江東区 防災気象情報">
+          <span class="weather-header-badge-text" id="header-weather-text">江東区: 平常</span>
+        </div>
         <span id="current-datetime" class="datetime-display">----/--/-- --:--:--</span>
         <span class="terminal-name">端末名: 東地区外務H1</span>
       </div>
@@ -2099,6 +2171,10 @@
     const POLL_INTERVAL_MS = 3000;
     let isProcessingRequest = false;
 
+    // 防災気象情報状態管理
+    let weatherAlertsData = { alerts: [], hasWarning: false, hasSpecial: false, hasAdvisory: false };
+    let weatherPollCountdown = 0;
+
     // ピタネット（付箋注記）状態管理
     let isNoteCreateMode = false;
     let confirmedNotes = []; // GET /api/notes のサーバー確定分
@@ -2592,6 +2668,32 @@
         if (btnYes) btnYes.disabled = true;
         if (btnNo) btnNo.disabled = true;
 
+      } else if (weatherAlertsData && weatherAlertsData.alerts && weatherAlertsData.alerts.length > 0) {
+        // 優先度4: 防災気象情報（警報・注意報）
+        if (btnEmgResolve) btnEmgResolve.style.display = 'none';
+        if (btnYes) btnYes.style.display = 'inline-block';
+        if (btnNo) btnNo.style.display = 'inline-block';
+
+        if (btnDetail) {
+          btnDetail.disabled = true;
+          delete btnDetail.dataset.targetType;
+          delete btnDetail.dataset.targetId;
+        }
+        if (btnYes) btnYes.disabled = true;
+        if (btnNo) btnNo.disabled = true;
+
+        const alerts = weatherAlertsData.alerts;
+        const alertNames = alerts.map((a) => a.name).join('・');
+        const badgeClass = weatherAlertsData.hasSpecial
+          ? 'notification-badge-special'
+          : (weatherAlertsData.hasWarning ? 'notification-badge-warning' : 'notification-badge-advisory');
+        const badgeLabel = weatherAlertsData.hasSpecial
+          ? '特別警報'
+          : (weatherAlertsData.hasWarning ? '気象警報' : '気象注意報');
+
+        const msg = `<span class="${badgeClass}">${badgeLabel}</span> <span class="notification-highlight">江東区:</span> ${escapeHtml(alertNames)}が発表されています${weatherAlertsData.headline ? ` 「${escapeHtml(weatherAlertsData.headline)}」` : ''}`;
+        setNotification(msg, weatherAlertsData.hasWarning || weatherAlertsData.hasSpecial ? 'error' : 'warning');
+
       } else {
         // 通常未選択状態
         if (btnEmgResolve) btnEmgResolve.style.display = 'none';
@@ -2606,6 +2708,51 @@
         if (btnYes) btnYes.disabled = true;
         if (btnNo) btnNo.disabled = true;
         setNotification('状態を変更する設備を選択してください', 'default');
+      }
+    }
+
+    function updateWeatherHeaderBadge() {
+      const badge = document.getElementById('header-weather-badge');
+      const text = document.getElementById('header-weather-text');
+      if (!badge || !text) return;
+
+      if (!weatherAlertsData || !weatherAlertsData.alerts) {
+        badge.style.display = 'none';
+        return;
+      }
+
+      badge.style.display = 'inline-flex';
+      const alerts = weatherAlertsData.alerts;
+      if (alerts.length === 0) {
+        badge.className = 'weather-header-badge badge-normal';
+        text.textContent = '江東区: 平常';
+        badge.title = '江東区に発表中の警報・注意報はありません';
+      } else {
+        const names = alerts.map((a) => a.name).join('・');
+        if (weatherAlertsData.hasSpecial) {
+          badge.className = 'weather-header-badge badge-special';
+          text.textContent = `[特別警報] ${names}`;
+        } else if (weatherAlertsData.hasWarning) {
+          badge.className = 'weather-header-badge badge-warning';
+          text.textContent = `[警報] ${names}`;
+        } else {
+          badge.className = 'weather-header-badge badge-advisory';
+          text.textContent = `[注意報] ${names}`;
+        }
+        badge.title = weatherAlertsData.headline || `江東区に${names}が発表されています`;
+      }
+    }
+
+    async function fetchWeatherAlertsData() {
+      try {
+        const res = await fetch('/api/weather/alerts');
+        if (res.ok) {
+          weatherAlertsData = await res.json();
+          updateWeatherHeaderBadge();
+          updateNotificationArea();
+        }
+      } catch (err) {
+        console.warn('Weather fetch warning in H:', err);
       }
     }
 
@@ -4869,7 +5016,16 @@
         if (document.getElementById('note-list-modal')?.classList.contains('active')) {
           renderNoteListModal();
         }
-        updateNotificationArea();
+
+        // 気象情報の定期更新（約30秒間隔 = 10回のポーリングに1回）
+        weatherPollCountdown++;
+        if (weatherPollCountdown >= 10 || !weatherAlertsData || weatherAlertsData.alerts.length === 0) {
+          weatherPollCountdown = 0;
+          fetchWeatherAlertsData();
+        } else {
+          updateWeatherHeaderBadge();
+          updateNotificationArea();
+        }
 
         // 申請詳細モーダル表示中
         const reqModal = document.getElementById('request-detail-modal');
@@ -5117,6 +5273,7 @@
         updateEmergencyMarkers();
         renderNoteLayer();
         updateNotificationArea();
+        fetchWeatherAlertsData();
 
         // 各ビューの初期描画
         if (currentView === 'facilities') {

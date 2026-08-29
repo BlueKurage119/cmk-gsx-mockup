@@ -53,6 +53,30 @@
       <!-- 緊急発報状況カード表示コンテナ（概況表示ペイン・地図下部、未対応発報がある場合のみ自動表示） -->
       <div id="emergency-card-container" class="emergency-card-container" style="display: none;" role="region" aria-label="緊急発報状況"></div>
 
+      <!-- 防災気象情報カード（江東区の警報・注意報および雨雲レーダー展開ボタン） -->
+      <section class="weather-card-container" id="weather-card-container" aria-label="防災気象情報">
+        <div class="weather-card-header">
+          <div class="weather-card-title">
+            <svg class="weather-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>
+            </svg>
+            <span>防災気象情報（江東区）</span>
+          </div>
+          <button type="button" class="btn-radar-open" id="btn-m-radar-open" aria-label="雨雲レーダーを開く">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm1-13h-2v4.58L14.7 15.3l1.4-1.42-3.1-2.18V7z"/>
+            </svg>
+            <span>雨雲レーダー</span>
+          </button>
+        </div>
+        <div class="weather-card-body" id="weather-card-body">
+          <div class="weather-alert-badges" id="weather-alert-badges">
+            <span class="weather-badge badge-normal">警報・注意報なし</span>
+          </div>
+          <div class="weather-headline-text" id="weather-headline-text">気象情報を読込中...</div>
+        </div>
+      </section>
+
       <!-- 下段: 要約ペイン（運用サマリー） -->
       <section class="summary-pane-card" id="summary-pane-card" aria-label="現場運用サマリー">
         <!-- ゲートセクション（開放・制限のみ列挙） -->
@@ -1372,9 +1396,54 @@
       }).join('');
     }
 
+    let currentWeatherAlerts = null;
+    let weatherPollCountdown = 0;
+
+    function renderWeatherCard(data) {
+      const badgesContainer = document.getElementById('weather-alert-badges');
+      const headlineElem = document.getElementById('weather-headline-text');
+      if (!badgesContainer || !headlineElem) return;
+
+      if (!data || !data.alerts) {
+        badgesContainer.innerHTML = '<span class="weather-badge badge-normal">気象情報取得待機中</span>';
+        headlineElem.textContent = '気象情報を取得中...';
+        return;
+      }
+
+      const alerts = data.alerts;
+      if (alerts.length === 0) {
+        badgesContainer.innerHTML = '<span class="weather-badge badge-normal">警報・注意報なし</span>';
+        headlineElem.textContent = data.headline || '現在、江東区に発表中の警報・注意報はありません。';
+      } else {
+        badgesContainer.innerHTML = alerts.map((a) => {
+          let badgeClass = 'badge-advisory';
+          if (a.level === 'special') badgeClass = 'badge-special';
+          else if (a.level === 'warning') badgeClass = 'badge-warning';
+
+          return `<span class="weather-badge ${badgeClass}">[${escapeHtml(a.name)}]</span>`;
+        }).join('');
+
+        const alertNames = alerts.map((a) => a.name).join('・');
+        headlineElem.textContent = data.headline ? `【${alertNames}】${data.headline}` : `現在、江東区に${alertNames}が発表されています。`;
+      }
+    }
+
+    async function fetchWeatherAlertsData() {
+      try {
+        const res = await fetch('/api/weather/alerts');
+        if (res.ok) {
+          const data = await res.json();
+          currentWeatherAlerts = data;
+          renderWeatherCard(data);
+        }
+      } catch (err) {
+        console.warn('Weather alerts fetch warning:', err);
+      }
+    }
+
     const POLL_INTERVAL_MS = 3000;
 
-    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ + 概要層付箋データ）
+    // サーバー状態の定期ポーリング（設備データ + 未承認申請データ + 緊急発報データ + 概要層付箋データ + 気象データ）
     async function pollFacilities() {
       try {
         const [facilitiesRes, requestsRes, emergencyRes, notesRes] = await Promise.all([
@@ -1411,6 +1480,13 @@
 
         if (currentView === 'facility-input') {
           renderFacilityList();
+        }
+
+        // 気象情報の定期更新（約30秒間隔 = 10回のポーリングに1回）
+        weatherPollCountdown++;
+        if (weatherPollCountdown >= 10 || !currentWeatherAlerts) {
+          weatherPollCountdown = 0;
+          fetchWeatherAlertsData();
         }
 
         // 成功時はエラー表示をクリア
@@ -1910,6 +1986,9 @@
 
         // 3. 要約ペインの更新
         updateSummaryPane(currentFacilities);
+
+        // 3-2. 防災気象情報の初期取得
+        fetchWeatherAlertsData();
 
         // 4. ピタネットポップオーバーイベント
         document.getElementById('btn-close-m-note')?.addEventListener('click', closeNotePopover);

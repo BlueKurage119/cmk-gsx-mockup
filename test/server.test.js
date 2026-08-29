@@ -1656,4 +1656,50 @@ test('GET /api/weather/radar-times returns 200, success true, and radar time ser
   }
 });
 
+test('GET /m includes weather-card-container, badge elements, and fetchWeatherAlertsData logic (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m`);
+    const text = await res.text();
+    assert.ok(text.includes('id="weather-card-container"'), 'M terminal should include weather-card-container');
+    assert.ok(text.includes('id="weather-alert-badges"'), 'M terminal should include weather-alert-badges');
+    assert.ok(text.includes('id="btn-m-radar-open"'), 'M terminal should include btn-m-radar-open');
+    assert.ok(text.includes('fetchWeatherAlertsData'), 'M terminal should define fetchWeatherAlertsData');
+    assert.ok(text.includes('renderWeatherCard'), 'M terminal should define renderWeatherCard');
+    assert.ok(text.includes('/api/weather/alerts'), 'M terminal should query /api/weather/alerts');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /m/style.css includes styles for weather-card-container and weather badges (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/m/style.css`);
+    const text = await res.text();
+    assert.ok(text.includes('.weather-card-container'), 'style.css should style .weather-card-container');
+    assert.ok(text.includes('.weather-badge'), 'style.css should style .weather-badge');
+    assert.ok(text.includes('.weather-badge.badge-warning'), 'style.css should style .badge-warning');
+    assert.ok(text.includes('.btn-radar-open'), 'style.css should style .btn-radar-open');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /h includes weather badge in header and weather notification handling (Issue #86)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/h`);
+    const text = await res.text();
+    assert.ok(text.includes('id="header-weather-badge"'), 'H terminal should have header-weather-badge');
+    assert.ok(text.includes('notification-badge-warning'), 'H terminal should define notification-badge-warning');
+    assert.ok(text.includes('updateWeatherHeaderBadge'), 'H terminal should define updateWeatherHeaderBadge');
+    assert.ok(text.includes('fetchWeatherAlertsData'), 'H terminal should define fetchWeatherAlertsData');
+    assert.ok(text.includes('/api/weather/alerts'), 'H terminal should fetch /api/weather/alerts');
+  } finally {
+    await close();
+  }
+});
+
+
 

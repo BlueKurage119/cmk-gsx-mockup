@@ -1856,4 +1856,115 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ==========================================================================
+   Issue #86: 防災気象情報カード（M端末概況）
+   ========================================================================== */
+.weather-card-container {
+  background-color: var(--surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.weather-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.weather-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.weather-card-title svg {
+  width: 18px;
+  height: 18px;
+  fill: #8ab4f8;
+  flex-shrink: 0;
+}
+
+.btn-radar-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: rgba(138, 180, 248, 0.12);
+  color: #8ab4f8;
+  border: 1px solid rgba(138, 180, 248, 0.4);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease;
+}
+
+.btn-radar-open:active {
+  background-color: rgba(138, 180, 248, 0.24);
+}
+
+.weather-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weather-alert-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+}
+
+.weather-badge.badge-special {
+  background-color: #a142f4;
+  color: #ffffff;
+}
+
+.weather-badge.badge-warning {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+.weather-badge.badge-advisory {
+  background-color: #f29900;
+  color: #202124;
+}
+
+.weather-badge.badge-normal {
+  background-color: rgba(52, 168, 83, 0.2);
+  color: #81c995;
+  border: 1px solid rgba(52, 168, 83, 0.4);
+}
+
+.weather-headline-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+
 
