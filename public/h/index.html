@@ -2630,6 +2630,11 @@
       }
     }
 
+    // 気象警報・注意報のブザー管理変数
+    let buzzerAcknowledgedWeatherUpdatedAt = null;
+    let isWeatherSoundActive = false;
+    let activeWeatherSoundType = null; // 'warning' | 'advisory' | null
+
     // ブザー点滅・消音停止（ヘッダークリック、F8キー押下または詳細/はい/いいえ/承認/差戻/確認済ボタン押下）
     function stopBuzzer() {
       isBuzzerActive = false;
@@ -2637,8 +2642,15 @@
       stopOfflineBeep();
       pendingRequests.forEach((req) => buzzerAcknowledgedReqIds.add(req.id));
       pendingFaultReports.forEach((fault) => buzzerAcknowledgedFaultIds.add(fault.id));
+      if (weatherAlertsData && weatherAlertsData.updatedAt) {
+        buzzerAcknowledgedWeatherUpdatedAt = weatherAlertsData.updatedAt;
+      }
+      if (activeWeatherSoundType === 'advisory') {
+        isWeatherSoundActive = false;
+        activeWeatherSoundType = null;
+      }
       const header = document.querySelector('.app-header');
-      if (header && !isEmergencyAlarmActive) header.classList.remove('alarm-active');
+      if (header && !isEmergencyAlarmActive && !isWeatherSoundActive) header.classList.remove('alarm-active');
     }
 
     // 緊急サイレン音（880Hz / 587Hz 交互ウーウー音）
@@ -2680,21 +2692,76 @@
         header.classList.remove('emergency-alarm-active');
       }
 
-      // 未確認の承認待ち申請または故障申告があれば通常ブザー再開
-      if (pendingRequests.length > 0 || pendingFaultReports.length > 0) {
-        const hasNewUnackReq = pendingRequests.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
-        const hasNewUnackFault = pendingFaultReports.some((f) => !buzzerAcknowledgedFaultIds.has(f.id));
-        if (hasNewUnackReq || hasNewUnackFault) {
+      // 未確認の承認待ち申請または故障申告または注意報があれば通常ブザー再開
+      const hasNewUnackReq = pendingRequests.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
+      const hasNewUnackFault = pendingFaultReports.some((f) => !buzzerAcknowledgedFaultIds.has(f.id));
+      const hasUnackWeatherAdvisory = isWeatherSoundActive && activeWeatherSoundType === 'advisory';
+      if (hasNewUnackReq || hasNewUnackFault || hasUnackWeatherAdvisory) {
+        isBuzzerActive = true;
+        startBuzzerSound();
+        if (header) header.classList.add('alarm-active');
+      }
+    }
+
+    // 気象警報・注意報ブザーの完全停止（確認操作時、スヌーズなし）
+    function stopWeatherBuzzer() {
+      isWeatherSoundActive = false;
+      activeWeatherSoundType = null;
+      if (weatherAlertsData && weatherAlertsData.updatedAt) {
+        buzzerAcknowledgedWeatherUpdatedAt = weatherAlertsData.updatedAt;
+      } else {
+        buzzerAcknowledgedWeatherUpdatedAt = 'acknowledged';
+      }
+
+      if (activeEmergencyAlerts.length === 0) {
+        stopEmergencyAlarm();
+      }
+      if (pendingRequests.length === 0 && pendingFaultReports.length === 0) {
+        stopBuzzer();
+      }
+    }
+
+    // 気象警報・注意報発表時のブザー鳴り分け判定
+    function checkAndTriggerWeatherBuzzer() {
+      if (!weatherAlertsData || !weatherAlertsData.alerts || weatherAlertsData.alerts.length === 0) {
+        if (isWeatherSoundActive) {
+          stopWeatherBuzzer();
+        }
+        return;
+      }
+
+      const currentUpdatedAt = weatherAlertsData.updatedAt || 'latest';
+      if (buzzerAcknowledgedWeatherUpdatedAt === currentUpdatedAt) {
+        return; // 既に確認・停止済み
+      }
+
+      if (weatherAlertsData.hasSpecial || weatherAlertsData.hasWarning) {
+        // 警報以上: 非常通報ブザー（サイレン）鳴動
+        isWeatherSoundActive = true;
+        activeWeatherSoundType = 'warning';
+        startEmergencyAlarm();
+      } else {
+        // 注意報: 通知ブザー鳴動
+        isWeatherSoundActive = true;
+        activeWeatherSoundType = 'advisory';
+        if (!isEmergencyAlarmActive) {
           isBuzzerActive = true;
           startBuzzerSound();
-          if (header) header.classList.add('alarm-active');
+          const header = document.querySelector('.app-header');
+          if (header && !header.classList.contains('emergency-alarm-active')) {
+            header.classList.add('alarm-active');
+          }
         }
       }
     }
 
-    // 緊急サイレン 2分間スヌーズ（ヘッダークリック、F8キー押下またはダイアログ表示時）
+    // 緊急サイレン 2分間スヌーズ（非常通報用のスヌーズ）
     function snoozeEmergencyAlarm() {
-      if (activeEmergencyAlerts.length === 0) return;
+      if (activeEmergencyAlerts.length === 0) {
+        // 気象警報のみの場合はスヌーズではなく完全停止
+        stopWeatherBuzzer();
+        return;
+      }
       isEmergencyAlarmActive = false;
       isEmergencySnoozed = true;
       if (emergencyAlarmIntervalId) {
@@ -2899,6 +2966,7 @@
       } else if (viewName === 'radar') {
         const panel = document.getElementById('view-radar');
         if (panel) panel.classList.add('active');
+        stopWeatherBuzzer();
         initHRadar();
       } else {
         const panel = document.getElementById('view-overview');
@@ -3091,6 +3159,7 @@
           weatherAlertsData = await res.json();
           updateRadarNavDot();
           updateNotificationArea();
+          checkAndTriggerWeatherBuzzer();
         }
       } catch (err) {
         console.warn('Weather fetch warning in H:', err);
@@ -5692,19 +5761,20 @@
           }
         }
 
-        // 緊急サイレン音・承認／故障ブザー音の制御
-        if (activeEmergencyAlerts.length > 0) {
+        // 緊急サイレン音・承認／故障ブザー音・気象警報音の制御
+        if (activeEmergencyAlerts.length > 0 || (isWeatherSoundActive && activeWeatherSoundType === 'warning')) {
           startEmergencyAlarm();
         } else {
           stopEmergencyAlarm();
           const hasNewUnackReq = newPending.some((r) => !buzzerAcknowledgedReqIds.has(r.id));
           const hasNewUnackFault = pendingFaultReports.some((f) => !buzzerAcknowledgedFaultIds.has(f.id));
-          const hasNewUnack = hasNewUnackReq || hasNewUnackFault;
+          const hasUnackWeatherAdvisory = isWeatherSoundActive && activeWeatherSoundType === 'advisory';
+          const hasNewUnack = hasNewUnackReq || hasNewUnackFault || hasUnackWeatherAdvisory;
 
-          if ((newPending.length > 0 || pendingFaultReports.length > 0) && hasNewUnack) {
+          if ((newPending.length > 0 || pendingFaultReports.length > 0 || hasUnackWeatherAdvisory) && hasNewUnack) {
             isBuzzerActive = true;
             startBuzzerSound();
-          } else if (newPending.length === 0 && pendingFaultReports.length === 0) {
+          } else if (newPending.length === 0 && pendingFaultReports.length === 0 && !hasUnackWeatherAdvisory) {
             isBuzzerActive = false;
             stopBuzzerSound();
             buzzerAcknowledgedReqIds.clear();
@@ -5736,6 +5806,7 @@
         } else {
           updateRadarNavDot();
           updateNotificationArea();
+          checkAndTriggerWeatherBuzzer();
         }
 
         // 申請詳細モーダル表示中
@@ -6023,11 +6094,12 @@
       window.addEventListener('pointerdown', unlockAudio, { once: true });
       window.addEventListener('keydown', unlockAudio, { once: true });
 
-      // ヘッダークリックイベント（ブザー停止 & 緊急サイレン2分間スヌーズ & オフライン音停止）
+      // ヘッダークリックイベント（ブザー停止 & 緊急サイレン2分間スヌーズ & 気象ブザー停止 & オフライン音停止）
       const appHeader = document.querySelector('.app-header');
       if (appHeader) {
         appHeader.addEventListener('click', () => {
           getAudioContext();
+          stopWeatherBuzzer();
           if (isEmergencyAlarmActive || activeEmergencyAlerts.length > 0) {
             snoozeEmergencyAlarm();
           }
@@ -6038,10 +6110,11 @@
         });
       }
 
-      // キーボードイベント（F8キーで承認ブザー停止 & 緊急サイレン2分間スヌーズ & オフライン音停止）
+      // キーボードイベント（F8キーで承認ブザー停止 & 気象ブザー停止 & 緊急サイレン2分間スヌーズ & オフライン音停止）
       window.addEventListener('keydown', (e) => {
         if (e.key === 'F8') {
           e.preventDefault();
+          stopWeatherBuzzer();
           stopBuzzer();
           stopOfflineBeep();
           if (isEmergencyAlarmActive || activeEmergencyAlerts.length > 0) {
@@ -6114,6 +6187,7 @@
         } else if (btnDetail?.dataset.targetType === 'fault') {
           openFaultDetailModal(btnDetail.dataset.targetId || null);
         } else if (btnDetail?.dataset.targetType === 'weather') {
+          stopWeatherBuzzer();
           switchView('radar');
         } else {
           openRequestDetailModal(btnDetail?.dataset.targetId || null);
