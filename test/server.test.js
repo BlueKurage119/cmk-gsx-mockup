@@ -1624,3 +1624,36 @@ test('GET /h includes header click handler for buzzer stop and siren snooze with
   }
 });
 
+test('GET /api/weather/alerts returns 200, success true, and Koto-ku weather alerts info (Issue #85)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/weather/alerts`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /application\/json/);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.area, '江東区');
+    assert.equal(data.areaCode, '1310800');
+    assert.ok(Array.isArray(data.alerts));
+    assert.equal(typeof data.hasWarning, 'boolean');
+    assert.equal(typeof data.hasSpecial, 'boolean');
+  } finally {
+    await close();
+  }
+});
+
+test('GET /api/weather/radar-times returns 200, success true, and radar time series (Issue #85)', async () => {
+  const { baseUrl, close } = await listenServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/weather/radar-times`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /application\/json/);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(Array.isArray(data.times));
+  } finally {
+    await close();
+  }
+});
+
+

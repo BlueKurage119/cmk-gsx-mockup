@@ -5,6 +5,7 @@ const { registerRequestRoutes } = require('./src/routes/request-api');
 const { registerFaultRoutes, uploadDir } = require('./src/routes/fault-api');
 const { registerEmergencyRoutes } = require('./src/routes/emergency-api');
 const { registerNoteRoutes } = require('./src/routes/note-api');
+const { registerWeatherRoutes } = require('./src/routes/weather-api');
 const { registerSharedRoutes } = require('./src/routes/shared-assets');
 
 function createApp() {
@@ -23,6 +24,7 @@ function createApp() {
   registerFaultRoutes(app);
   registerEmergencyRoutes(app);
   registerNoteRoutes(app);
+  registerWeatherRoutes(app);
   registerSharedRoutes(app);
 
   return app;
